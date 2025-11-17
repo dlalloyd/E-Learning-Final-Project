@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  role      String     @default("learner") // learner, instructor, admin
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  submissions  Assessment[]
+  progress     UserProgress[]
+  badges       UserBadge[]
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  createdAt   DateTime @default(now())
+
+  lessons      Lesson[]
+  prerequisites TopicPrerequisite[] @relation("topic_prereqs")
+  requiredFor   TopicPrerequisite[] @relation("topic_required_for")
+}
+
+model TopicPrerequisite {
+  topicId      String
+  prerequisiteId String
+  topic        Topic @relation("topic_required_for", fields: [topicId], references: [id], onDelete: Cascade)
+  prerequisite Topic @relation("topic_prereqs", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([topicId, prerequisiteId])
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  topicId   String
+  order     Int
+  createdAt DateTime @default(now())
+
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  quizzes   Quiz[]
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  title     String
+  lessonId  String
+  createdAt DateTime @default(now())
+
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  assessments Assessment[]
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  text        String
+  type        String   @default("multiple_choice") // multiple_choice, short_answer, essay
+  difficulty  Float    @default(1500) // Elo rating
+  quizId      String
+  order       Int
+  createdAt   DateTime @default(now())
+
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options Option[]
+  answers Answer[]
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  text       String
+  isCorrect  Boolean  @default(false)
+  questionId String
+  order      Int
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Assessment {
+  id          String   @id @default(cuid())
+  userId      String
+  quizId      String
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  score       Float?
+  maxScore    Float?
+  passed      Boolean  @default(false)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers Answer[]
+}
+
+model Answer {
+  id           String   @id @default(cuid())
+  assessmentId String
+  questionId   String
+  selectedOptionId String?
+  textAnswer   String?
+  isCorrect    Boolean?
+  createdAt    DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model UserProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  topicId   String
+  accuracy  Float    @default(0) // Percentage 0-100
+  completed Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  criteria    String // JSON criteria for earning badge
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  details   String? // JSON
+  timestamp DateTime @default(now())
+}
