@@ -1,0 +1,100 @@
+{
+  "metadata": {
+    "version": "1.0-stage2",
+    "calibrated_by": "Self-pilot EAP, Dylan Bengi, 26/02/2026",
+    "theta_0": -0.780,
+    "theta_0_sd": 0.543,
+    "theta_0_ci_95": [-1.982, 0.164],
+    "model": "3PL-constrained",
+    "c_estimation": "fixed at 0.25 (4-option MCQ theoretical bound)",
+    "total_items": 15,
+    "domain": "UK Geography — Counties and Climate Systems",
+    "bloom_distribution": {
+      "L1_remembering": 5,
+      "L2_understanding": 5,
+      "L3_applying": 5
+    }
+  },
+  "items": {
+    "Q01": { "a": 1.1, "b": -0.8, "c": 0.25, "bloom": 1, "kc": "UK_national_parks",
+      "text": "Which national park is primarily located in Cumbria?",
+      "correct": "B",
+"options": { "A": "Peak District", "B": "Lake District", "C": "Yorkshire Dales", "D": "Dartmoor" }
+    },
+    "Q02": { "a": 1.3, "b": -1.2, "c": 0.25, "bloom": 1, "kc": "UK_capitals",
+      "text": "What is the capital city of Wales?",
+      "correct": "C",
+      "options": { "A": "Swansea", "B": "Newport", "C": "Cardiff", "D": "Wrexham" }
+    },
+    "Q03": { "a": 0.9, "b": -0.5, "c": 0.25, "bloom": 1, "kc": "UK_county_locations",
+      "text": "In which county is Stonehenge located?",
+      "correct": "C",
+      "options": { "A": "Dorset", "B": "Somerset", "C": "Wiltshire", "D": "Hampshire" }
+    },
+    "Q04": { "a": 1.0, "b": -0.8, "c": 0.25, "bloom": 1, "kc": "UK_county_locations",
+      "text": "Which mountain is the highest point in Wales?",
+      "correct": "C",
+      "options": { "A": "Scafell Pike", "B": "Ben Nevis", "C": "Snowdon", "D": "Helvellyn" }
+    },
+    "Q05": { "a": 1.0, "b": -0.3, "c": 0.25, "bloom": 1, "kc": "UK_rivers",
+      "text": "Which river flows through London?",
+      "correct": "C",
+      "options": { "A": "Severn", "B": "Avon", "C": "Thames", "D": "Trent" }
+    },
+    "Q06": { "a": 1.2, "b": 0.4, "c": 0.25, "bloom": 2, "kc": "westerly_winds_rainfall",
+      "text": "Why does western Scotland receive significantly more rainfall than eastern Scotland?",
+      "correct": "A",
+      "options": { "A": "Prevailing westerly winds bring moist Atlantic air", "B": "Gulf Stream warms eastern coast", "C": "Eastern mountain ranges create rain shadow", "D": "Deforestation increases western precipitation" }
+    },
+    "Q07": { "a": 1.1, "b": 0.2, "c": 0.25, "bloom": 2, "kc": "maritime_continental",
+      "text": "What primarily causes milder winter temperatures along England's SW coast vs inland?",
+      "correct": "B",
+      "options": { "A": "Urban density generates heat", "B": "Atlantic Ocean moderating influence", "C": "Lower altitude", "D": "Prevailing easterly continental winds" }
+    },
+        "Q08": { "a": 1.3, "b": 0.6, "c": 0.25, "bloom": 2, "kc": "pennines_rain_shadow",
+      "text": "Why does London receive lower annual rainfall than Manchester?",
+      "correct": "C",
+      "options": { "A": "London is further from coast", "B": "Pennines create orographic uplift over Manchester", "C": "Pennines create rain shadow protecting London from westerlies", "D": "London urban heat island suppresses precipitation" }
+    },
+    "Q09": { "a": 1.0, "b": 0.3, "c": 0.25, "bloom": 2, "kc": "north_atlantic_drift",
+      "text": "The North Atlantic Drift primarily affects UK climate by:",
+      "correct": "C",
+      "options": { "A": "Increasing summer temperatures", "B": "Preventing NW British rivers freezing", "C": "Moderating winter temperatures and increasing precipitation", "D": "Creating Scottish anticyclones" }
+    },
+    "Q10": { "a": 1.2, "b": 0.7, "c": 0.25, "bloom": 2, "kc": "pennines_rain_shadow",
+      "text": "Why do areas east of the Pennines show more continental climate characteristics?",
+      "correct": "A",
+      "options": { "A": "Protected from Atlantic air masses by Pennines", "B": "More Scandinavian anticyclones", "C": "Urban development modifies climate", "D": "North Sea provides summer warming" }
+    },
+    "Q11": { "a": 1.3, "b": 1.1, "c": 0.25, "bloom": 3, "kc": "climate_classification",
+      "text": "A town has 65mm rainfall in January, 48mm in July; 21°C max in July, 4°C in January. Which UK climate type?",
+      "correct": "B",
+      "options": { "A": "Highland", "B": "Maritime temperate", "C": "Continental", "D": "Mediterranean" }
+    },
+        "Q11": { "a": 1.3, "b": 1.1, "c": 0.25, "bloom": 3, "kc": "climate_classification",
+      "text": "A town has 65mm rainfall in January, 48mm in July; 21°C max in July, 4°C in January. Which UK climate type?",
+      "correct": "B",
+      "options": { "A": "Highland", "B": "Maritime temperate", "C": "Continental", "D": "Mediterranean" }
+    },
+    "Q12": { "a": 1.1, "b": 0.9, "c": 0.25, "bloom": 3, "kc": "continental_effect",
+      "text": "A student claims Birmingham gets less rain than Glasgow because it's inland. Which concept best supports this?",
+      "correct": "B",
+      "options": { "A": "Orographic effect", "B": "Continental effect / distance from moisture source", "C": "Urban heat island", "D": "Coriolis force" }
+    },
+    "Q13": { "a": 1.2, "b": 1.3, "c": 0.25, "bloom": 3, "kc": "climate_change_application",
+      "text": "A Cornwall farmer worries about climate change impacts. Based on UK climate patterns, what is MOST likely?",
+      "correct": "C",
+      "options": { "A": "Drought from reduced westerlies", "B": "More winter frost from weakening Gulf Stream", "C": "Increased rainfall variability and milder winters", "D": "Reduced summer temperatures" }
+    },
+    "Q14": { "a": 1.0, "b": 1.0, "c": 0.25, "bloom": 3, "kc": "pennines_rain_shadow",
+      "text": "Yorkshire has a rain shadow on its eastern side. What does this mean for East Yorkshire agriculture?",
+      "correct": "B",
+      "options": { "A": "Higher humidity from North Sea", "B": "Reduced precipitation makes irrigation necessary", "C": "Higher rainfall supports dairy farming", "D": "Frost hollows limit crop variety" }
+    },
+    "Q15": { "a": 1.1, "b": 1.4, "c": 0.25, "bloom": 3, "kc": "flood_risk_integration",
+      "text": "A Newcastle planner assesses flood risk. Given its East-Pennine position and River Tyne proximity, which factor is prioritised?",
+      "correct": "B",
+      "options": { "A": "Orographic precipitation from westerlies crossing Pennines", "B": "North Sea storm surge + River Tyne discharge", "C": "Urban heat island intensifying convective rainfall", "D": "Limestone groundwater saturation" }
+    }
+  }
+}

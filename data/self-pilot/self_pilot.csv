@@ -1,0 +1,16 @@
+item_id,your_answer,correct_answer,is_correct,response_time_seconds,confidence_1to5,notes
+Q01,A,B,1,53,3,Correct — Cumbria/Lake District link
+Q02,B,B,1,35,4,Correct — Cornwall south-west
+Q03,A,C,0,62,2,Wrong — answered Sussex; correct Kent (Canterbury in Kent not Sussex)
+Q04,A,C,0,58,2,Wrong — answered Lancashire; correct Cumbria (Lake District is in Cumbria)
+Q05,B,B,1,45,4,Correct — Lancashire and Cheshire separated by Mersey
+Q06,A,C,0,70,2,Wrong — answered Cornwall; correct Kent (White Cliffs of Dover in Kent)
+Q07,C,C,1,40,4,Correct — Pennines run along Lancashire/Yorkshire boundary
+Q08,A,D,0,65,2,Wrong — answered Oxfordshire; correct Gloucestershire (Thames source)
+Q09,B,B,1,38,4,Correct — Kent/Pas-de-Calais narrowest point
+Q10,B,C,0,72,2,Wrong — answered Granite; correct Millstone Grit and Carboniferous Limestone
+Q11,C,B,0,68,2,Wrong — answered English Channel; correct North Sea (Thames Estuary)
+Q12,B,B,1,55,4,Correct — Pennines rain shadow mechanism
+Q13,D,B,0,75,2,Wrong — answered D (Atlantic tropics); correct B (sea stores heat)
+Q14,A,C,0,80,2,Wrong — answered elevation; correct rain shadow (Lancashire faces westerlies)
+Q15,BLANK,B,0,0,1,Left blank — Kent vs Cornwall claim (partial credit not applicable)
