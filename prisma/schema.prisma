@@ -1,5 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma Schema — Adaptive E-Learning System
+// Updated: IRT 3PL + BKT architecture (ADR-001, ADR-003, ADR-004)
+// Replaces Elo-based difficulty field with IRT parameters (a, b, c)
 
 generator client {
   provider = "prisma-client-js"
@@ -7,37 +8,42 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+    url      = env("DATABASE_URL")
 }
+
+// ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   name      String
   password  String
-  role      String     @default("learner") // learner, instructor, admin
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  role      String   @default("learner") // learner, instructor, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  submissions  Assessment[]
-  progress     UserProgress[]
-  badges       UserBadge[]
+  sessions    Session[]8
+  assessments Assessment[]
+  progress    UserProgress[]
+  badges      UserBadge[]
 }
 
+// ─── Topic / Lesson / Quiz ────────────────────────────────────────────────────
+
 model Topic {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   description String?
   order       Int
   createdAt   DateTime @default(now())
 
-  lessons      Lesson[]
+  lessons       Lesson[]
   prerequisites TopicPrerequisite[] @relation("topic_prereqs")
   requiredFor   TopicPrerequisite[] @relation("topic_required_for")
 }
 
 model TopicPrerequisite {
-  topicId      String
+  topicId        String
   prerequisiteId String
   topic        Topic @relation("topic_required_for", fields: [topicId], references: [id], onDelete: Cascade)
   prerequisite Topic @relation("topic_prereqs", fields: [prerequisiteId], references: [id], onDelete: Cascade)
@@ -53,8 +59,8 @@ model Lesson {
   order     Int
   createdAt DateTime @default(now())
 
-  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  quizzes   Quiz[]
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  quizzes Quiz[]
 }
 
 model Quiz {
@@ -63,68 +69,137 @@ model Quiz {
   lessonId  String
   createdAt DateTime @default(now())
 
-  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   questions   Question[]
   assessments Assessment[]
+  sessions    Session[]
 }
 
-model Question {
-  id          String   @id @default(cuid())
-  text        String
-  type        String   @default("multiple_choice") // multiple_choice, short_answer, essay
-  difficulty  Float    @default(1500) // Elo rating
-  quizId      String
-  order       Int
-  createdAt   DateTime @default(now())
+// ─── Question (IRT 3PL parameters) ───────────────────────────────────────────
 
-  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  options Option[]
-  answers Answer[]
+model Question {
+  id        String   @id @default(cuid())
+  text      String
+  type      String   @default("multiple_choice")
+  quizId    String
+  order     Int
+  createdAt DateTime @default(now())
+
+  // IRT 3PL parameters (replaces Elo difficulty field)
+  // a = discrimination (0.5–2.0), b = difficulty (logits), c = guessing (fixed 0.25)
+  irt_a     Float    @default(1.0)  // discrimination
+  irt_b     Float    @default(0.0)  // difficulty in logits
+  irt_c     Float    @default(0.25) // guessing (fixed for 4-option MCQ)
+
+  // Bloom's taxonomy level and knowledge component
+  bloom     Int      @default(1)    // 1=Remembering, 2=Understanding, 3=Applying
+  kc        String   @default("")   // knowledge component ID (matches BKT params)
+
+  quiz         Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options      Option[]
+  answers      Answer[]
+  interactions Interaction[]
 }
 
 model Option {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   text       String
-  isCorrect  Boolean  @default(false)
+  isCorrect  Boolean @default(false)
   questionId String
   order      Int
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
-model Assessment {
-  id          String   @id @default(cuid())
+// ─── Session (per learner per study condition) ────────────────────────────────
+
+model Session {
+  id          String    @id @default(cuid())
   userId      String
   quizId      String
-  startedAt   DateTime @default(now())
+  condition   String    @default("adaptive") // "adaptive" | "static"
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
-  score       Float?
+
+  // IRT learner state — updated after each response via EAP
+  theta       Float     @default(-0.780) // current ability estimate (self-pilot θ₀)
+  thetaSd     Float     @default(0.543)  // posterior standard deviation
+
+  // BKT state stored as JSON — Record<kcId, KCState>
+  kcStates    String    @default("{}") // JSON serialised
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz  Quiz  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  interactions Interaction[]
+  assessments  Assessment[]
+}
+
+// ─── Interaction (single Q&A event) ──────────────────────────────────────────
+
+model Interaction {
+  id             String   @id @default(cuid())
+  sessionId      String
+  questionId     String
+  selectedAnswer String   // option label: "A", "B", "C", or "D"
+  isCorrect      Boolean
+  responseTimeMs Int      // milliseconds
+
+  // IRT state before and after this response
+  theta_before   Float
+  theta_after    Float
+
+  // BKT state for the question's KC before and after
+  pLearned_before Float
+  pLearned_after  Float
+
+  createdAt DateTime @default(now())
+
+  session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ─── Assessment (pre/post/delayed test) ──────────────────────────────────────
+
+model Assessment {
+  id          String    @id @default(cuid())
+  userId      String
+  sessionId   String?
+  quizId      String
+  type        String    @default("post_test") // pre_test | post_test | delayed_post_test
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  score       Float?    // raw score (correct / total)
   maxScore    Float?
-  passed      Boolean  @default(false)
+  passed      Boolean   @default(false)
+  thetaAtTime Float?    // IRT ability estimate at time of assessment
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id])
   answers Answer[]
 }
 
 model Answer {
-  id           String   @id @default(cuid())
-  assessmentId String
-  questionId   String
+  id               String   @id @default(cuid())
+  assessmentId     String
+  questionId       String
   selectedOptionId String?
-  textAnswer   String?
-  isCorrect    Boolean?
-  createdAt    DateTime @default(now())
+  textAnswer       String?
+  isCorrect        Boolean?
+  createdAt        DateTime @default(now())
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
+// ─── Progress / Badges ────────────────────────────────────────────────────────
+
 model UserProgress {
   id        String   @id @default(cuid())
   userId    String
   topicId   String
-  accuracy  Float    @default(0) // Percentage 0-100
+  accuracy  Float    @default(0)
   completed Boolean  @default(false)
   updatedAt DateTime @updatedAt
 
@@ -138,17 +213,17 @@ model Badge {
   name        String
   description String?
   icon        String?
-  criteria    String // JSON criteria for earning badge
+  criteria    String
   createdAt   DateTime @default(now())
 
   users UserBadge[]
 }
 
 model UserBadge {
-  id        String   @id @default(cuid())
-  userId    String
-  badgeId   String
-  earnedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
@@ -160,6 +235,6 @@ model SystemLog {
   id        String   @id @default(cuid())
   action    String
   userId    String?
-  details   String? // JSON
+  details   String?
   timestamp DateTime @default(now())
 }
