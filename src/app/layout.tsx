@@ -1,19 +1,21 @@
-'use client';
+import type { Metadata } from 'next';
+import './globals.css';
 
-import React, { ReactNode } from 'react';
+export const metadata: Metadata = {
+  title: 'Adaptive E-Learning System',
+  description: 'IRT-based personalised learning for UK Geography',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <head>
-        <title>E-Learning Adaptive System</title>
-        <meta name="description" content="Personalised adaptive e-learning platform" />
-      </head>
-      <body>{children}</body>
+      <body className="bg-gray-50 text-gray-900 min-h-screen">
+        {children}
+      </body>
     </html>
   );
 }

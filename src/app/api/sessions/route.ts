@@ -30,11 +30,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify user exists
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+// Upsert user — creates participant if they don't exist
+// userId treated as participant identifier (e.g. "P01", "P02")
+const user = await prisma.user.upsert({
+  where: { email: `${userId}@study.local` },
+  update: {},
+  create: {
+    email: `${userId}@study.local`,
+    name: userId,
+    password: 'study-participant',
+    role: 'learner',
+  },
+});
 
     // Verify quiz exists
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
@@ -48,7 +55,7 @@ export async function POST(req: NextRequest) {
     // Create session with IRT priors from self-pilot (θ₀ = -0.780)
     const session = await prisma.session.create({
       data: {
-        userId,
+        userId: user.id,
         quizId,
         condition,
         theta: THETA_INITIAL,       // -0.780 logits (self-pilot EAP, 26/02/2026)

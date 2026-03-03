@@ -16,6 +16,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.27",
     "axios": "^1.6.0",
     "lodash": "^4.17.21",
     "next": "^14.0.0",
@@ -41,6 +42,6 @@
     "ts-node": "^10.9.2"
   },
   "prisma": {
-  "seed": "ts-node --compiler-options {\"module\":\"CommonJS\",\"types\":[\"node\"]} prisma/seed.ts"
-}
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\",\"types\":[\"node\"]} prisma/seed.ts"
+  }
 }
