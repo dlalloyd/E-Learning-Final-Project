@@ -4,7 +4,7 @@
   "description": "Personalised E-Learning System with Adaptive Assessments",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
