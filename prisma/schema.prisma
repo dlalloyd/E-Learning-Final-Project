@@ -7,8 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────
@@ -22,7 +23,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions    Session[]8
+  sessions    Session[]
   assessments Assessment[]
   progress    UserProgress[]
   badges      UserBadge[]
@@ -83,6 +84,7 @@ model Question {
   type      String   @default("multiple_choice")
   quizId    String
   order     Int
+  hint      Hint[]
   createdAt DateTime @default(now())
 
   // IRT 3PL parameters (replaces Elo difficulty field)
@@ -119,6 +121,8 @@ model Session {
   quizId      String
   condition   String    @default("adaptive") // "adaptive" | "static"
   startedAt   DateTime  @default(now())
+  state           UserSessionState?
+  analyticsEvents AnalyticsEvent[]
   completedAt DateTime?
 
   // IRT learner state — updated after each response via EAP
@@ -237,4 +241,103 @@ model SystemLog {
   userId    String?
   details   String?
   timestamp DateTime @default(now())
+}
+
+// ============================================
+// PATH B: INSTRUCTIONAL CONTENT LAYER
+// Added: 2026-03-09
+// Purpose: Transform from assessment-only to ITS
+// Decision: ADR-005
+// ============================================
+
+// ——— Knowledge Component (explicit model for KC tracking) ———————————————————
+
+model KnowledgeComponent {
+  id            String   @id // Use the kc string as ID (e.g., "UK_capitals")
+  name          String
+  description   String?
+  bloomLevel    Int      @default(1) // 1, 2, or 3
+  
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  learningObjects   LearningObject[]
+  prerequisiteFor   PrerequisiteEdge[] @relation("KCPrerequisites")
+  dependentOn       PrerequisiteEdge[] @relation("KCDependents")
+}
+
+// ——— Learning Object (instructional content chunks) —————————————————————————
+
+model LearningObject {
+  id            String   @id @default(cuid())
+  title         String
+  content       String   @db.Text  // Markdown instructional content
+  eli5Content   String?  @db.Text  // Simplified "Explain Like I'm 5" version
+  contentType   String   @default("text") // text, diagram, video
+  bloomLevel    Int      // 1 = Remembering, 2 = Understanding, 3 = Applying
+  orderIndex    Int      // Sequencing within KC
+  
+  knowledgeComponentId String
+  knowledgeComponent   KnowledgeComponent @relation(fields: [knowledgeComponentId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ——— Hint (graduated scaffolding per question) ——————————————————————————————
+
+model Hint {
+  id            String   @id @default(cuid())
+  hintText      String   @db.Text
+  hintLevel     Int      // 1 = conceptual, 2 = procedural, 3 = worked example
+  orderIndex    Int
+  
+  questionId    String
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+}
+
+// ——— Prerequisite Edge (KC dependency graph) ————————————————————————————————
+
+model PrerequisiteEdge {
+  id                String @id @default(cuid())
+  masteryThreshold  Float  @default(0.8) // Required P(L) to unlock dependent KC
+  
+  fromKCId          String // Prerequisite KC
+  toKCId            String // Dependent KC (unlocked when fromKC mastered)
+  
+  fromKC KnowledgeComponent @relation("KCPrerequisites", fields: [fromKCId], references: [id])
+  toKC   KnowledgeComponent @relation("KCDependents", fields: [toKCId], references: [id])
+  
+  @@unique([fromKCId, toKCId])
+}
+
+// ——— User Session State (mode tracking for ITS) —————————————————————————————
+
+model UserSessionState {
+  id                String   @id @default(cuid())
+  currentMode       String   @default("assessing") // assessing, instructing, practicing, remediating
+  currentKCId       String?  // Which KC user is currently working on
+  consecutiveFails  Int      @default(0)
+  interventionCount Int      @default(0)  // Times system switched to instruction
+  scaffoldRequests  Int      @default(0)  // Times user clicked "Review Material"
+  hintsUsed         Int      @default(0)  // Total hints revealed
+  
+  sessionId         String   @unique
+  session           Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  updatedAt         DateTime @updatedAt
+}
+
+// ——— Analytics Event (detailed logging for dissertation) ————————————————————
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  eventType String   // MODE_CHANGE, HINT_REQUESTED, CONTENT_VIEWED, THETA_UPDATED, etc.
+  payload   Json     // Flexible event data
+  timestamp DateTime @default(now())
+  
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
