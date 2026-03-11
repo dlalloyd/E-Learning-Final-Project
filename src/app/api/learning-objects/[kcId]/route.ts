@@ -26,7 +26,7 @@ export async function GET(
       orderBy: { orderIndex: 'asc' },
     });
 
-    let prerequisiteStatus = [];
+    let prerequisiteStatus: Array<{ kcId: string; name: string; mastered: boolean }> = [];
 
     if (sessionId) {
       const prereqEdges = await prisma.prerequisiteEdge.findMany({
