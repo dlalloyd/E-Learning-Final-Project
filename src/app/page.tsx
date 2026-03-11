@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import InstructionMode from '@/components/InstructionMode';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ——— Types ————————————————————————————————————————————————————————————
 
 interface QuestionData {
   questionId: string;
@@ -39,7 +40,8 @@ interface AnswerResult {
   };
 }
 
-type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'complete' | 'error';
+type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'complete' | 'error';
+type InstructionTrigger = 'low_mastery' | 'consecutive_failures' | 'user_request';
 
 const BLOOM_LABELS: Record<number, string> = {
   1: 'Remembering',
@@ -53,15 +55,17 @@ const BLOOM_COLOURS: Record<number, string> = {
   3: 'bg-amber-100 text-amber-800',
 };
 
-// Hard-coded for study — in production these come from auth
 const STUDY_CONFIG = {
   quizId: 'quiz-uk-geo-adaptive',
 };
 
-// ─── Theta Bar ────────────────────────────────────────────────────────────────
+// ——— Instruction Mode Thresholds ——————————————————————————————————————
+const MASTERY_THRESHOLD = 0.3;
+const CONSECUTIVE_FAIL_THRESHOLD = 3;
+
+// ——— Theta Bar ————————————————————————————————————————————————————————
 
 function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
-  // Map theta (-3 to +3) onto 0–100%
   const pct = Math.round(((theta + 3) / 6) * 100);
   const clamped = Math.max(2, Math.min(98, pct));
 
@@ -84,7 +88,7 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ——— Main Component ———————————————————————————————————————————————————
 
 export default function QuizPage() {
   const [appState, setAppState] = useState<AppState>('start');
@@ -101,7 +105,12 @@ export default function QuizPage() {
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // ── Fetch next question ──────────────────────────────────────────────────
+  // ——— Instruction Mode State ———
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
+  const [currentKcId, setCurrentKcId] = useState<string>('');
+  const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
+
+  // —— Fetch next question ——————————————————————————————————————————————
 
   const fetchNextQuestion = useCallback(async (sid: string) => {
     setAppState('loading');
@@ -117,6 +126,7 @@ export default function QuizPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to load question');
 
       setQuestion(data);
+      setCurrentKcId(data.kc);
       setSelected(null);
       setResult(null);
       setStartTime(Date.now());
@@ -127,7 +137,7 @@ export default function QuizPage() {
     }
   }, []);
 
-  // ── Start session ────────────────────────────────────────────────────────
+  // —— Start session ————————————————————————————————————————————————————
 
   const startSession = async () => {
     if (!userId.trim()) return;
@@ -150,6 +160,7 @@ export default function QuizPage() {
       setSessionId(data.sessionId);
       setTheta(data.theta);
       setThetaSd(data.thetaSd);
+      setConsecutiveFailures(0);
       await fetchNextQuestion(data.sessionId);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -157,7 +168,24 @@ export default function QuizPage() {
     }
   };
 
-  // ── Submit answer ─────────────────────────────────────────────────────────
+  // —— Check if instruction mode should trigger ——————————————————————————
+
+  const shouldTriggerInstruction = (answerResult: AnswerResult, failures: number): InstructionTrigger | null => {
+    if (condition !== 'adaptive') return null;
+    if (answerResult.correct) return null;
+
+    if (failures >= CONSECUTIVE_FAIL_THRESHOLD) {
+      return 'consecutive_failures';
+    }
+
+    if (answerResult.bkt.pLearned_after < MASTERY_THRESHOLD) {
+      return 'low_mastery';
+    }
+
+    return null;
+  };
+
+  // —— Submit answer ————————————————————————————————————————————————————
 
   const submitAnswer = async (answer: string) => {
     if (!question || !sessionId) return;
@@ -183,7 +211,22 @@ export default function QuizPage() {
       setTheta(data.theta.after);
       setThetaSd(data.theta.sd);
       setTotalAnswered((n) => n + 1);
-      if (data.correct) setTotalCorrect((n) => n + 1);
+
+      let newFailures = consecutiveFailures;
+      if (data.correct) {
+        setTotalCorrect((n) => n + 1);
+        setConsecutiveFailures(0);
+        newFailures = 0;
+      } else {
+        newFailures = consecutiveFailures + 1;
+        setConsecutiveFailures(newFailures);
+      }
+
+      const trigger = shouldTriggerInstruction(data, newFailures);
+      if (trigger) {
+        setInstructionTrigger(trigger);
+      }
+
       setAppState('feedback');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -191,7 +234,43 @@ export default function QuizPage() {
     }
   };
 
-  // ── Option button style ───────────────────────────────────────────────────
+  // —— Handle "Review Material" button click ——————————————————————————————
+
+  const handleReviewRequest = () => {
+    setInstructionTrigger('user_request');
+    setAppState('instruction');
+  };
+
+  // —— Handle instruction complete ————————————————————————————————————————
+
+  const handleInstructionComplete = () => {
+    setConsecutiveFailures(0);
+    fetchNextQuestion(sessionId);
+  };
+
+  // —— Handle next after feedback —————————————————————————————————————————
+
+  const handleNextAfterFeedback = () => {
+    console.log('=== INSTRUCTION CHECK ===');
+    console.log('condition:', condition);
+    console.log('result.correct:', result?.correct);
+    console.log('consecutiveFailures:', consecutiveFailures);
+    console.log('bkt.pLearned_after:', result?.bkt.pLearned_after);
+    console.log('MASTERY_THRESHOLD:', MASTERY_THRESHOLD);
+    console.log('CONSECUTIVE_FAIL_THRESHOLD:', CONSECUTIVE_FAIL_THRESHOLD);
+
+    const trigger = shouldTriggerInstruction(result!, consecutiveFailures);
+    console.log('trigger result:', trigger);
+
+    if (trigger) {
+      setInstructionTrigger(trigger);
+      setAppState('instruction');
+    } else {
+      fetchNextQuestion(sessionId);
+    }
+  };
+
+  // —— Option button style ——————————————————————————————————————————————
 
   const optionStyle = (label: string) => {
     if (appState !== 'feedback') {
@@ -204,13 +283,12 @@ export default function QuizPage() {
     return 'border-slate-200 bg-white text-slate-400';
   };
 
-  // ─── Render: Start Screen ─────────────────────────────────────────────────
+  // ——— Render: Start Screen ———————————————————————————————————————————
 
   if (appState === 'start') {
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="mb-10 text-center">
             <div className="inline-block mb-4 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono tracking-widest uppercase">
               Adaptive E-Learning System
@@ -223,7 +301,6 @@ export default function QuizPage() {
             </p>
           </div>
 
-          {/* Form */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6">
             <div>
               <label className="block text-slate-400 text-xs font-mono uppercase tracking-widest mb-2">
@@ -277,7 +354,7 @@ export default function QuizPage() {
     );
   }
 
-  // ─── Render: Loading ──────────────────────────────────────────────────────
+  // ——— Render: Loading ————————————————————————————————————————————————
 
   if (appState === 'loading') {
     return (
@@ -290,7 +367,7 @@ export default function QuizPage() {
     );
   }
 
-  // ─── Render: Error ────────────────────────────────────────────────────────
+  // ——— Render: Error ——————————————————————————————————————————————————
 
   if (appState === 'error') {
     return (
@@ -310,7 +387,29 @@ export default function QuizPage() {
     );
   }
 
-  // ─── Render: Complete ─────────────────────────────────────────────────────
+  // ——— Render: Instruction Mode ————————————————————————————————————————
+
+  if (appState === 'instruction') {
+    return (
+      <main className="min-h-screen bg-slate-950 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-4 flex items-center justify-between text-xs text-slate-500 font-mono">
+            <span>{condition} · Session: {sessionId.slice(0, 8)}...</span>
+            <span>{totalCorrect}/{totalAnswered} correct</span>
+          </div>
+
+          <InstructionMode
+            kcId={currentKcId}
+            sessionId={sessionId}
+            onComplete={handleInstructionComplete}
+            triggerReason={instructionTrigger}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // ——— Render: Complete ———————————————————————————————————————————————
 
   if (appState === 'complete') {
     const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
@@ -353,6 +452,7 @@ export default function QuizPage() {
                 setTotalCorrect(0);
                 setTheta(-0.780);
                 setThetaSd(0.543);
+                setConsecutiveFailures(0);
               }}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-all"
             >
@@ -364,7 +464,7 @@ export default function QuizPage() {
     );
   }
 
-  // ─── Render: Question / Feedback ─────────────────────────────────────────
+  // ——— Render: Question / Feedback —————————————————————————————————————
 
   const questionsTotal = question
     ? question.meta.questionsAnswered + question.meta.questionsRemaining
@@ -372,6 +472,8 @@ export default function QuizPage() {
   const progress = question
     ? Math.round((question.meta.questionsAnswered / questionsTotal) * 100)
     : 0;
+
+  const willTriggerInstruction = result && !result.correct && shouldTriggerInstruction(result, consecutiveFailures);
 
   return (
     <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -400,14 +502,25 @@ export default function QuizPage() {
         {question && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
 
-            {/* Bloom badge */}
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${BLOOM_COLOURS[question.bloom]}`}>
-                {BLOOM_LABELS[question.bloom]}
-              </span>
-              <span className="text-xs text-slate-600 font-mono">
-                b = {question.meta.itemDifficulty.toFixed(2)}
-              </span>
+            {/* Bloom badge + Review button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${BLOOM_COLOURS[question.bloom]}`}>
+                  {BLOOM_LABELS[question.bloom]}
+                </span>
+                <span className="text-xs text-slate-600 font-mono">
+                  b = {question.meta.itemDifficulty.toFixed(2)}
+                </span>
+              </div>
+
+              {condition === 'adaptive' && appState === 'question' && (
+                <button
+                  onClick={handleReviewRequest}
+                  className="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300 transition-colors"
+                >
+                  📚 Review Material
+                </button>
+              )}
             </div>
 
             {/* Question text */}
@@ -450,17 +563,34 @@ export default function QuizPage() {
                     P(Learned) [{result.bkt.kc}]: {result.bkt.pLearned_before.toFixed(3)} → {result.bkt.pLearned_after.toFixed(3)}
                     {result.bkt.isMastered && <span className="ml-2 text-amber-400">★ Mastered</span>}
                   </div>
+                  {consecutiveFailures > 0 && !result.correct && (
+                    <div className="text-amber-500">
+                      Consecutive incorrect: {consecutiveFailures}
+                    </div>
+                  )}
                 </div>
+
+                {willTriggerInstruction && (
+                  <div className="mt-3 p-3 bg-blue-950/50 border border-blue-800 rounded-lg">
+                    <p className="text-blue-400 text-sm">
+                      📚 Let's review this topic before continuing.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Next button */}
             {appState === 'feedback' && (
               <button
-                onClick={() => fetchNextQuestion(sessionId)}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+                onClick={handleNextAfterFeedback}
+                className={`w-full py-4 font-semibold rounded-xl transition-all ${
+                  willTriggerInstruction
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                }`}
               >
-                Next Question →
+                {willTriggerInstruction ? '📚 Review Material →' : 'Next Question →'}
               </button>
             )}
           </div>

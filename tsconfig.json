@@ -24,10 +24,8 @@
       "@testing-library/jest-dom"
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
+  "@/*": ["./src/*", "./*"]
+  },
     "allowJs": true,
     "incremental": true,
     "plugins": [
