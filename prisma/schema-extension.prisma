@@ -1,0 +1,231 @@
+// ============================================================================
+// ADAPTIVE ENGINE EXTENSIONS - March 2026
+// Add these models to your existing schema.prisma
+// Run: npx prisma migrate dev --name add_adaptive_extensions
+// ============================================================================
+
+// ============================================================================
+// 1. SUCCESSIVE RELEARNING (Nemesis System)
+// Tracks mastery decay and triggers re-presentation of decayed items
+// Evidence: Rawson & Dunlosky (2011, 2013, 2022) - d = 0.8+ (full letter grade)
+// ============================================================================
+
+model KCMastery {
+  id                String    @id @default(cuid())
+  sessionId         String
+  kcId              String
+  
+  // Current mastery state
+  pLearned          Float     @default(0.5)  // Current P(L) estimate
+  pForget           Float     @default(0.05) // Decay rate per hour (calibrated)
+  
+  // Temporal tracking for decay calculation
+  lastAssessedAt    DateTime  @default(now())
+  masteredAt        DateTime?                 // When P(L) first exceeded 0.95
+  decayedAt         DateTime?                 // When P(L) fell below relearn threshold
+  
+  // Successive relearning metrics
+  relearningCount   Int       @default(0)    // Times re-presented after decay
+  totalPresentations Int      @default(0)    // Total times assessed on this KC
+  
+  // Relations
+  session           Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  kc                KnowledgeComponent @relation(fields: [kcId], references: [id], onDelete: Cascade)
+  
+  // Composite unique constraint
+  @@unique([sessionId, kcId])
+  @@index([kcId])
+  @@index([sessionId])
+}
+
+// ============================================================================
+// 2. ISOMORPHIC PROBLEM VARIATION (Template-Based Questions)
+// Generates multiple surface-level variants while preserving structural KC
+// Evidence: Paas & Van Merriënboer (1994) - ES = 0.38-0.57 for transfer
+// ============================================================================
+
+model QuestionTemplate {
+  id              String   @id @default(cuid())
+  
+  // Template content with {variable} placeholders
+  // Example: "Which river forms the border between {region_a} and {region_b}?"
+  templateText    String   @db.Text
+  
+  // IRT parameters (applied to all variants from this template)
+  difficulty      Float    @default(0.0)   // IRT b-parameter
+  discrimination  Float    @default(1.0)   // IRT a-parameter
+  guessingParam   Float    @default(0.25)  // IRT c-parameter (MC default)
+  
+  // Pedagogical metadata
+  bloomLevel      Int      @default(1)     // 1=Remember, 2=Understand, 3=Apply
+  kcId            String
+  
+  // Format support for Input Fading
+  supportsMC      Boolean  @default(true)  // Multiple choice available
+  supportsCloze   Boolean  @default(false) // Cloze/fill-in available
+  supportsFreeText Boolean @default(false) // Free text available
+  
+  // Relations
+  kc              KnowledgeComponent @relation(fields: [kcId], references: [id], onDelete: Cascade)
+  variants        QuestionVariant[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([kcId])
+  @@index([bloomLevel])
+}
+
+model QuestionVariant {
+  id              String   @id @default(cuid())
+  templateId      String
+  
+  // Variable substitutions as JSON
+  // Example: {"region_a": "England", "region_b": "Wales"}
+  variables       Json
+  
+  // Answer data
+  correctAnswer   String              // Canonical correct answer
+  acceptedAnswers Json?               // Alternative spellings: ["Edinburgh", "edinburgh"]
+  distractors     Json                // MC distractors: ["River Thames", "River Trent"]
+  
+  // Cloze-specific (for Input Fading)
+  clozeTemplate   String?  @db.Text   // "The capital of {blank} is Edinburgh"
+  
+  // Relations
+  template        QuestionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  presentations   VariantPresentation[]
+  
+  @@index([templateId])
+}
+
+model VariantPresentation {
+  id              String   @id @default(cuid())
+  variantId       String
+  sessionId       String
+  
+  // Tracking for anti-repetition logic
+  presentedAt     DateTime @default(now())
+  format          String   @default("mc") // mc, cloze, freetext
+  
+  // Response data
+  isCorrect       Boolean?
+  confidenceLevel Int?     // 1=Low, 2=Medium, 3=High (for CBM)
+  responseTimeMs  Int?     // Milliseconds to answer
+  
+  // Relations
+  variant         QuestionVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  session         Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([variantId])
+  @@index([sessionId])
+  @@index([presentedAt])
+}
+
+// ============================================================================
+// 3. CONFIDENCE-BASED MARKING (CBM)
+// Enriches BKT updates based on learner confidence calibration
+// Evidence: Gardner-Medwin (2006, UCL) - 15+ years deployment
+// ============================================================================
+
+// Note: CBM data stored in VariantPresentation.confidenceLevel above
+// Additional analytics model for calibration tracking:
+
+model ConfidenceCalibration {
+  id              String   @id @default(cuid())
+  sessionId       String
+  
+  // Calibration metrics (updated after each response)
+  highConfCorrect Int      @default(0)  // High confidence + correct
+  highConfWrong   Int      @default(0)  // High confidence + wrong (overconfident)
+  lowConfCorrect  Int      @default(0)  // Low confidence + correct (underconfident)
+  lowConfWrong    Int      @default(0)  // Low confidence + wrong
+  
+  // Derived calibration score (0-1, where 1 = perfectly calibrated)
+  calibrationScore Float?
+  
+  // Relations
+  session         Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([sessionId])
+}
+
+// ============================================================================
+// 4. INPUT FADING (Format Progression)
+// Maps question format to mastery level for desirable difficulty
+// Evidence: Rowland (2014), Salden et al. (2010) - g = 0.50-0.73
+// ============================================================================
+
+// Note: Format selection logic uses:
+// - QuestionTemplate.supportsMC/Cloze/FreeText
+// - KCMastery.pLearned to select appropriate format
+// - VariantPresentation.format to log which was used
+
+// Format thresholds stored in config (not database):
+// P(L) < 0.5  → MC (scaffolded recognition)
+// P(L) 0.5-0.8 → Cloze (partial recall)
+// P(L) > 0.8  → Free text (full recall)
+
+// ============================================================================
+// 5. SELF-REFERENCED FEEDBACK (Ghost Mechanic)
+// Compares current performance to historical self
+// Evidence: Hattie & Timperley (2007), Kluger & DeNisi (1996) - d = 0.41-0.73
+// ============================================================================
+
+model SessionSummary {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  
+  // Session-level metrics
+  totalQuestions  Int      @default(0)
+  correctAnswers  Int      @default(0)
+  accuracy        Float?
+  
+  // Per-KC deltas (compared to previous session)
+  kcDeltas        Json?    // {"kc_id": {"previous": 0.5, "current": 0.7, "delta": 0.2}}
+  
+  // Aggregate improvement metrics
+  avgMasteryStart Float?   // Average P(L) at session start
+  avgMasteryEnd   Float?   // Average P(L) at session end
+  netImprovement  Float?   // avgMasteryEnd - avgMasteryStart
+  
+  // Relearning metrics (for successive relearning tracking)
+  itemsRelearned  Int      @default(0)
+  
+  // Relations
+  session         Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+}
+
+// ============================================================================
+// EXTEND EXISTING MODELS
+// Add these fields to your existing Interaction model
+// ============================================================================
+
+// In your existing Interaction model, add:
+// confidenceLevel   Int?     // 1 = Low, 2 = Medium, 3 = High
+// format            String?  // mc, cloze, freetext
+// isRelearning      Boolean  @default(false) // Flagged if item was decayed
+
+// ============================================================================
+// UPDATE Session model to include new relations
+// Add these relations to your existing Session model:
+// ============================================================================
+
+// In your existing Session model, add:
+// kcMasteries          KCMastery[]
+// variantPresentations VariantPresentation[]
+// confidenceCalibration ConfidenceCalibration?
+// sessionSummary       SessionSummary?
+
+// ============================================================================
+// UPDATE KnowledgeComponent model to include new relations
+// Add these relations to your existing KnowledgeComponent model:
+// ============================================================================
+
+// In your existing KnowledgeComponent model, add:
+// kcMasteries      KCMastery[]
+// questionTemplates QuestionTemplate[]

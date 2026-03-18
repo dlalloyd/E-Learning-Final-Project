@@ -32,7 +32,7 @@ model User {
 // ─── Topic / Lesson / Quiz ────────────────────────────────────────────────────
 
 model Topic {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
   order       Int
@@ -46,8 +46,8 @@ model Topic {
 model TopicPrerequisite {
   topicId        String
   prerequisiteId String
-  topic        Topic @relation("topic_required_for", fields: [topicId], references: [id], onDelete: Cascade)
-  prerequisite Topic @relation("topic_prereqs", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  topic          Topic  @relation("topic_required_for", fields: [topicId], references: [id], onDelete: Cascade)
+  prerequisite   Topic  @relation("topic_prereqs", fields: [prerequisiteId], references: [id], onDelete: Cascade)
 
   @@id([topicId, prerequisiteId])
 }
@@ -89,13 +89,13 @@ model Question {
 
   // IRT 3PL parameters (replaces Elo difficulty field)
   // a = discrimination (0.5–2.0), b = difficulty (logits), c = guessing (fixed 0.25)
-  irt_a     Float    @default(1.0)  // discrimination
-  irt_b     Float    @default(0.0)  // difficulty in logits
-  irt_c     Float    @default(0.25) // guessing (fixed for 4-option MCQ)
+  irt_a Float @default(1.0) // discrimination
+  irt_b Float @default(0.0) // difficulty in logits
+  irt_c Float @default(0.25) // guessing (fixed for 4-option MCQ)
 
   // Bloom's taxonomy level and knowledge component
-  bloom     Int      @default(1)    // 1=Remembering, 2=Understanding, 3=Applying
-  kc        String   @default("")   // knowledge component ID (matches BKT params)
+  bloom Int    @default(1) // 1=Remembering, 2=Understanding, 3=Applying
+  kc    String @default("") // knowledge component ID (matches BKT params)
 
   quiz         Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
   options      Option[]
@@ -116,42 +116,47 @@ model Option {
 // ─── Session (per learner per study condition) ────────────────────────────────
 
 model Session {
-  id          String    @id @default(cuid())
-  userId      String
-  quizId      String
-  condition   String    @default("adaptive") // "adaptive" | "static"
-  startedAt   DateTime  @default(now())
+  id              String            @id @default(cuid())
+  userId          String
+  quizId          String
+  condition       String            @default("adaptive") // "adaptive" | "static"
+  startedAt       DateTime          @default(now())
   state           UserSessionState?
   analyticsEvents AnalyticsEvent[]
-  completedAt DateTime?
+  completedAt     DateTime?
 
   // IRT learner state — updated after each response via EAP
-  theta       Float     @default(-0.780) // current ability estimate (self-pilot θ₀)
-  thetaSd     Float     @default(0.543)  // posterior standard deviation
+  theta   Float @default(-0.780) // current ability estimate (self-pilot θ₀)
+  thetaSd Float @default(0.543) // posterior standard deviation
 
   // BKT state stored as JSON — Record<kcId, KCState>
-  kcStates    String    @default("{}") // JSON serialised
+  kcStates String @default("{}") // JSON serialised
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz  Quiz  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   interactions Interaction[]
   assessments  Assessment[]
+
+  kcMasteries           KCMastery[]
+  variantPresentations  VariantPresentation[]
+  confidenceCalibration ConfidenceCalibration?
+  sessionSummary        SessionSummary?
 }
 
 // ─── Interaction (single Q&A event) ──────────────────────────────────────────
 
 model Interaction {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   sessionId      String
   questionId     String
-  selectedAnswer String   // option label: "A", "B", "C", or "D"
+  selectedAnswer String // option label: "A", "B", "C", or "D"
   isCorrect      Boolean
-  responseTimeMs Int      // milliseconds
+  responseTimeMs Int // milliseconds
 
   // IRT state before and after this response
-  theta_before   Float
-  theta_after    Float
+  theta_before Float
+  theta_after  Float
 
   // BKT state for the question's KC before and after
   pLearned_before Float
@@ -173,10 +178,10 @@ model Assessment {
   type        String    @default("post_test") // pre_test | post_test | delayed_post_test
   startedAt   DateTime  @default(now())
   completedAt DateTime?
-  score       Float?    // raw score (correct / total)
+  score       Float? // raw score (correct / total)
   maxScore    Float?
   passed      Boolean   @default(false)
-  thetaAtTime Float?    // IRT ability estimate at time of assessment
+  thetaAtTime Float? // IRT ability estimate at time of assessment
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
@@ -253,91 +258,229 @@ model SystemLog {
 // ——— Knowledge Component (explicit model for KC tracking) ———————————————————
 
 model KnowledgeComponent {
-  id            String   @id // Use the kc string as ID (e.g., "UK_capitals")
-  name          String
-  description   String?
-  bloomLevel    Int      @default(1) // 1, 2, or 3
-  
-  createdAt     DateTime @default(now())
-  
+  id          String  @id // Use the kc string as ID (e.g., "UK_capitals")
+  name        String
+  description String?
+  bloomLevel  Int     @default(1) // 1, 2, or 3
+
+  createdAt DateTime @default(now())
+
   // Relations
-  learningObjects   LearningObject[]
-  prerequisiteFor   PrerequisiteEdge[] @relation("KCPrerequisites")
-  dependentOn       PrerequisiteEdge[] @relation("KCDependents")
+  learningObjects LearningObject[]
+  prerequisiteFor PrerequisiteEdge[] @relation("KCPrerequisites")
+  dependentOn     PrerequisiteEdge[] @relation("KCDependents")
+
+  kcMasteries       KCMastery[]
+  questionTemplates QuestionTemplate[]
 }
 
 // ——— Learning Object (instructional content chunks) —————————————————————————
 
 model LearningObject {
-  id            String   @id @default(cuid())
-  title         String
-  content       String   @db.Text  // Markdown instructional content
-  eli5Content   String?  @db.Text  // Simplified "Explain Like I'm 5" version
-  contentType   String   @default("text") // text, diagram, video
-  bloomLevel    Int      // 1 = Remembering, 2 = Understanding, 3 = Applying
-  orderIndex    Int      // Sequencing within KC
-  
+  id          String  @id @default(cuid())
+  title       String
+  content     String  @db.Text // Markdown instructional content
+  eli5Content String? @db.Text // Simplified "Explain Like I'm 5" version
+  contentType String  @default("text") // text, diagram, video
+  bloomLevel  Int // 1 = Remembering, 2 = Understanding, 3 = Applying
+  orderIndex  Int // Sequencing within KC
+
   knowledgeComponentId String
   knowledgeComponent   KnowledgeComponent @relation(fields: [knowledgeComponentId], references: [id])
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ——— Hint (graduated scaffolding per question) ——————————————————————————————
 
 model Hint {
-  id            String   @id @default(cuid())
-  hintText      String   @db.Text
-  hintLevel     Int      // 1 = conceptual, 2 = procedural, 3 = worked example
-  orderIndex    Int
-  
-  questionId    String
-  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  
-  createdAt     DateTime @default(now())
+  id         String @id @default(cuid())
+  hintText   String @db.Text
+  hintLevel  Int // 1 = conceptual, 2 = procedural, 3 = worked example
+  orderIndex Int
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 // ——— Prerequisite Edge (KC dependency graph) ————————————————————————————————
 
 model PrerequisiteEdge {
-  id                String @id @default(cuid())
-  masteryThreshold  Float  @default(0.8) // Required P(L) to unlock dependent KC
-  
-  fromKCId          String // Prerequisite KC
-  toKCId            String // Dependent KC (unlocked when fromKC mastered)
-  
+  id               String @id @default(cuid())
+  masteryThreshold Float  @default(0.8) // Required P(L) to unlock dependent KC
+
+  fromKCId String // Prerequisite KC
+  toKCId   String // Dependent KC (unlocked when fromKC mastered)
+
   fromKC KnowledgeComponent @relation("KCPrerequisites", fields: [fromKCId], references: [id])
   toKC   KnowledgeComponent @relation("KCDependents", fields: [toKCId], references: [id])
-  
+
   @@unique([fromKCId, toKCId])
 }
 
 // ——— User Session State (mode tracking for ITS) —————————————————————————————
 
 model UserSessionState {
-  id                String   @id @default(cuid())
-  currentMode       String   @default("assessing") // assessing, instructing, practicing, remediating
-  currentKCId       String?  // Which KC user is currently working on
-  consecutiveFails  Int      @default(0)
-  interventionCount Int      @default(0)  // Times system switched to instruction
-  scaffoldRequests  Int      @default(0)  // Times user clicked "Review Material"
-  hintsUsed         Int      @default(0)  // Total hints revealed
-  
-  sessionId         String   @unique
-  session           Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
-  updatedAt         DateTime @updatedAt
+  id                String  @id @default(cuid())
+  currentMode       String  @default("assessing") // assessing, instructing, practicing, remediating
+  currentKCId       String? // Which KC user is currently working on
+  consecutiveFails  Int     @default(0)
+  interventionCount Int     @default(0) // Times system switched to instruction
+  scaffoldRequests  Int     @default(0) // Times user clicked "Review Material"
+  hintsUsed         Int     @default(0) // Total hints revealed
+
+  sessionId String  @unique
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ——— Analytics Event (detailed logging for dissertation) ————————————————————
 
 model AnalyticsEvent {
   id        String   @id @default(cuid())
-  eventType String   // MODE_CHANGE, HINT_REQUESTED, CONTENT_VIEWED, THETA_UPDATED, etc.
-  payload   Json     // Flexible event data
+  eventType String // MODE_CHANGE, HINT_REQUESTED, CONTENT_VIEWED, THETA_UPDATED, etc.
+  payload   Json // Flexible event data
   timestamp DateTime @default(now())
-  
+
   sessionId String
-  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// ADAPTIVE ENGINE EXTENSIONS
+// Added: 2026-03-12
+// Purpose: 5 evidence-based learning mechanics
+// ============================================
+
+// ——— KC Mastery (Successive Relearning / Nemesis System) ———————————————————
+
+model KCMastery {
+  id        String @id @default(cuid())
+  sessionId String
+  kcId      String
+
+  pLearned Float @default(0.5)
+  pForget  Float @default(0.05)
+
+  lastAssessedAt DateTime  @default(now())
+  masteredAt     DateTime?
+  decayedAt      DateTime?
+
+  relearningCount    Int @default(0)
+  totalPresentations Int @default(0)
+
+  session Session            @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  kc      KnowledgeComponent @relation(fields: [kcId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, kcId])
+  @@index([kcId])
+  @@index([sessionId])
+}
+
+// ——— Question Template (Isomorphic Variation) ——————————————————————————————
+
+model QuestionTemplate {
+  id           String @id @default(cuid())
+  templateText String @db.Text
+
+  difficulty     Float @default(0.0)
+  discrimination Float @default(1.0)
+  guessingParam  Float @default(0.25)
+
+  bloomLevel Int    @default(1)
+  kcId       String
+
+  supportsMC       Boolean @default(true)
+  supportsCloze    Boolean @default(false)
+  supportsFreeText Boolean @default(false)
+
+  kc       KnowledgeComponent @relation(fields: [kcId], references: [id], onDelete: Cascade)
+  variants QuestionVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kcId])
+  @@index([bloomLevel])
+}
+
+model QuestionVariant {
+  id         String @id @default(cuid())
+  templateId String
+
+  variables       Json
+  correctAnswer   String
+  acceptedAnswers Json?
+  distractors     Json
+  clozeTemplate   String? @db.Text
+
+  template      QuestionTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  presentations VariantPresentation[]
+
+  @@index([templateId])
+}
+
+model VariantPresentation {
+  id        String @id @default(cuid())
+  variantId String
+  sessionId String
+
+  presentedAt DateTime @default(now())
+  format      String   @default("mc")
+
+  isCorrect       Boolean?
+  confidenceLevel Int?
+  responseTimeMs  Int?
+
+  variant QuestionVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  session Session         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+  @@index([sessionId])
+  @@index([presentedAt])
+}
+
+// ——— Confidence Calibration (CBM) ——————————————————————————————————————————
+
+model ConfidenceCalibration {
+  id        String @id @default(cuid())
+  sessionId String @unique
+
+  highConfCorrect Int @default(0)
+  highConfWrong   Int @default(0)
+  lowConfCorrect  Int @default(0)
+  lowConfWrong    Int @default(0)
+
+  calibrationScore Float?
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+}
+
+// ——— Session Summary (Self-Referenced Feedback) ————————————————————————————
+
+model SessionSummary {
+  id        String @id @default(cuid())
+  sessionId String @unique
+
+  totalQuestions Int    @default(0)
+  correctAnswers Int    @default(0)
+  accuracy       Float?
+
+  kcDeltas Json?
+
+  avgMasteryStart Float?
+  avgMasteryEnd   Float?
+  netImprovement  Float?
+
+  itemsRelearned Int @default(0)
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
