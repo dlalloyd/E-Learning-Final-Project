@@ -99,6 +99,7 @@ export default function QuizPage() {
   const [thetaSd, setThetaSd] = useState(0.543);
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<1 | 2 | 3 | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [startTime, setStartTime] = useState<number>(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
@@ -128,7 +129,8 @@ export default function QuizPage() {
       setQuestion(data);
       setCurrentKcId(data.kc);
       setSelected(null);
-      setResult(null);
+        setConfidence(null);
+        setResult(null);
       setStartTime(Date.now());
       setAppState('question');
     } catch (err) {
@@ -187,7 +189,7 @@ export default function QuizPage() {
 
   // —— Submit answer ————————————————————————————————————————————————————
 
-  const submitAnswer = async (answer: string) => {
+  const submitAnswer = async (answer: string, confidenceLevel: 1 | 2 | 3) => {
     if (!question || !sessionId) return;
     setSelected(answer);
 
@@ -201,6 +203,7 @@ export default function QuizPage() {
           questionId: question.questionId,
           selectedAnswer: answer,
           responseTimeMs,
+          confidenceLevel,
         }),
       });
 
@@ -533,7 +536,7 @@ export default function QuizPage() {
               {Object.entries(question.options).map(([label, text]) => (
                 <button
                   key={label}
-                  onClick={() => appState === 'question' && submitAnswer(label)}
+                  onClick={() => appState === 'question' && !selected && setSelected(label)}
                   disabled={appState === 'feedback'}
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${optionStyle(label)}`}
                 >
