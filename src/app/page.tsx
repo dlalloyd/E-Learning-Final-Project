@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import InstructionMode from '@/components/InstructionMode';
+import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 
 // ——— Types ————————————————————————————————————————————————————————————
 
@@ -415,52 +416,20 @@ export default function QuizPage() {
   // ——— Render: Complete ———————————————————————————————————————————————
 
   if (appState === 'complete') {
-    const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+    const handleNewSession = () => {
+      setAppState('start');
+      setSessionId('');
+      setTotalAnswered(0);
+      setTotalCorrect(0);
+      setTheta(-0.780);
+      setThetaSd(0.543);
+      setConsecutiveFailures(0);
+    };
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-6">
-            <div className="text-5xl">🎓</div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Assessment Complete</h2>
-              <p className="text-slate-400 mt-1 text-sm">Session: {condition}</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: 'Score', value: `${totalCorrect}/${totalAnswered}` },
-                { label: 'Accuracy', value: `${accuracy}%` },
-                { label: 'Final θ', value: theta.toFixed(3) },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-slate-800 rounded-xl p-4">
-                  <div className="text-xl font-bold text-white font-mono">{value}</div>
-                  <div className="text-slate-500 text-xs mt-1">{label}</div>
-                </div>
-              ))}
-            </div>
-
-            <ThetaBar theta={theta} sd={thetaSd} />
-
-            <div className="bg-slate-800/50 rounded-xl p-4 text-left text-xs text-slate-500 font-mono space-y-1">
-              <div>Session ID: {sessionId}</div>
-              <div>Condition: {condition}</div>
-              <div>θ final: {theta.toFixed(4)} ± {thetaSd.toFixed(4)}</div>
-            </div>
-
-            <button
-              onClick={() => {
-                setAppState('start');
-                setSessionId('');
-                setTotalAnswered(0);
-                setTotalCorrect(0);
-                setTheta(-0.780);
-                setThetaSd(0.543);
-                setConsecutiveFailures(0);
-              }}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-all"
-            >
-              New Session
-            </button>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
           </div>
         </div>
       </main>
@@ -602,3 +571,6 @@ export default function QuizPage() {
     </main>
   );
 }
+
+
+
