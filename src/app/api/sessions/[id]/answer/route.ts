@@ -171,6 +171,32 @@ export async function POST(
       }),
     ]);
 
+    // --- Update Confidence Calibration ---
+    const confidenceLevel = body.confidenceLevel;
+    if (confidenceLevel && (confidenceLevel === 1 || confidenceLevel === 3)) {
+      try {
+        const calibrationUpdate: Record<string, { increment: number }> = {};
+        if (confidenceLevel === 3) {
+          calibrationUpdate[isCorrect ? 'highConfCorrect' : 'highConfWrong'] = { increment: 1 };
+        } else {
+          calibrationUpdate[isCorrect ? 'lowConfCorrect' : 'lowConfWrong'] = { increment: 1 };
+        }
+        await prisma.confidenceCalibration.upsert({
+          where: { sessionId },
+          create: {
+            sessionId,
+            highConfCorrect: confidenceLevel === 3 && isCorrect ? 1 : 0,
+            highConfWrong: confidenceLevel === 3 && !isCorrect ? 1 : 0,
+            lowConfCorrect: confidenceLevel === 1 && isCorrect ? 1 : 0,
+            lowConfWrong: confidenceLevel === 1 && !isCorrect ? 1 : 0,
+          },
+          update: calibrationUpdate,
+        });
+      } catch (err) {
+        console.warn('ConfidenceCalibration upsert failed:', err);
+      }
+    }
+
     // ── Response ──────────────────────────────────────────────────────────────
 
     return NextResponse.json({
