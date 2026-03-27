@@ -1,11 +1,14 @@
- /**
+/**
  * POST /api/sessions/[id]/answer
  * Submits a learner's answer and updates:
- *   1. IRT ability estimate (θ) via EAP
- *   2. BKT knowledge component state for the answered item's KC
- *   3. Interaction record (full audit trail for dissertation analysis)
+ *   1. IRT ability estimate (theta) via EAP
+ *   2. BKT knowledge component state
+ *   3. Interaction record (audit trail)
+ *   4. Confidence calibration (CBM)
+ *   5. KCMastery (Successive Relearning)
+ *
+ * v2: Handles both QuestionVariant IDs (isomorphic) and legacy Question IDs
  */
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
 import { eapEstimate } from '@/lib/algorithms/irt';
@@ -20,9 +23,8 @@ export async function POST(
   try {
     const sessionId = params.id;
     const body = await req.json();
-    const { questionId, selectedAnswer, responseTimeMs } = body;
+    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel } = body;
 
-    // Validate required fields
     if (!questionId || !selectedAnswer) {
       return NextResponse.json(
         { error: 'questionId and selectedAnswer are required' },
@@ -30,13 +32,16 @@ export async function POST(
       );
     }
 
-    // Load session
+    // Load session with full interaction history
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
       include: {
         interactions: {
-          include: { question: true },
-          orderBy: { createdAt: 'asc' },
+          include: {
+            question: {
+              include: { options: { orderBy: { order: 'asc' } } },
+            },
+          },
         },
       },
     });
@@ -44,135 +49,142 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
-
     if (session.completedAt) {
       return NextResponse.json({ error: 'Session already completed' }, { status: 400 });
     }
 
-    // Load the question with options
-    const question = await prisma.question.findUnique({
+    // -------------------------------------------------------------------
+    // Detect whether questionId is a QuestionVariant ID or legacy Question ID
+    // -------------------------------------------------------------------
+    let isVariant = false;
+    let kc = '';
+    let correctLabel = '';
+    let irtParams: IRTParams = { a: 1.0, b: 0.0, c: 0.25 };
+    let questionRecord: { id: string } | null = null;
+
+    // Try variant first
+    const variant = await prisma.questionVariant.findUnique({
       where: { id: questionId },
-      include: { options: { orderBy: { order: 'asc' } } },
+      include: { template: true },
     });
 
-    if (!question) {
-      return NextResponse.json({ error: 'Question not found' }, { status: 404 });
+    if (variant) {
+      // --- VARIANT PATH ---
+      isVariant = true;
+      kc = variant.template.kcId;
+      correctLabel = variant.correctAnswer.toUpperCase().trim();
+      // IRT params from template (discrimination/difficulty/guessingParam)
+      irtParams = {
+        a: variant.template.discrimination,
+        b: variant.template.difficulty,
+        c: variant.template.guessingParam,
+      };
+      // Use a synthetic question record ID for interaction logging
+      // We store the variantId in the questionId field of Interaction
+      questionRecord = { id: questionId };
+
+      // Update VariantPresentation with correctness + confidence
+      await prisma.variantPresentation.updateMany({
+        where: { variantId: questionId, sessionId },
+        data: {
+          isCorrect: selectedAnswer.toUpperCase() === correctLabel,
+          confidenceLevel: confidenceLevel || null,
+          responseTimeMs: responseTimeMs || null,
+        },
+      });
+
+    } else {
+      // --- LEGACY QUESTION PATH ---
+      const question = await prisma.question.findUnique({
+        where: { id: questionId },
+        include: { options: { orderBy: { order: 'asc' } } },
+      });
+
+      if (!question) {
+        return NextResponse.json({ error: 'Question not found' }, { status: 404 });
+      }
+      if (question.quizId !== session.quizId) {
+        return NextResponse.json({ error: 'Question does not belong to this session' }, { status: 400 });
+      }
+
+      const alreadyAnswered = session.interactions.some((i) => i.questionId === questionId);
+      if (alreadyAnswered) {
+        return NextResponse.json({ error: 'Question already answered in this session' }, { status: 400 });
+      }
+
+      const labels = ['A', 'B', 'C', 'D'];
+      const correctIdx = question.options.findIndex((o) => o.isCorrect);
+      correctLabel = correctIdx >= 0 ? labels[correctIdx] : 'A';
+      kc = question.kc || '';
+      irtParams = { a: question.irt_a, b: question.irt_b, c: question.irt_c };
+      questionRecord = { id: questionId };
     }
 
-    // Check question belongs to this session's quiz
-    if (question.quizId !== session.quizId) {
-      return NextResponse.json(
-        { error: 'Question does not belong to this session' },
-        { status: 400 }
-      );
-    }
-
-    // Check not already answered
-    const alreadyAnswered = session.interactions.some(
-      (i) => i.questionId === questionId
-    );
-    if (alreadyAnswered) {
-      return NextResponse.json(
-        { error: 'Question already answered in this session' },
-        { status: 400 }
-      );
-    }
-
-    // Determine correct answer
-    const labels = ['A', 'B', 'C', 'D'];
-    const correctIdx = question.options.findIndex((o) => o.isCorrect);
-    const correctLabel = correctIdx >= 0 ? labels[correctIdx] : 'A';
+    // -------------------------------------------------------------------
+    // Evaluate correctness
+    // -------------------------------------------------------------------
     const isCorrect = selectedAnswer.toUpperCase() === correctLabel;
 
-    // ── IRT Update (EAP) ──────────────────────────────────────────────────────
-
-    // Build full response history including this new response
+    // -------------------------------------------------------------------
+    // IRT Update (EAP)
+    // -------------------------------------------------------------------
+    // Build full response history from existing interactions
     const allResponses: Array<{ params: IRTParams; isCorrect: boolean }> = [
-      // Previous responses from session interactions
-      ...session.interactions.map((interaction) => ({
-        params: {
-          a: interaction.question.irt_a,
-          b: interaction.question.irt_b,
-          c: interaction.question.irt_c,
-        },
-        isCorrect: interaction.isCorrect,
-      })),
-      // This new response
-      {
-        params: {
-          a: question.irt_a,
-          b: question.irt_b,
-          c: question.irt_c,
-        },
-        isCorrect,
-      },
+      ...session.interactions.map((i) => {
+        const q = i.question;
+        return {
+          params: { a: q.irt_a, b: q.irt_b, c: q.irt_c } as IRTParams,
+          isCorrect: i.isCorrect,
+        };
+      }),
+      { params: irtParams, isCorrect },
     ];
 
     const eap = eapEstimate(allResponses);
-    const theta_before = session.theta;
-    const theta_after = eap.theta;
 
-    // ── BKT Update ────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------
+    // BKT Update
+    // -------------------------------------------------------------------
+    const kcStates: Record<string, KCState> = JSON.parse(session.kcStates || '{}');
+    const currentKCState: KCState = kcStates[kc] || { ...DEFAULT_BKT_PARAMS };
+    const bktParams = DEFAULT_BKT_PARAMS[kc] || DEFAULT_BKT_PARAMS['UK_capitals'];
+    const updatedKCState = updateKCState(currentKCState, isCorrect, bktParams);
+    kcStates[kc] = updatedKCState;
+    const isMastered = updatedKCState.pLearned >= 0.95;
 
-    // Parse current KC states from session
-    let kcStates: Record<string, KCState> = {};
-    try {
-      kcStates = JSON.parse(session.kcStates);
-    } catch {
-      kcStates = {};
+    // -------------------------------------------------------------------
+    // KCMastery upsert (Successive Relearning)
+    // -------------------------------------------------------------------
+    if (kc) {
+      try {
+        const wasMastered = (await prisma.kCMastery.findUnique({
+          where: { sessionId_kcId: { sessionId, kcId: kc } },
+        }))?.masteredAt != null;
+
+        const nowMastered = isMastered;
+
+        await prisma.kCMastery.upsert({
+          where: { sessionId_kcId: { sessionId, kcId: kc } },
+          create: {
+            sessionId,
+            kcId: kc,
+            pLearned: updatedKCState.pLearned,
+            pForget: 0.1,
+            masteredAt: nowMastered ? new Date() : null,
+            lastAssessedAt: new Date(),
+          },
+          update: {
+            pLearned: updatedKCState.pLearned,
+            lastAssessedAt: new Date(),
+            masteredAt: nowMastered && !wasMastered ? new Date() : undefined,
+          },
+        });
+      } catch (err) {
+        console.warn('KCMastery upsert failed:', err);
+      }
     }
-
-    const kc = question.kc;
-    const pLearned_before = kcStates[kc]?.pLearned ?? 0.25;
-    let pLearned_after = pLearned_before;
-
-    // Update BKT state if we have params for this KC
-    if (kc && DEFAULT_BKT_PARAMS[kc]) {
-      const updatedKCState = updateKCState(
-        kcStates[kc] || {
-          kcId: kc,
-          pLearned: DEFAULT_BKT_PARAMS[kc].pL0,
-          attempts: 0,
-          correct: 0,
-          isMastered: false,
-        },
-        isCorrect,
-        DEFAULT_BKT_PARAMS[kc]
-      );
-      kcStates[kc] = updatedKCState;
-      pLearned_after = updatedKCState.pLearned;
-    }
-
-    // ── Persist to DB (transaction) ───────────────────────────────────────────
-
-    const [interaction] = await prisma.$transaction([
-      // Create interaction record
-      prisma.interaction.create({
-        data: {
-          sessionId,
-          questionId,
-          selectedAnswer: selectedAnswer.toUpperCase(),
-          isCorrect,
-          responseTimeMs: responseTimeMs || 0,
-          theta_before,
-          theta_after,
-          pLearned_before,
-          pLearned_after,
-        },
-      }),
-      // Update session theta and KC states
-      prisma.session.update({
-        where: { id: sessionId },
-        data: {
-          theta: theta_after,
-          thetaSd: eap.sd,
-          kcStates: JSON.stringify(kcStates),
-        },
-      }),
-    ]);
 
     // --- Update Confidence Calibration ---
-    const confidenceLevel = body.confidenceLevel;
     if (confidenceLevel && (confidenceLevel === 1 || confidenceLevel === 3)) {
       try {
         const calibrationUpdate: Record<string, { increment: number }> = {};
@@ -197,38 +209,121 @@ export async function POST(
       }
     }
 
-    // ── Response ──────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------
+    // Persist Interaction + Session Update in one transaction
+    // For variant-based answers, store the variantId in questionId field
+    // We create a synthetic interaction for analytics continuity
+    // -------------------------------------------------------------------
+    let interactionId: string;
 
+    if (isVariant) {
+      // For variants, store interaction using a fallback question ID
+      // We find the first question in the quiz to use as a placeholder
+      // (the real data lives in VariantPresentation)
+      // OR we skip creating an Interaction and rely on VariantPresentation
+      // Decision: create a minimal log entry for session analytics
+
+      // Get any question from this session's quiz for foreign key compliance
+      const anyQuestion = await prisma.question.findFirst({
+        where: { quizId: session.quizId },
+      });
+
+      if (anyQuestion) {
+        const [interaction] = await prisma.$transaction([
+          prisma.interaction.create({
+            data: {
+              sessionId,
+              questionId: anyQuestion.id,  // placeholder FK
+              selectedAnswer: selectedAnswer.toString().toUpperCase(),
+              isCorrect,
+              responseTimeMs: responseTimeMs || 0,
+              theta_before: session.theta,
+              theta_after: eap.theta,
+              pLearned_before: currentKCState.pLearned,
+              pLearned_after: updatedKCState.pLearned,
+            },
+          }),
+          prisma.session.update({
+            where: { id: sessionId },
+            data: {
+              theta: eap.theta,
+              thetaSd: eap.sd,
+              kcStates: JSON.stringify(kcStates),
+            },
+          }),
+        ]);
+        interactionId = interaction.id;
+      } else {
+        // No questions at all — just update session
+        await prisma.session.update({
+          where: { id: sessionId },
+          data: {
+            theta: eap.theta,
+            thetaSd: eap.sd,
+            kcStates: JSON.stringify(kcStates),
+          },
+        });
+        interactionId = 'variant-only';
+      }
+    } else {
+      // Legacy path: normal interaction creation
+      const [interaction] = await prisma.$transaction([
+        prisma.interaction.create({
+          data: {
+            sessionId,
+            questionId: questionRecord!.id,
+            selectedAnswer: selectedAnswer.toString().toUpperCase(),
+            isCorrect,
+            responseTimeMs: responseTimeMs || 0,
+              theta_before: session.theta,
+              theta_after: eap.theta,
+              pLearned_before: currentKCState.pLearned,
+              pLearned_after: updatedKCState.pLearned,
+          },
+        }),
+        prisma.session.update({
+          where: { id: sessionId },
+          data: {
+            theta: eap.theta,
+            thetaSd: eap.sd,
+            kcStates: JSON.stringify(kcStates),
+          },
+        }),
+      ]);
+      interactionId = interaction.id;
+    }
+
+    // -------------------------------------------------------------------
+    // Response
+    // -------------------------------------------------------------------
     return NextResponse.json({
       correct: isCorrect,
       correctAnswer: correctLabel,
-      selectedAnswer: selectedAnswer.toUpperCase(),
-      // IRT update
+      selectedAnswer: selectedAnswer.toString().toUpperCase(),
       theta: {
-        before: Math.round(theta_before * 1000) / 1000,
-        after: Math.round(theta_after * 1000) / 1000,
-        delta: Math.round((theta_after - theta_before) * 1000) / 1000,
-        sd: Math.round(eap.sd * 1000) / 1000,
+        before: session.theta,
+        after: eap.theta,
+        delta: Math.round((eap.theta - session.theta) * 1000) / 1000,
+        sd: eap.sd,
         ci95: [
-          Math.round(eap.ci95Low * 1000) / 1000,
-          Math.round(eap.ci95High * 1000) / 1000,
-        ],
+          Math.round((eap.theta - 1.96 * eap.sd) * 1000) / 1000,
+          Math.round((eap.theta + 1.96 * eap.sd) * 1000) / 1000,
+        ] as [number, number],
       },
-      // BKT update for this KC
       bkt: {
         kc,
-        pLearned_before: Math.round(pLearned_before * 1000) / 1000,
-        pLearned_after: Math.round(pLearned_after * 1000) / 1000,
-        isMastered: kcStates[kc]?.isMastered ?? false,
+        pLearned_before: currentKCState.pLearned,
+        pLearned_after: updatedKCState.pLearned,
+        isMastered,
       },
-      interactionId: interaction.id,
+      interactionId,
     });
 
   } catch (error) {
     console.error('POST /api/sessions/[id]/answer error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+
+
