@@ -249,7 +249,14 @@ export default function QuizPage() {
 
   const handleInstructionComplete = () => {
     setConsecutiveFailures(0);
-    fetchNextQuestion(sessionId);
+    if (instructionTrigger === 'user_request' && question) {
+      // User clicked "Review Material" mid-question — return to the same question
+      setStartTime(Date.now());
+      setAppState('question');
+    } else {
+      // Auto-triggered after wrong answer — fetch next question
+      fetchNextQuestion(sessionId);
+    }
   };
 
   // —— Handle next after feedback —————————————————————————————————————————
