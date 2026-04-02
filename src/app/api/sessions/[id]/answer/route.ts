@@ -23,7 +23,7 @@ export async function POST(
   try {
     const sessionId = params.id;
     const body = await req.json();
-    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel } = body;
+    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel, cognitiveLoad } = body;
 
     if (!questionId || !selectedAnswer) {
       return NextResponse.json(
@@ -241,6 +241,7 @@ export async function POST(
               theta_after: eap.theta,
               pLearned_before: currentKCState.pLearned,
               pLearned_after: updatedKCState.pLearned,
+              cognitiveLoad: cognitiveLoad ?? null,
             },
           }),
           prisma.session.update({
@@ -279,6 +280,7 @@ export async function POST(
               theta_after: eap.theta,
               pLearned_before: currentKCState.pLearned,
               pLearned_after: updatedKCState.pLearned,
+              cognitiveLoad: cognitiveLoad ?? null,
           },
         }),
         prisma.session.update({

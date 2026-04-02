@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import LearningTrajectoryChart from '@/components/LearningTrajectoryChart';
 
 interface KCPerformance {
   kcId: string;
@@ -107,6 +108,8 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
           </div>
         ))}
       </div>
+
+      <LearningTrajectoryChart sessionId={sessionId} />
 
       {data.kcPerformance.length > 0 && (
         <div className="bg-slate-800/50 rounded-xl p-4">

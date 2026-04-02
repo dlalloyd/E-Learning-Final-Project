@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
+import HintPanel from '@/components/HintPanel';
 
 // ——— Types ————————————————————————————————————————————————————————————
 
@@ -107,6 +108,9 @@ export default function QuizPage() {
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // ——— Cognitive Load State ———
+  const [cognitiveLoad, setCognitiveLoad] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+
   // ——— Instruction Mode State ———
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [currentKcId, setCurrentKcId] = useState<string>('');
@@ -132,6 +136,7 @@ export default function QuizPage() {
       setSelected(null);
         setConfidence(null);
         setResult(null);
+        setCognitiveLoad(null);
       setStartTime(Date.now());
       setAppState('question');
     } catch (err) {
@@ -205,6 +210,7 @@ export default function QuizPage() {
           selectedAnswer: answer,
           responseTimeMs,
           confidenceLevel,
+          cognitiveLoad: cognitiveLoad ?? undefined,
         }),
       });
 
@@ -249,7 +255,14 @@ export default function QuizPage() {
 
   const handleInstructionComplete = () => {
     setConsecutiveFailures(0);
-    fetchNextQuestion(sessionId);
+    if (instructionTrigger === 'user_request' && question) {
+      // User clicked "Review Material" mid-question — return to the same question
+      setStartTime(Date.now());
+      setAppState('question');
+    } else {
+      // Auto-triggered after wrong answer — fetch next question
+      fetchNextQuestion(sessionId);
+    }
   };
 
   // —— Handle next after feedback —————————————————————————————————————————
@@ -550,6 +563,39 @@ export default function QuizPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Cognitive Load Rating */}
+            {appState === 'feedback' && (
+              <div className="bg-slate-800/50 rounded-xl p-4">
+                <p className="text-slate-400 text-xs mb-3 font-mono uppercase tracking-widest">
+                  How mentally demanding was that question?
+                </p>
+                <div className="flex gap-2">
+                  {([1, 2, 3, 4, 5] as const).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setCognitiveLoad(level)}
+                      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        cognitiveLoad === level
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-between text-xs text-slate-600 mt-1 px-1">
+                  <span>Very easy</span>
+                  <span>Very difficult</span>
+                </div>
+              </div>
+            )}
+
+            {/* Hints (show after wrong answer) */}
+            {appState === 'feedback' && result && !result.correct && question && (
+              <HintPanel questionId={question.questionId} sessionId={sessionId} show={true} />
             )}
 
             {/* Next button */}
