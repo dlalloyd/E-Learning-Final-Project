@@ -162,6 +162,9 @@ model Interaction {
   pLearned_before Float
   pLearned_after  Float
 
+  // Cognitive load rating (NASA-TLX style): 1=Very easy … 5=Very difficult
+  cognitiveLoad Int?
+
   createdAt DateTime @default(now())
 
   session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
