@@ -108,6 +108,18 @@ export async function GET(
     );
 
     // -------------------------------------------------------------------
+    // Prerequisite Gating: build set of accessible KC IDs
+    // -------------------------------------------------------------------
+    const prerequisites = await prisma.prerequisiteEdge.findMany();
+    const masteryMap = new Map(kcMasteries.map((m) => [m.kcId, m.pLearned]));
+
+    function kcIsAccessible(kcId: string): boolean {
+      const reqs = prerequisites.filter((p) => p.toKCId === kcId);
+      if (reqs.length === 0) return true; // no prerequisites — always accessible
+      return reqs.every((p) => (masteryMap.get(p.fromKCId) ?? 0) >= p.masteryThreshold);
+    }
+
+    // -------------------------------------------------------------------
     // Build IRTQuestion candidates from templates
     // -------------------------------------------------------------------
     // A template is eligible if it has at least one unseen variant
@@ -118,6 +130,9 @@ export async function GET(
         (v) => !presentedVariantIds.has(v.id)
       );
       if (unseenVariants.length === 0) continue;
+
+      // Skip KCs whose prerequisites are not yet mastered
+      if (!kcIsAccessible(template.kcId)) continue;
 
       // Boost information value for decayed KCs (successive relearning)
       const isDecayed = decayedKCIds.has(template.kcId);
