@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
+import HintPanel from '@/components/HintPanel';
 
 // ——— Types ————————————————————————————————————————————————————————————
 
@@ -557,6 +558,11 @@ export default function QuizPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Hints (show after wrong answer) */}
+            {appState === 'feedback' && result && !result.correct && question && (
+              <HintPanel questionId={question.questionId} sessionId={sessionId} show={true} />
             )}
 
             {/* Next button */}
