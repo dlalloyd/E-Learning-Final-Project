@@ -528,6 +528,29 @@ export default function QuizPage() {
               ))}
             </div>
 
+            {/* Confidence picker — appears after selecting an option, submits the answer */}
+            {appState === 'question' && selected && (
+              <div className="bg-slate-800/50 rounded-xl p-4">
+                <p className="text-slate-400 text-xs mb-3 font-mono uppercase tracking-widest">
+                  How confident are you in your answer?
+                </p>
+                <div className="flex gap-2">
+                  {([1, 2, 3] as const).map((level) => {
+                    const labels = { 1: 'Not sure', 2: 'Fairly sure', 3: 'Very sure' };
+                    return (
+                      <button
+                        key={level}
+                        onClick={() => submitAnswer(selected, level)}
+                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-700 text-slate-300 hover:bg-indigo-600 hover:text-white transition-all"
+                      >
+                        {labels[level]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Feedback */}
             {appState === 'feedback' && result && (
               <div className={`rounded-xl p-4 border ${result.correct ? 'bg-emerald-950/50 border-emerald-800' : 'bg-red-950/50 border-red-800'}`}>
