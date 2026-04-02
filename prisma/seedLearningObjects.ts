@@ -472,6 +472,549 @@ National Parks help illustrate:
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // LEVEL 1 SUPPLEMENT: UK Physical Features (Bloom 1, orderIndex 15–19)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'lo-uk-rivers-overview',
+    title: 'Major UK River Systems',
+    knowledgeComponentId: 'UK_rivers',
+    bloomLevel: 1,
+    orderIndex: 15,
+    contentType: 'text',
+    content: `## Learning Objective
+By the end of this section, you will be able to name the UK's five major river systems, describe their approximate source-to-mouth journeys, and explain why rivers have been central to human geography.
+
+---
+
+## Why Rivers Matter
+
+Rivers shaped where people settled, where cities grew, and how goods moved across the country for thousands of years. Before roads and railways, a navigable river was the fastest, cheapest route to carry heavy goods. Today, understanding river systems is essential for explaining patterns of industry, population, and flood risk.
+
+---
+
+## The Five Major River Systems
+
+### River Thames (346 km)
+The most economically and historically significant river in England. It rises in the Cotswold Hills near Kemble in Gloucestershire and flows eastward through Oxford, Reading, Windsor, and central London before emptying into the North Sea via the Thames Estuary at Southend-on-Sea. The Thames is tidal as far upstream as Teddington Lock in southwest London.
+
+**Why it matters:** London grew at the lowest point where the Thames could be bridged, making it a natural hub for trade with continental Europe. The Port of London was once the busiest in the world.
+
+### River Severn (354 km)
+The longest river in the UK. It rises on the eastern slopes of Plynlimon in the Cambrian Mountains of Wales and flows northeast through Shrewsbury, then south through Worcester and Gloucester before emptying into the Bristol Channel. The Severn has the second-largest tidal range in the world (up to 15 metres), creating the famous Severn Bore — a tidal wave that surges upstream.
+
+**Why it matters:** The Severn historically divided Wales from England and formed a natural barrier. The two Severn road bridges now carry millions of vehicles per year between England and Wales.
+
+### River Trent (297 km)
+England's third-longest river. Rising in the Staffordshire Moorlands near Stoke-on-Trent, it flows northeast through Nottingham and Newark before joining the Ouse to form the Humber Estuary at the east coast. The Trent valley was traditionally regarded as marking the boundary between the more prosperous south and the industrialised north of England.
+
+**Why it matters:** The Trent powered the industrial Midlands — pottery, steel, and coal industries all developed along its valley. Its valley is home to many coal-fired power stations, attracted by river water for cooling.
+
+### River Mersey (112 km)
+Formed by the confluence of the Goyt and Tame rivers at Stockport, the Mersey flows west through Manchester's conurbation before widening into the Mersey Estuary and emptying into the Irish Sea at Liverpool Bay.
+
+**Why it matters:** Liverpool's position on the Mersey estuary made it a global trading port, particularly during the Atlantic trade era. The Manchester Ship Canal (opened 1894) turned Manchester into an inland port connected directly to the Mersey.
+
+### River Tyne (118 km)
+Formed where the North Tyne and South Tyne meet near Hexham in Northumberland, the Tyne flows east through Newcastle and Gateshead before reaching the North Sea at Tynemouth.
+
+**Why it matters:** Newcastle upon Tyne grew around coal export — "coals to Newcastle" became a byword for sending something to where it already exists in abundance. The Tyne bridges, including the iconic Tyne Bridge (1928), reflect the river's central role in the city's identity.
+
+---
+
+## Source to Mouth: Key Terms
+
+- **Source** — where a river begins, usually on high ground
+- **Mouth** — where a river reaches the sea or a larger body of water
+- **Estuary** — the tidal, often wide lower section where fresh and salt water mix
+
+---
+
+## Self-Check
+
+1. Which is the longest river in the UK?
+2. What river does London sit on, and where does it meet the sea?
+3. Which river connects the Midlands to the Irish Sea via Liverpool?
+
+**Answers:** 1. River Severn (354 km) | 2. River Thames; Thames Estuary (North Sea) | 3. River Mersey
+
+---
+
+## Connection Forward
+
+Understanding these river systems prepares you for:
+- **Drainage basins and tributaries** — how smaller rivers feed the major systems
+- **Flood risk** — which cities are most vulnerable and why
+- **Settlement patterns** — how rivers determined where towns and cities grew`,
+    eli5Content: `## Simple Version
+
+Think of rivers as roads made of water. Before cars and trains, rivers were the motorways of the UK — if you wanted to move heavy things like coal or grain, you put them on a boat and floated them downstream.
+
+The UK has five big rivers you need to know:
+
+**Thames** — London's river. It starts in the hills and flows east to the sea. London grew here because it was the easiest place to cross it.
+
+**Severn** — the longest one. It starts in Wales, loops through England, and pours into the Bristol Channel. It has a huge "tidal bore" — a wave that rushes upstream when the tide comes in.
+
+**Trent** — goes through the middle of England (the Midlands) and joins up with another river to reach the east coast.
+
+**Mersey** — Liverpool's river. Ships from all over the world came here to load and unload goods.
+
+**Tyne** — Newcastle's river, famous for coal and bridges.
+
+Every big UK city sits on one of these rivers. That is not a coincidence — people built cities where the water was!`
+  },
+
+  {
+    id: 'lo-uk-mountains-overview',
+    title: 'UK Mountain Ranges and Highest Peaks',
+    knowledgeComponentId: 'UK_mountains',
+    bloomLevel: 1,
+    orderIndex: 16,
+    contentType: 'text',
+    content: `## Learning Objective
+By the end of this section, you will be able to identify the UK's major mountain ranges, name the three highest peaks in each home nation, and describe the basic processes that formed them.
+
+---
+
+## The UK's Upland Geography
+
+The UK's mountains are concentrated in the north and west — a pattern that profoundly influences climate, land use, and settlement. This north-west/south-east divide between "Highland Britain" and "Lowland Britain" is one of the most important geographical concepts in understanding the country.
+
+---
+
+## Major Mountain Ranges
+
+### The Scottish Highlands
+The most extensive and highest mountain region in the British Isles. The Highlands are separated from the Scottish Lowlands by the Highland Boundary Fault — a geological fracture running from Helensburgh in the west to Stonehaven in the east.
+
+**Key peaks:**
+- **Ben Nevis (1,345m)** — the highest point in the UK. Located near Fort William in the western Highlands. Its summit is in cloud for roughly 355 days per year. The Ben Nevis Race sees runners complete the 14 km round trip in under two hours.
+- **Ben Macdui (1,309m)** — second highest, located in the Cairngorms plateau. The Cairngorms are Britain's only subarctic mountain environment.
+- **Ben Lomond (974m)** — the most southerly Munro (peaks over 914m), overlooking Loch Lomond.
+
+### The Pennines
+Often called "the backbone of England," the Pennines form a chain of upland moorland running roughly 400 km from the Scottish border south to Derbyshire. They are not dramatic, jagged peaks but broad, high moorland plateaus.
+
+**Key summits:**
+- **Cross Fell (893m)** — the highest point in the Pennines, in Cumbria
+- **Pen-y-ghent (694m)** — one of the famous Yorkshire Three Peaks
+
+The Pennines create a rain shadow — their western flanks receive heavy rainfall, while the eastern plains are much drier.
+
+### The Lake District (Cumbrian Mountains)
+A compact but dramatic mountain area in Cumbria, northwest England. Formed by volcanic activity and shaped by glaciation.
+
+**Key peaks:**
+- **Scafell Pike (978m)** — the highest point in England. Part of the Three Peaks Challenge alongside Ben Nevis and Snowdon.
+- **Helvellyn (950m)** — famous for the knife-edge Striding Edge ridge
+- **Skiddaw (931m)** — one of the oldest rocks in England
+
+### The Cambrian Mountains (Wales)
+A high, plateau-like upland in mid-Wales. Less dramatic than Snowdonia but covering a larger area. Home to the sources of the rivers Severn and Wye.
+
+### Snowdonia (Eryri)
+The highest mountain region in Wales and England combined (after the Highlands). Located in northwest Wales.
+
+**Key peaks:**
+- **Snowdon / Yr Wyddfa (1,085m)** — the highest point in Wales and the most visited mountain in the UK (around 600,000 visitors per year). A rack-and-pinion railway runs to the summit.
+- **Carnedd Llewelyn (1,064m)**
+- **Glyder Fawr (1,001m)**
+
+---
+
+## How Were They Formed?
+
+### Glaciation
+The dominant shaping force. During the last Ice Age (ending approximately 12,000 years ago), glaciers carved the landscape:
+- **Corries (cirques)** — armchair-shaped hollows where glaciers formed
+- **Arêtes** — knife-edge ridges between two corries
+- **U-shaped valleys** — characteristic flat-bottomed, steep-sided valleys
+- **Ribbon lakes** — long, narrow lakes in glacially scoured valleys (Windermere, Loch Ness)
+
+### Folding and Faulting
+The Scottish Highlands were created by ancient continental collision — the same tectonic forces that built the Appalachian Mountains in North America. The rocks in the Highlands are among the oldest in the world, some over 3 billion years old.
+
+---
+
+## Self-Check
+
+1. What is the highest peak in the UK, and where is it?
+2. What is the highest point in England?
+3. What is the highest point in Wales?
+4. What geographical feature separates the Scottish Highlands from the Lowlands?
+
+**Answers:** 1. Ben Nevis (1,345m), near Fort William, Scotland | 2. Scafell Pike (978m), Lake District | 3. Snowdon / Yr Wyddfa (1,085m), Snowdonia | 4. The Highland Boundary Fault
+
+---
+
+## Connection Forward
+
+Understanding mountain geography prepares you for:
+- **Orographic rainfall** — how mountains force air upward and create rain
+- **Economic impact of uplands** — tourism, farming, reservoirs, wind farms
+- **Rain shadow effect** — why eastern England is drier than the west`,
+    eli5Content: `## Simple Version
+
+Mountains in the UK are mostly in the north and west — think of Scotland, Wales, and the northwest of England.
+
+**The three tallest are:**
+- **Ben Nevis (1,345m)** — Scotland. This is the UK champion. It is so often covered in cloud that you might climb all the way to the top and still not be able to see much!
+- **Scafell Pike (978m)** — England, in the Lake District. Famous for its beautiful lakes.
+- **Snowdon (1,085m)** — Wales. So popular that you can actually catch a little train to the summit.
+
+Most UK mountains were shaped by glaciers — giant rivers of ice that ground down the rock during the last Ice Age. They left behind curved valleys, sharp ridges, and long lakes (like Windermere and Loch Ness).
+
+The mountains act like a giant wall — they stop rain clouds from crossing, which is why the west of the UK is much wetter than the east.`
+  },
+
+  {
+    id: 'lo-uk-rivers-detail',
+    title: 'River Characteristics: Drainage Basins, Tributaries, and Settlement',
+    knowledgeComponentId: 'UK_rivers',
+    bloomLevel: 1,
+    orderIndex: 17,
+    contentType: 'text',
+    content: `## Learning Objective
+By the end of this section, you will be able to define drainage basins, tributaries, and confluences, name key tributaries of UK rivers, and explain how river systems shaped human settlement patterns.
+
+---
+
+## Key Concepts
+
+### Drainage Basin
+A drainage basin (also called a catchment area) is all the land from which rainfall drains into a single river system. It is bounded by a **watershed** — the high ground that separates one basin from another. Water falling on one side of a watershed drains into one river; water on the other side drains into a different river.
+
+**Example:** The Pennines form the watershed between the Rivers Mersey and Aire. Rain on the western slopes drains into the Mersey and eventually the Irish Sea; rain on the eastern slopes drains into the Aire, then the Ouse, then the Humber, and finally the North Sea.
+
+The drainage basin of the Thames — the **Thames Basin** — covers approximately 13,000 km² and includes parts of Gloucestershire, Wiltshire, Oxfordshire, Buckinghamshire, Hertfordshire, and Greater London.
+
+### Tributary
+A tributary is a river or stream that flows into a larger river. Every major UK river has numerous tributaries that feed it with water from across its drainage basin.
+
+### Confluence
+The point where a tributary joins a larger river. Many UK towns and cities developed at confluences because:
+- The meeting point of two rivers created a natural transport hub
+- Fertile floodplain soils on both sides supported farming
+- The increased water flow after the confluence made the river easier to navigate by boat
+
+**Examples of confluence settlements:**
+- **Oxford** — at the confluence of the Thames and the Cherwell
+- **Nottingham** — grew near the confluence of the Trent and the Soar
+- **Newcastle upon Tyne** — at the tidal limit and a ford on the Tyne
+
+---
+
+## Key Tributaries of Major UK Rivers
+
+### Thames Tributaries
+- **River Cherwell** — joins at Oxford
+- **River Kennet** — joins at Reading; drains the Berkshire Downs
+- **River Wey** — joins at Weybridge, Surrey
+- **River Medway** — drains Kent; empties into the Thames Estuary at Rochester
+- **River Lee (Lea)** — joins in east London; the Lee Valley is now a major urban park
+
+### Severn Tributaries
+- **River Avon (Warwickshire)** — joins the Severn at Tewkesbury; flows through Stratford-upon-Avon and Evesham
+- **River Wye** — joins the Severn Estuary near Chepstow; famous for its gorge through the Forest of Dean
+- **River Vyrnwy** — a major Welsh tributary; the Vyrnwy reservoir supplies Liverpool with drinking water
+
+### Trent Tributaries
+- **River Soar** — flows through Leicester and joins the Trent near Nottingham
+- **River Derwent** — drains the Peak District; joins the Trent at Shardlow
+- **River Dove** — forms the boundary between Derbyshire and Staffordshire; famous for fly fishing
+
+### Ouse Tributaries (Yorkshire)
+- **River Aire** — flows through Leeds; joins the Ouse at Airmyn
+- **River Wharfe** — drains the Yorkshire Dales through Ilkley and Wetherby
+- **River Cam** — flows through Cambridge, joining the Great Ouse; gave Cambridge its name
+
+---
+
+## Settlement Patterns Along Rivers
+
+### Why Settle by a River?
+1. **Fresh water** — essential for drinking, cooking, and agriculture
+2. **Fertile soil** — river floodplains deposit nutrient-rich silt
+3. **Transport** — goods could be moved by boat far more easily than by road
+4. **Power** — watermills on fast-flowing rivers powered grain mills and early factories
+5. **Defence** — rivers formed natural moats; meanders created defensible peninsulas
+
+### River Crossing Points
+Many of England's most important cities grew at the first easy crossing point from the sea — where the river was narrow enough to bridge but still navigable by boats.
+
+- **London** (Thames): the Romans built the first bridge; all roads radiated from this point
+- **York** (Ouse): the Romans chose this crossing point; it became a Viking trading city
+- **Bristol** (Avon): grew at the tidal limit of the Avon; the harbour could receive seagoing ships
+
+---
+
+## Self-Check
+
+1. What is the difference between a tributary and a confluence?
+2. Which river flows through Leicester and eventually joins the Trent?
+3. Name two reasons why towns often developed at river confluences.
+
+**Answers:** 1. A tributary is a smaller river that flows INTO a larger one; a confluence is the specific POINT where this joining happens | 2. River Soar | 3. Any two from: transport hub, fertile floodplain soils, easier river navigation, natural meeting point for trade
+
+---
+
+## Connection Forward
+
+This foundation in drainage basins and tributaries prepares you for:
+- **Flood risk analysis** — understanding why upstream rainfall affects downstream towns
+- **Water supply** — how reservoirs on tributaries supply cities
+- **Industrial geography** — why certain industries clustered along specific river valleys`,
+    eli5Content: `## Simple Version
+
+Imagine a river is like a family tree — but upside down.
+
+At the top, you have loads of tiny streams on hills and mountains. These join together into slightly bigger streams, which join into small rivers, which all eventually pour into one big river.
+
+The **drainage basin** is all the land that drains into that one big river. If it rains anywhere in that area, the water will eventually reach your river.
+
+A **tributary** is just a smaller river that joins a bigger one. When they meet, that meeting point is called a **confluence**.
+
+**Why do cities grow at confluences?** Because in the old days, rivers were your roads. If two rivers meet, that spot is like a motorway junction — loads of people and goods pass through. So people set up markets and towns there.
+
+Examples:
+- The River Cherwell meets the Thames → **Oxford**
+- The River Soar meets the Trent near → **Nottingham**
+- The River Cam meets the Great Ouse → **Ely** (gave the region to Cambridge)`
+  },
+
+  {
+    id: 'lo-uk-mountains-detail',
+    title: 'Upland vs Lowland Britain: Weather, Farming, and Economy',
+    knowledgeComponentId: 'UK_mountains',
+    bloomLevel: 1,
+    orderIndex: 18,
+    contentType: 'text',
+    content: `## Learning Objective
+By the end of this section, you will be able to describe the upland/lowland divide in Britain, explain orographic rainfall and temperature lapse rate, and outline the economic activities associated with upland areas.
+
+---
+
+## The Great Divide: Highland vs Lowland Britain
+
+The UK is physically divided into two broad zones by an imaginary line running roughly from the Tees estuary in the northeast to the Exe estuary in the southwest:
+
+- **Highland Britain** (north and west) — mountainous, older and harder rocks (granite, slate, limestone), thin soils, high rainfall, sparse population
+- **Lowland Britain** (south and east) — flat to gently rolling, younger and softer rocks (chalk, clay, sandstone), deeper fertile soils, lower rainfall, denser population
+
+This divide explains many of the most significant patterns in British human geography: where industry grew, where populations cluster, and how land is used.
+
+---
+
+## Weather Implications of Mountains
+
+### Orographic Rainfall (Relief Rainfall)
+When moist air from the Atlantic hits a mountain range, it is forced upward. As air rises, it cools at approximately 6.5°C per 1,000 metres — the **environmental lapse rate**. Cooler air holds less water vapour, so the moisture condenses and falls as rain on the windward (west-facing) slope.
+
+By the time air descends the leeward (east-facing) slope, it has lost most of its moisture. This creates a **rain shadow** — a drier region in the shelter of the mountains.
+
+**Real-world data:**
+| Location | Annual rainfall | Reason |
+|---|---|---|
+| Seathwaite, Lake District | ~3,400 mm | Western windward slope |
+| Leeds (east of Pennines) | ~640 mm | Rain shadow of Pennines |
+| Fort William (west Highlands) | ~2,000 mm | Western Highland slopes |
+| Aberdeen (east Highlands) | ~800 mm | Rain shadow of Cairngorms |
+
+### Temperature Lapse Rate
+Temperature falls with altitude. On average in the UK, temperatures drop by approximately 0.6°C for every 100 metres of altitude gained. This means:
+- The summit of Ben Nevis (1,345m) is typically 8°C colder than sea level Fort William
+- Growing seasons shorten dramatically with altitude — upland farms have far fewer frost-free days than lowland farms
+- Snow persists longer at altitude — the Cairngorms maintain snow patches into July in some years
+
+---
+
+## Economic Impact of Upland Areas
+
+### Farming
+Upland farming is dominated by **pastoral (livestock) farming**, especially sheep and beef cattle. The thin, acidic soils and harsh climate rule out most arable (crop) farming. Key characteristics:
+- **Hill sheep farming** — breeds like Herdwick (Lake District), Swaledale (Yorkshire Dales), and Cheviot (Northumberland) are adapted to harsh upland conditions
+- **Extensive farming** — low stocking density on large areas; farms may cover hundreds of hectares
+- **Subsidy dependence** — many upland farms are economically marginal and depend on government support (formerly EU Common Agricultural Policy, now UK Agriculture Act payments)
+
+### Tourism
+Upland areas generate billions of pounds annually through tourism:
+- **The Lake District** receives approximately 19 million visitors per year — the most of any UK national park
+- **Snowdonia** — around 4 million visitors per year
+- **Ben Nevis** — approximately 150,000 summit attempts per year
+- Activities include hiking, mountain biking, skiing (Cairngorms), rock climbing, and water sports on upland lakes
+
+### Water Supply (Reservoirs)
+Upland areas are ideal for reservoirs because:
+- High rainfall means abundant water input
+- Hard impermeable rocks (granite, slate) prevent water seeping away
+- Valleys can be dammed to create large storage capacity
+- Sparse population means fewer people to displace
+
+**Examples:**
+- **Thirlmere** and **Haweswater** (Lake District) — supply Manchester
+- **Elan Valley reservoirs** (Cambrian Mountains, Wales) — supply Birmingham
+- **Vyrnwy** (Welsh hills) — supplies Liverpool
+
+### Wind Energy
+Upland areas receive much stronger and more consistent winds than lowland areas, making them ideal for wind farms. The UK is Europe's leading producer of wind energy, with thousands of turbines on Scottish, Welsh, and Pennine uplands.
+
+---
+
+## Self-Check
+
+1. What process causes heavy rainfall on the western slopes of UK mountain ranges?
+2. At what rate does temperature typically fall with altitude in the UK?
+3. Why are upland areas particularly suitable for reservoirs?
+4. Name two farming breeds adapted to upland conditions.
+
+**Answers:** 1. Orographic (relief) rainfall — moist air is forced upward, cools, and condenses | 2. Approximately 0.6°C per 100 metres | 3. High rainfall, impermeable rocks, ability to dam valleys, sparse population | 4. Any two from: Herdwick, Swaledale, Cheviot
+
+---
+
+## Connection Forward
+
+This understanding of upland/lowland Britain prepares you for:
+- **Flood risk** — how upland rainfall translates into downstream flooding
+- **Climate patterns** — why the UK's climate varies so dramatically over short distances
+- **Population distribution** — why most of the UK's population lives in Lowland Britain`,
+    eli5Content: `## Simple Version
+
+Imagine Britain cut in half diagonally, like a sandwich — the top-left bit is hilly and rainy (Highland Britain), and the bottom-right bit is flatter and drier (Lowland Britain).
+
+**Why are mountains so rainy on one side?**
+Clouds blow in from the Atlantic Ocean (always from the west). When they hit a mountain, they have to go UP. Going up makes the air colder. Cold air can not hold as much water, so the water falls out as RAIN — on the mountain's west side. By the time the air goes over the top and comes down the other side, it has run out of rain. So the east side is much drier. This is called the **rain shadow**.
+
+**What do people do in the mountains?**
+- **Sheep farming** — sheep are tough enough to handle the cold and wet
+- **Tourism** — millions of people visit the Lake District, Snowdonia, and the Scottish Highlands every year
+- **Reservoirs** — upland valleys get dammed to store rainwater that cities drink
+- **Wind farms** — it is very windy up there, so wind turbines generate lots of electricity`
+  },
+
+  {
+    id: 'lo-uk-coastal-features',
+    title: 'UK Coastlines: Erosion, Deposition, and Coastal National Parks',
+    knowledgeComponentId: 'UK_national_parks',
+    bloomLevel: 1,
+    orderIndex: 19,
+    contentType: 'text',
+    content: `## Learning Objective
+By the end of this section, you will be able to describe the UK's three main coastline zones, distinguish between erosional and depositional coastal features, and identify key coastal national parks and landmarks.
+
+---
+
+## The UK's Coastal Context
+
+The UK is an island nation with approximately 17,820 km of coastline — more than the entire coast of India. No point in Great Britain is more than 113 km from the sea. This extraordinary coastal exposure means that the sea has profoundly shaped both the landscape and British culture, economy, and history.
+
+---
+
+## Three Main Coastline Zones
+
+### The North Sea Coast (East)
+Stretching from the Scottish border south to the Thames Estuary, the North Sea coast is characterised by:
+- **Softer rocks** (boulder clay, chalk) that erode quickly
+- **Flat, low-lying land** vulnerable to storm surge flooding
+- **Rapid coastal erosion** — Holderness (East Yorkshire) loses on average 1.8 metres of coastline per year, making it Europe's fastest-eroding coast
+- **Sandy beaches and spits** formed by longshore drift carrying sediment southward
+
+**Key features:** Flamborough Head (chalk headland, Yorkshire), Dungeness (the UK's largest shingle structure, Kent), The Wash (large estuarine bay, Norfolk/Lincolnshire)
+
+### The Atlantic Coast (West)
+The western coastline faces the full force of Atlantic storms and is characterised by:
+- **Hard, ancient rocks** (granite, slate) that resist erosion
+- **Dramatic cliff scenery** — Cliffs of Moher, Lizard Peninsula, Pembrokeshire
+- **Deep estuaries and rias** (drowned river valleys) — the Fal in Cornwall, Milford Haven in Wales
+- **Higher wave energy** from Atlantic swells crossing thousands of kilometres of open ocean
+
+**Key features:** Land's End (UK's most westerly point), Pembrokeshire coastline (stacks, arches, sea caves), Scottish sea lochs (fjords), Giant's Causeway (Northern Ireland, basalt columns)
+
+### The English Channel Coast (South)
+A varied coastline balancing Atlantic exposure and sheltered stretches:
+- **White chalk cliffs** (Seven Sisters, White Cliffs of Dover) — the iconic symbol of England
+- **Shingle beaches** (Chesil Beach — 29 km of shingle connecting Portland to the mainland)
+- **Eroding sandstone cliffs** at Bournemouth and Poole
+- **Busy shipping lanes** — the English Channel is the world's busiest shipping route
+
+---
+
+## Coastal Processes
+
+### Erosion Features
+Coastal erosion creates distinctive landforms over geological timescales:
+
+- **Headlands and bays** — form when rocks of different hardness alternate along a coastline. Soft rock erodes to form bays; hard rock resists to form headlands that jut out.
+- **Cliffs** — formed by wave attack at the base of sloping land. Waves undercut the cliff to form a **wave-cut notch**; when the overhang collapses, the cliff retreats.
+- **Sea caves, arches, and stacks** — the sequence of erosion: waves exploit cracks to form a cave → cave cuts through a headland to form an arch → arch roof collapses leaving an isolated **stack** → stack erodes to a **stump**.
+  - **Famous examples:** Old Harry Rocks (Dorset), Durdle Door (arch, Dorset), The Needles (chalk stacks, Isle of Wight)
+
+### Deposition Features
+Where wave energy is lower or sediment supply is high, material is deposited:
+
+- **Beaches** — accumulations of sand or shingle. The UK's longest beach is Chesil Beach (Dorset) at 29 km.
+- **Spits** — narrow fingers of sand or shingle extending from a headland, formed by longshore drift (the transport of sediment along the coast by waves). When the coastline changes direction, the spit curves inland at its tip.
+  - **Example:** Spurn Head (Humberside), Dungeness (Kent)
+- **Bars** — spits that extend across a bay, cutting off a lagoon.
+- **Tombolos** — beaches that connect an island to the mainland; Chesil Beach connects Portland to Dorset.
+
+---
+
+## Key Coastal National Parks and Landmarks
+
+### Pembrokeshire Coast National Park (Wales)
+The only UK national park whose primary designation is its coastline rather than mountains. Its 186 km Pembrokeshire Coast Path passes through dramatic cliff scenery, sandy bays, and prehistoric sites. Key features: Stackpole Head, the Green Bridge of Wales arch, and Skomer Island (seabird colony).
+
+### South Downs National Park (England)
+Stretches 160 km from Winchester (Hampshire) to Eastbourne (East Sussex). Where the South Downs meet the sea, they create the iconic **Seven Sisters** — seven chalk cliff faces forming a dramatic roller-coaster profile east of Seaford. The chalk was formed from the shells of tiny marine organisms deposited when a warm, shallow sea covered southern Britain 100 million years ago.
+
+### North York Moors National Park (England)
+The eastern edge of this park drops dramatically to the North Sea, creating spectacular coastal scenery including:
+- **Robin Hood's Bay** — a picturesque fishing village built into a narrow coastal valley
+- **Whitby** — home of the famous abbey (inspiration for Bram Stoker's Dracula), a working fishing port at the mouth of the River Esk
+- **Boulby** — site of England's highest cliffs (203m) outside of the chalk
+
+---
+
+## Self-Check
+
+1. Which UK coastline loses on average 1.8 metres per year to erosion?
+2. What is the difference between a headland and a bay?
+3. What process forms a coastal spit?
+4. Which is the only UK national park primarily designated for its coastline?
+
+**Answers:** 1. Holderness coast, East Yorkshire | 2. A headland is hard rock that resists erosion and juts out; a bay forms where soft rock erodes back | 3. Longshore drift carries sediment along the coast, which accumulates and extends as a spit when the coastline changes direction | 4. Pembrokeshire Coast National Park (Wales)
+
+---
+
+## Connection Forward
+
+Understanding UK coastal features prepares you for:
+- **Coastal management** — why some coasts are defended and others are left to erode
+- **Sea level rise** — which parts of the UK face the greatest threat from climate change
+- **Marine ecosystems** — how coastal habitats support biodiversity`,
+    eli5Content: `## Simple Version
+
+The UK is an island, so it has coastline everywhere — mountains, cliffs, beaches, and everything in between.
+
+**Three types of coast:**
+
+**East coast (North Sea):** Made of softer rock, so the sea eats it away. In East Yorkshire (Holderness), the cliff crumbles by nearly 2 metres every year! The old villages that used to be on the cliff are now under the sea.
+
+**West coast (Atlantic):** Bashed by huge Atlantic waves, but made of hard rock like granite. This creates dramatic cliffs and sea stacks — tall pillars of rock standing alone in the water, left behind after the weaker rock around them got eaten away.
+
+**South coast (English Channel):** Famous for the white chalk cliffs (like the White Cliffs of Dover). Chalk used to be seabed — it is made from billions of tiny sea creatures that died and piled up millions of years ago.
+
+**Two things happen at coasts:**
+- **Erosion** — waves smash rock away, making cliffs and caves
+- **Deposition** — worn-away material gets dropped somewhere else, making beaches and spits (long fingers of sand)
+
+**Coastal national parks** protect some of the most beautiful coastlines:
+- Pembrokeshire (Wales) — the only park that is mostly about the sea cliffs
+- South Downs — the Seven Sisters chalk cliffs
+- North York Moors — dramatic cliffs dropping to the North Sea`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // LEVEL 2: UNDERSTANDING (Bloom 2)
   // ═══════════════════════════════════════════════════════════════════════════
   {
