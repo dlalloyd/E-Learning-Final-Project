@@ -59,10 +59,9 @@ export async function GET(
   try {
     const sessionId = params.id;
 
-    // Load session
+    // Load session (needed for early-exit checks)
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
-      include: { interactions: true },
     });
 
     if (!session) {
@@ -73,32 +72,27 @@ export async function GET(
     }
 
     // -------------------------------------------------------------------
-    // Get already-presented variant IDs for this session
+    // Parallel fetch: all independent queries at once
     // -------------------------------------------------------------------
-    const presentations = await prisma.variantPresentation.findMany({
-      where: { sessionId },
-      select: { variantId: true },
-    });
+    const [presentations, templates, kcMasteries, prerequisites] = await Promise.all([
+      prisma.variantPresentation.findMany({
+        where: { sessionId },
+        select: { variantId: true },
+      }),
+      prisma.questionTemplate.findMany({
+        include: { variants: true },
+      }),
+      prisma.kCMastery.findMany({
+        where: { sessionId },
+      }),
+      prisma.prerequisiteEdge.findMany(),
+    ]);
+
     const presentedVariantIds = new Set(presentations.map((p) => p.variantId));
 
-    // -------------------------------------------------------------------
-    // Load all question templates with their variants
-    // -------------------------------------------------------------------
-    const templates = await prisma.questionTemplate.findMany({
-      include: { variants: true },
-    });
-
     if (templates.length === 0) {
-      // Fallback: no templates exist, serve static questions
       return serveStaticQuestion(session, sessionId);
     }
-
-    // -------------------------------------------------------------------
-    // Successive Relearning: check for decayed KCs
-    // -------------------------------------------------------------------
-    const kcMasteries = await prisma.kCMastery.findMany({
-      where: { sessionId },
-    });
 
     // KCs that were mastered but have decayed below re-engagement threshold
     const decayedKCIds = new Set(
@@ -107,10 +101,6 @@ export async function GET(
         .map((m) => m.kcId)
     );
 
-    // -------------------------------------------------------------------
-    // Prerequisite Gating: build set of accessible KC IDs
-    // -------------------------------------------------------------------
-    const prerequisites = await prisma.prerequisiteEdge.findMany();
     const masteryMap = new Map(kcMasteries.map((m) => [m.kcId, m.pLearned]));
 
     function kcIsAccessible(kcId: string): boolean {
