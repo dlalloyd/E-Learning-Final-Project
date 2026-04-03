@@ -23,7 +23,7 @@ export async function POST(
   try {
     const sessionId = params.id;
     const body = await req.json();
-    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel, cognitiveLoad } = body;
+    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel, cognitiveLoad, optionsMap } = body;
 
     if (!questionId || !selectedAnswer) {
       return NextResponse.json(
@@ -72,22 +72,35 @@ export async function POST(
       // --- VARIANT PATH ---
       isVariant = true;
       kc = variant.template.kcId;
-      correctLabel = variant.correctAnswer.toUpperCase().trim();
+
+      // The client sends a label (A/B/C/D) and the shuffled options map.
+      // We need to find which label corresponds to the correct answer text.
+      const correctAnswerText = variant.correctAnswer;
+      if (optionsMap && typeof optionsMap === 'object') {
+        // Find the label whose text matches the correct answer
+        const matchingEntry = Object.entries(optionsMap as Record<string, string>)
+          .find(([, text]) => text === correctAnswerText);
+        correctLabel = matchingEntry ? matchingEntry[0].toUpperCase() : 'A';
+      } else {
+        // Fallback: compare answer text directly
+        correctLabel = selectedAnswer.toUpperCase();
+      }
+
       // IRT params from template (discrimination/difficulty/guessingParam)
       irtParams = {
         a: variant.template.discrimination,
         b: variant.template.difficulty,
         c: variant.template.guessingParam,
       };
-      // Use a synthetic question record ID for interaction logging
-      // We store the variantId in the questionId field of Interaction
       questionRecord = { id: questionId };
+
+      const isAnswerCorrect = selectedAnswer.toUpperCase() === correctLabel;
 
       // Update VariantPresentation with correctness + confidence
       await prisma.variantPresentation.updateMany({
         where: { variantId: questionId, sessionId },
         data: {
-          isCorrect: selectedAnswer.toUpperCase() === correctLabel,
+          isCorrect: isAnswerCorrect,
           confidenceLevel: confidenceLevel || null,
           responseTimeMs: responseTimeMs || null,
         },
