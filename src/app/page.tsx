@@ -211,6 +211,7 @@ export default function QuizPage() {
           responseTimeMs,
           confidenceLevel,
           cognitiveLoad: cognitiveLoad ?? undefined,
+          optionsMap: question.options,
         }),
       });
 
@@ -268,17 +269,7 @@ export default function QuizPage() {
   // —— Handle next after feedback —————————————————————————————————————————
 
   const handleNextAfterFeedback = () => {
-    console.log('=== INSTRUCTION CHECK ===');
-    console.log('condition:', condition);
-    console.log('result.correct:', result?.correct);
-    console.log('consecutiveFailures:', consecutiveFailures);
-    console.log('bkt.pLearned_after:', result?.bkt.pLearned_after);
-    console.log('MASTERY_THRESHOLD:', MASTERY_THRESHOLD);
-    console.log('CONSECUTIVE_FAIL_THRESHOLD:', CONSECUTIVE_FAIL_THRESHOLD);
-
     const trigger = shouldTriggerInstruction(result!, consecutiveFailures);
-    console.log('trigger result:', trigger);
-
     if (trigger) {
       setInstructionTrigger(trigger);
       setAppState('instruction');
@@ -588,31 +579,28 @@ export default function QuizPage() {
               </div>
             )}
 
-            {/* Cognitive Load Rating */}
+            {/* Cognitive Load Rating — compact inline */}
             {appState === 'feedback' && (
-              <div className="bg-slate-800/50 rounded-xl p-4">
-                <p className="text-slate-400 text-xs mb-3 font-mono uppercase tracking-widest">
-                  How mentally demanding was that question?
-                </p>
-                <div className="flex gap-2">
+              <div className="flex items-center gap-3 px-1">
+                <span className="text-slate-500 text-xs whitespace-nowrap">Difficulty:</span>
+                <div className="flex gap-1">
                   {([1, 2, 3, 4, 5] as const).map((level) => (
                     <button
                       key={level}
                       onClick={() => setCognitiveLoad(level)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`w-8 h-8 rounded-md text-xs font-semibold transition-all ${
                         cognitiveLoad === level
                           ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                          : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300'
                       }`}
                     >
                       {level}
                     </button>
                   ))}
                 </div>
-                <div className="flex justify-between text-xs text-slate-600 mt-1 px-1">
-                  <span>Very easy</span>
-                  <span>Very difficult</span>
-                </div>
+                <span className="text-slate-600 text-xs">
+                  {cognitiveLoad === 1 ? 'Easy' : cognitiveLoad === 5 ? 'Hard' : ''}
+                </span>
               </div>
             )}
 
