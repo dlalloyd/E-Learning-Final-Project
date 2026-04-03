@@ -106,7 +106,11 @@ export async function GET(
     function kcIsAccessible(kcId: string): boolean {
       const reqs = prerequisites.filter((p) => p.toKCId === kcId);
       if (reqs.length === 0) return true; // no prerequisites — always accessible
-      return reqs.every((p) => (masteryMap.get(p.fromKCId) ?? 0) >= p.masteryThreshold);
+      // Use a relaxed threshold (0.5) so L2/L3 questions unlock after 1-2 correct L1 answers.
+      // The DB stores 0.8 for mastery gating, but for question selection we want
+      // progressive unlocking — full mastery gating is enforced at the KC level.
+      const SELECTION_THRESHOLD = 0.5;
+      return reqs.every((p) => (masteryMap.get(p.fromKCId) ?? 0) >= SELECTION_THRESHOLD);
     }
 
     // -------------------------------------------------------------------
