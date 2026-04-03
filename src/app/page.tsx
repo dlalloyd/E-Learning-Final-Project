@@ -42,7 +42,7 @@ interface AnswerResult {
   };
 }
 
-type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'complete' | 'error';
+type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'learn' | 'complete' | 'error';
 type InstructionTrigger = 'low_mastery' | 'consecutive_failures' | 'user_request';
 
 const BLOOM_LABELS: Record<number, string> = {
@@ -101,7 +101,6 @@ export default function QuizPage() {
   const [thetaSd, setThetaSd] = useState(0.543);
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState<1 | 2 | 3 | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [startTime, setStartTime] = useState<number>(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
@@ -116,9 +115,25 @@ export default function QuizPage() {
   const [currentKcId, setCurrentKcId] = useState<string>('');
   const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
 
+  // ——— Learning-First Onboarding ———
+  const FOUNDATION_KCS = [
+    'UK_capitals', 'UK_county_locations', 'UK_rivers',
+    'UK_mountains', 'UK_national_parks',
+  ];
+  const [learnQueue, setLearnQueue] = useState<string[]>([]);
+
   // —— Fetch next question ——————————————————————————————————————————————
 
   const fetchNextQuestion = useCallback(async (sid: string) => {
+    // If there are KCs queued for learning-first onboarding, show instruction first
+    if (learnQueue.length > 0) {
+      const nextKc = learnQueue[0];
+      setCurrentKcId(nextKc);
+      setInstructionTrigger('low_mastery');
+      setAppState('learn');
+      return;
+    }
+
     setAppState('loading');
     try {
       const res = await fetch(`/api/sessions/${sid}/next-question`);
@@ -134,16 +149,15 @@ export default function QuizPage() {
       setQuestion(data);
       setCurrentKcId(data.kc);
       setSelected(null);
-        setConfidence(null);
-        setResult(null);
-        setCognitiveLoad(null);
+      setResult(null);
+      setCognitiveLoad(null);
       setStartTime(Date.now());
       setAppState('question');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setAppState('error');
     }
-  }, []);
+  }, [learnQueue]);
 
   // —— Start session ————————————————————————————————————————————————————
 
@@ -195,11 +209,14 @@ export default function QuizPage() {
 
   // —— Submit answer ————————————————————————————————————————————————————
 
-  const submitAnswer = async (answer: string, confidenceLevel: 1 | 2 | 3) => {
+  const submitAnswer = async (answer: string) => {
     if (!question || !sessionId) return;
     setSelected(answer);
 
     const responseTimeMs = Date.now() - startTime;
+    // Implicit confidence from response time (Klauer et al., 2007):
+    // Fast + correct → high confidence, Slow → low confidence
+    const confidenceLevel = responseTimeMs < 10000 ? 3 : responseTimeMs < 20000 ? 2 : 1;
 
     try {
       const res = await fetch(`/api/sessions/${sessionId}/answer`, {
@@ -345,13 +362,28 @@ export default function QuizPage() {
               </div>
             </div>
 
-            <button
-              onClick={startSession}
-              disabled={!userId.trim()}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold rounded-lg transition-all"
-            >
-              Begin Assessment →
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setLearnQueue([...FOUNDATION_KCS]);
+                  startSession();
+                }}
+                disabled={!userId.trim()}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold rounded-lg transition-all"
+              >
+                Learn First, Then Assess →
+              </button>
+              <button
+                onClick={startSession}
+                disabled={!userId.trim()}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
+              >
+                Skip to Assessment
+              </button>
+              <p className="text-slate-600 text-xs text-center">
+                New to UK Geography? Choose &quot;Learn First&quot; for guided instruction before the quiz.
+              </p>
+            </div>
           </div>
 
           <p className="mt-6 text-center text-slate-600 text-xs">
@@ -395,7 +427,62 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Instruction Mode ————————————————————————————————————————
+  // ——— Render: Learning-First Onboarding ——————————————————————————————
+
+  if (appState === 'learn') {
+    const handleLearnComplete = () => {
+      const remaining = learnQueue.slice(1);
+      setLearnQueue(remaining);
+      if (remaining.length > 0) {
+        setCurrentKcId(remaining[0]);
+        // stay in 'learn' state — re-render with next KC
+      } else {
+        // All foundation KCs reviewed — start assessment
+        fetchNextQuestion(sessionId);
+      }
+    };
+
+    return (
+      <main className="min-h-screen bg-slate-950 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-4 flex items-center justify-between text-xs text-slate-500 font-mono">
+            <span>Learning Mode · Topic {FOUNDATION_KCS.length - learnQueue.length + 1}/{FOUNDATION_KCS.length}</span>
+            <button
+              onClick={() => { setLearnQueue([]); fetchNextQuestion(sessionId); }}
+              className="text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Skip to Quiz →
+            </button>
+          </div>
+
+          {/* Progress dots */}
+          <div className="flex gap-1.5 mb-6">
+            {FOUNDATION_KCS.map((kc, i) => (
+              <div
+                key={kc}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  i < FOUNDATION_KCS.length - learnQueue.length
+                    ? 'bg-emerald-500'
+                    : i === FOUNDATION_KCS.length - learnQueue.length
+                    ? 'bg-indigo-500'
+                    : 'bg-slate-700'
+                }`}
+              />
+            ))}
+          </div>
+
+          <InstructionMode
+            kcId={currentKcId}
+            sessionId={sessionId}
+            onComplete={handleLearnComplete}
+            triggerReason="low_mastery"
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // ——— Render: Instruction Mode (mid-quiz remediation) ————————————————
 
   if (appState === 'instruction') {
     return (
@@ -509,8 +596,8 @@ export default function QuizPage() {
               {Object.entries(question.options).map(([label, text]) => (
                 <button
                   key={label}
-                  onClick={() => appState === 'question' && !selected && setSelected(label)}
-                  disabled={appState === 'feedback'}
+                  onClick={() => appState === 'question' && !selected && submitAnswer(label)}
+                  disabled={appState === 'feedback' || !!selected}
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${optionStyle(label)}`}
                 >
                   <span className="font-mono font-bold text-sm mr-3 opacity-60">{label}</span>
@@ -518,29 +605,6 @@ export default function QuizPage() {
                 </button>
               ))}
             </div>
-
-            {/* Confidence picker — appears after selecting an option, submits the answer */}
-            {appState === 'question' && selected && (
-              <div className="bg-slate-800/50 rounded-xl p-4">
-                <p className="text-slate-400 text-xs mb-3 font-mono uppercase tracking-widest">
-                  How confident are you in your answer?
-                </p>
-                <div className="flex gap-2">
-                  {([1, 2, 3] as const).map((level) => {
-                    const labels = { 1: 'Not sure', 2: 'Fairly sure', 3: 'Very sure' };
-                    return (
-                      <button
-                        key={level}
-                        onClick={() => submitAnswer(selected, level)}
-                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-700 text-slate-300 hover:bg-indigo-600 hover:text-white transition-all"
-                      >
-                        {labels[level]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Feedback */}
             {appState === 'feedback' && result && (

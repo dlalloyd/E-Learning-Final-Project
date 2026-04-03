@@ -32,19 +32,18 @@ export async function POST(
       );
     }
 
-    // Load session with full interaction history
-    const session = await prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        interactions: {
-          include: {
-            question: {
-              include: { options: { orderBy: { order: 'asc' } } },
-            },
-          },
+    // Load session (lightweight) + interaction IRT history in parallel
+    const [session, priorInteractions] = await Promise.all([
+      prisma.session.findUnique({ where: { id: sessionId } }),
+      prisma.interaction.findMany({
+        where: { sessionId },
+        select: {
+          questionId: true,
+          isCorrect: true,
+          question: { select: { irt_a: true, irt_b: true, irt_c: true } },
         },
-      },
-    });
+      }),
+    ]);
 
     if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -120,7 +119,7 @@ export async function POST(
         return NextResponse.json({ error: 'Question does not belong to this session' }, { status: 400 });
       }
 
-      const alreadyAnswered = session.interactions.some((i) => i.questionId === questionId);
+      const alreadyAnswered = priorInteractions.some((i) => i.questionId === questionId);
       if (alreadyAnswered) {
         return NextResponse.json({ error: 'Question already answered in this session' }, { status: 400 });
       }
@@ -143,13 +142,10 @@ export async function POST(
     // -------------------------------------------------------------------
     // Build full response history from existing interactions
     const allResponses: Array<{ params: IRTParams; isCorrect: boolean }> = [
-      ...session.interactions.map((i) => {
-        const q = i.question;
-        return {
-          params: { a: q.irt_a, b: q.irt_b, c: q.irt_c } as IRTParams,
-          isCorrect: i.isCorrect,
-        };
-      }),
+      ...priorInteractions.map((i) => ({
+        params: { a: i.question.irt_a, b: i.question.irt_b, c: i.question.irt_c } as IRTParams,
+        isCorrect: i.isCorrect,
+      })),
       { params: irtParams, isCorrect },
     ];
 
@@ -166,47 +162,40 @@ export async function POST(
     const isMastered = updatedKCState.pLearned >= 0.95;
 
     // -------------------------------------------------------------------
-    // KCMastery upsert (Successive Relearning)
+    // KCMastery + Confidence Calibration — fire-and-forget in parallel
     // -------------------------------------------------------------------
+    const sideEffects: Promise<unknown>[] = [];
+
     if (kc) {
-      try {
-        const wasMastered = (await prisma.kCMastery.findUnique({
-          where: { sessionId_kcId: { sessionId, kcId: kc } },
-        }))?.masteredAt != null;
-
-        const nowMastered = isMastered;
-
-        await prisma.kCMastery.upsert({
+      sideEffects.push(
+        prisma.kCMastery.upsert({
           where: { sessionId_kcId: { sessionId, kcId: kc } },
           create: {
             sessionId,
             kcId: kc,
             pLearned: updatedKCState.pLearned,
             pForget: 0.1,
-            masteredAt: nowMastered ? new Date() : null,
+            masteredAt: isMastered ? new Date() : null,
             lastAssessedAt: new Date(),
           },
           update: {
             pLearned: updatedKCState.pLearned,
             lastAssessedAt: new Date(),
-            masteredAt: nowMastered && !wasMastered ? new Date() : undefined,
+            ...(isMastered ? { masteredAt: new Date() } : {}),
           },
-        });
-      } catch (err) {
-        console.warn('KCMastery upsert failed:', err);
-      }
+        }).catch((err) => console.warn('KCMastery upsert failed:', err))
+      );
     }
 
-    // --- Update Confidence Calibration ---
     if (confidenceLevel && (confidenceLevel === 1 || confidenceLevel === 3)) {
-      try {
-        const calibrationUpdate: Record<string, { increment: number }> = {};
-        if (confidenceLevel === 3) {
-          calibrationUpdate[isCorrect ? 'highConfCorrect' : 'highConfWrong'] = { increment: 1 };
-        } else {
-          calibrationUpdate[isCorrect ? 'lowConfCorrect' : 'lowConfWrong'] = { increment: 1 };
-        }
-        await prisma.confidenceCalibration.upsert({
+      const calibrationUpdate: Record<string, { increment: number }> = {};
+      if (confidenceLevel === 3) {
+        calibrationUpdate[isCorrect ? 'highConfCorrect' : 'highConfWrong'] = { increment: 1 };
+      } else {
+        calibrationUpdate[isCorrect ? 'lowConfCorrect' : 'lowConfWrong'] = { increment: 1 };
+      }
+      sideEffects.push(
+        prisma.confidenceCalibration.upsert({
           where: { sessionId },
           create: {
             sessionId,
@@ -216,11 +205,12 @@ export async function POST(
             lowConfWrong: confidenceLevel === 1 && !isCorrect ? 1 : 0,
           },
           update: calibrationUpdate,
-        });
-      } catch (err) {
-        console.warn('ConfidenceCalibration upsert failed:', err);
-      }
+        }).catch((err) => console.warn('ConfidenceCalibration upsert failed:', err))
+      );
     }
+
+    // Don't block the response on side effects
+    Promise.all(sideEffects).catch(() => {});
 
     // -------------------------------------------------------------------
     // Persist Interaction + Session Update in one transaction
