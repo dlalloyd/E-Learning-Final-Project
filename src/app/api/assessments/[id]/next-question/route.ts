@@ -48,7 +48,7 @@ export async function GET(
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       include: {
-        answers: { select: { questionId: true } },
+        answers: { select: { questionId: true, selectedOptionId: true } },
       },
     });
 
@@ -64,7 +64,10 @@ export async function GET(
       });
     }
 
-    const answeredQuestionIds = new Set(assessment.answers.map((a: { questionId: string }) => a.questionId));
+    // selectedOptionId stores the actual variant ID; questionId is a placeholder FK
+    const answeredVariantIds = new Set(
+      assessment.answers.map((a: { selectedOptionId: string | null; questionId: string }) => a.selectedOptionId || a.questionId)
+    );
 
     // Get all templates with their variants, grouped by KC
     const templates = await prisma.questionTemplate.findMany({
@@ -102,7 +105,7 @@ export async function GET(
       const variant = template.variants[variantIdx];
 
       // Skip if already answered
-      if (answeredQuestionIds.has(variant.id)) continue;
+      if (answeredVariantIds.has(variant.id)) continue;
 
       // Render the question
       const variables = (variant.variables as Record<string, string>) || {};
@@ -131,8 +134,8 @@ export async function GET(
         bloom: template.bloomLevel,
         kc: template.kcId,
         meta: {
-          questionsAnswered: answeredQuestionIds.size,
-          questionsRemaining: Math.max(0, orderedTemplates.length - answeredQuestionIds.size),
+          questionsAnswered: answeredVariantIds.size,
+          questionsRemaining: Math.max(0, orderedTemplates.length - answeredVariantIds.size),
           assessmentType: assessment.type,
         },
       });

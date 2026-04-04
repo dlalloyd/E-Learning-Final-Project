@@ -618,7 +618,7 @@ export default function QuizPage() {
                       const queue = [...FOUNDATION_KCS];
                       setLearnQueue(queue);
                       learnQueueRef.current = queue;
-                      startAssessment('pre_test');
+                      startSession();
                     }}
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all"
                   >
@@ -628,7 +628,7 @@ export default function QuizPage() {
                     onClick={() => startAssessment('pre_test')}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
                   >
-                    Skip to Assessment
+                    Start with Pre-Test
                   </button>
                   <p className="text-slate-600 text-xs text-center">
                     New to UK Geography? Choose &quot;Learn First&quot; for guided instruction.
