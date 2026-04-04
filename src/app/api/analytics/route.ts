@@ -71,13 +71,14 @@ export async function GET(request: NextRequest) {
     });
 
     // Compute summary statistics
+    type AnalyticsEventRow = typeof events[number];
     const summary = {
       totalEvents: events.length,
-      instructionTriggered: events.filter(e => e.eventType === 'instruction_triggered').length,
-      instructionRequested: events.filter(e => e.eventType === 'instruction_requested').length,
-      instructionCompleted: events.filter(e => e.eventType === 'instruction_completed').length,
-      hintsUsed: events.filter(e => e.eventType === 'hint_requested').length,
-      eli5Toggles: events.filter(e => e.eventType === 'eli5_toggled').length,
+      instructionTriggered: events.filter((e: AnalyticsEventRow) => e.eventType === 'instruction_triggered').length,
+      instructionRequested: events.filter((e: AnalyticsEventRow) => e.eventType === 'instruction_requested').length,
+      instructionCompleted: events.filter((e: AnalyticsEventRow) => e.eventType === 'instruction_completed').length,
+      hintsUsed: events.filter((e: AnalyticsEventRow) => e.eventType === 'hint_requested').length,
+      eli5Toggles: events.filter((e: AnalyticsEventRow) => e.eventType === 'eli5_toggled').length,
     };
 
     return NextResponse.json({ events, summary });

@@ -45,7 +45,7 @@ export async function GET(
       orderBy: { createdAt: 'asc' },
     });
 
-    const interactions = rawInteractions.map((i, index) => ({
+    const interactions = rawInteractions.map((i: typeof rawInteractions[number], index: number) => ({
       index: index + 1,
       questionId: i.questionId,
       kc: i.question.kc,
@@ -65,7 +65,7 @@ export async function GET(
       orderBy: { timestamp: 'asc' },
     });
 
-    const analyticsEvents = rawEvents.map((e) => ({
+    const analyticsEvents = rawEvents.map((e: typeof rawEvents[number]) => ({
       eventType: e.eventType,
       payload: e.payload,
       timestamp: e.timestamp.toISOString(),

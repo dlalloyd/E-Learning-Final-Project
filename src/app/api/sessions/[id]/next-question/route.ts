@@ -101,7 +101,7 @@ export async function GET(
         .map((m) => m.kcId)
     );
 
-    const masteryMap = new Map(kcMasteries.map((m) => [m.kcId, m.pLearned]));
+    const masteryMap = new Map<string, number>(kcMasteries.map((m) => [m.kcId, m.pLearned]));
 
     function kcIsAccessible(kcId: string): boolean {
       const reqs = prerequisites.filter((p) => p.toKCId === kcId);

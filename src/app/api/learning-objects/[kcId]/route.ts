@@ -34,7 +34,7 @@ export async function GET(
         include: { fromKC: true },
       });
 
-      prerequisiteStatus = prereqEdges.map((edge) => ({
+      prerequisiteStatus = prereqEdges.map((edge: typeof prereqEdges[number]) => ({
         kcId: edge.fromKCId,
         name: edge.fromKC.name,
         mastered: false,

@@ -119,13 +119,13 @@ export async function POST(
         return NextResponse.json({ error: 'Question does not belong to this session' }, { status: 400 });
       }
 
-      const alreadyAnswered = priorInteractions.some((i) => i.questionId === questionId);
+      const alreadyAnswered = priorInteractions.some((i: { questionId: string }) => i.questionId === questionId);
       if (alreadyAnswered) {
         return NextResponse.json({ error: 'Question already answered in this session' }, { status: 400 });
       }
 
       const labels = ['A', 'B', 'C', 'D'];
-      const correctIdx = question.options.findIndex((o) => o.isCorrect);
+      const correctIdx = question.options.findIndex((o: { isCorrect: boolean }) => o.isCorrect);
       correctLabel = correctIdx >= 0 ? labels[correctIdx] : 'A';
       kc = question.kc || '';
       irtParams = { a: question.irt_a, b: question.irt_b, c: question.irt_c };
@@ -142,7 +142,7 @@ export async function POST(
     // -------------------------------------------------------------------
     // Build full response history from existing interactions
     const allResponses: Array<{ params: IRTParams; isCorrect: boolean }> = [
-      ...priorInteractions.map((i) => ({
+      ...priorInteractions.map((i: { isCorrect: boolean; question: { irt_a: number; irt_b: number; irt_c: number } }) => ({
         params: { a: i.question.irt_a, b: i.question.irt_b, c: i.question.irt_c } as IRTParams,
         isCorrect: i.isCorrect,
       })),
@@ -183,7 +183,7 @@ export async function POST(
             lastAssessedAt: new Date(),
             ...(isMastered ? { masteredAt: new Date() } : {}),
           },
-        }).catch((err) => console.warn('KCMastery upsert failed:', err))
+        }).catch((err: unknown) => console.warn('KCMastery upsert failed:', err))
       );
     }
 
@@ -205,7 +205,7 @@ export async function POST(
             lowConfWrong: confidenceLevel === 1 && !isCorrect ? 1 : 0,
           },
           update: calibrationUpdate,
-        }).catch((err) => console.warn('ConfidenceCalibration upsert failed:', err))
+        }).catch((err: unknown) => console.warn('ConfidenceCalibration upsert failed:', err))
       );
     }
 
