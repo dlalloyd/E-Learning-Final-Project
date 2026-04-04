@@ -65,7 +65,7 @@ export async function GET(
     const masteryRecords = await prisma.kCMastery.findMany({
       where: { sessionId, kcId: { in: kcIds } },
     });
-    const masteryMap = new Map(masteryRecords.map((m) => [m.kcId, m.pLearned]));
+    const masteryMap = new Map<string, number>(masteryRecords.map((m) => [m.kcId, m.pLearned]));
 
     const kcPerformance = Array.from(kcMap.values()).map((kc) => ({
       ...kc,

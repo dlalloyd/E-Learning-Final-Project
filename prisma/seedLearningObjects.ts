@@ -1889,7 +1889,7 @@ async function seedLearningObjects() {
 
   console.log('\n── Learning Objects Summary ─────────────────────────────────');
   console.log(`   Total objects : ${learningObjects.length}`);
-  counts.forEach((c) => {
+  counts.forEach((c: { bloomLevel: number; _count: { id: number } }) => {
     console.log(`   Bloom ${c.bloomLevel}       : ${c._count.id} items`);
   });
   console.log('─────────────────────────────────────────────────────────────\n');

@@ -42,7 +42,7 @@ interface AnswerResult {
   };
 }
 
-type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'learn' | 'complete' | 'error';
+type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'learn' | 'complete' | 'error' | 'assessment';
 type InstructionTrigger = 'low_mastery' | 'consecutive_failures' | 'user_request';
 
 const BLOOM_LABELS: Record<number, string> = {
@@ -119,6 +119,18 @@ export default function QuizPage() {
           setResumableSessionId(data.incompleteSession.id);
           setCondition(data.incompleteSession.condition);
         }
+        // Check for delayed test availability
+        fetch(`/api/assessments?userId=${data.user.id}`).then(r => r.json()).then(aData => {
+          if (aData.delayedTestAvailability) {
+            const available = aData.delayedTestAvailability.find(
+              (d: { delayedTestAvailable: boolean; delayedTestCompleted: boolean }) =>
+                d.delayedTestAvailable && !d.delayedTestCompleted
+            );
+            if (available) {
+              setDelayedTestAvailable({ sessionId: available.sessionId });
+            }
+          }
+        }).catch(() => {});
       }
     }).catch(() => {});
   }, []);
@@ -140,6 +152,15 @@ export default function QuizPage() {
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [currentKcId, setCurrentKcId] = useState<string>('');
   const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
+
+  // ——— Assessment State (Pre/Post/Delayed Tests) ———
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [assessmentType, setAssessmentType] = useState<'pre_test' | 'post_test' | 'delayed_post_test'>('pre_test');
+  const [assessmentQuestion, setAssessmentQuestion] = useState<QuestionData | null>(null);
+  const [assessmentResult, setAssessmentResult] = useState<{ correct: boolean; correctAnswer: string; selectedAnswer: string } | null>(null);
+  const [assessmentSelected, setAssessmentSelected] = useState<string | null>(null);
+  const [assessmentScore, setAssessmentScore] = useState<{ score: number; maxScore: number; passed: boolean } | null>(null);
+  const [delayedTestAvailable, setDelayedTestAvailable] = useState<{ sessionId: string; daysRemaining?: number } | null>(null);
 
   // ——— Learning-First Onboarding ———
   const FOUNDATION_KCS = [
@@ -385,6 +406,88 @@ export default function QuizPage() {
     fetchNextQuestion(resumableSessionId);
   };
 
+  // —— Assessment flow helpers ————————————————————————————————————————
+
+  const startAssessment = async (type: 'pre_test' | 'post_test' | 'delayed_post_test', linkedSessionId?: string) => {
+    setAppState('loading');
+    setAssessmentType(type);
+    try {
+      const res = await fetch('/api/assessments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, sessionId: linkedSessionId || null, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create assessment');
+      setAssessmentId(data.assessmentId);
+      await fetchAssessmentQuestion(data.assessmentId);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+      setAppState('error');
+    }
+  };
+
+  const fetchAssessmentQuestion = async (aId: string) => {
+    try {
+      const res = await fetch(`/api/assessments/${aId}/next-question`);
+      const data = await res.json();
+      if (data.completed) {
+        setAssessmentScore({ score: data.score, maxScore: data.maxScore, passed: data.passed });
+        setAssessmentQuestion(null);
+        setAssessmentResult(null);
+        setAssessmentSelected(null);
+        setAppState('assessment');
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || 'Failed to load question');
+      setAssessmentQuestion(data);
+      setAssessmentResult(null);
+      setAssessmentSelected(null);
+      setAppState('assessment');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+      setAppState('error');
+    }
+  };
+
+  const submitAssessmentAnswer = async (answer: string) => {
+    if (!assessmentQuestion || !assessmentId) return;
+    setAssessmentSelected(answer);
+    try {
+      const res = await fetch(`/api/assessments/${assessmentId}/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionId: assessmentQuestion.questionId,
+          selectedAnswer: answer,
+          optionsMap: assessmentQuestion.options,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit answer');
+      setAssessmentResult(data);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+      setAppState('error');
+    }
+  };
+
+  const handleAssessmentNext = () => {
+    if (assessmentId) fetchAssessmentQuestion(assessmentId);
+  };
+
+  const handleAssessmentComplete = () => {
+    setAssessmentId(null);
+    setAssessmentScore(null);
+    if (assessmentType === 'pre_test') {
+      // Pre-test done → proceed to main session
+      startSession();
+    } else {
+      // Post-test or delayed → back to start
+      setAppState('start');
+    }
+  };
+
   // ——— Render: Start Screen ———————————————————————————————————————————
 
   if (appState === 'start') {
@@ -515,14 +618,14 @@ export default function QuizPage() {
                       const queue = [...FOUNDATION_KCS];
                       setLearnQueue(queue);
                       learnQueueRef.current = queue;
-                      startSession();
+                      startAssessment('pre_test');
                     }}
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all"
                   >
                     Learn First, Then Assess →
                   </button>
                   <button
-                    onClick={startSession}
+                    onClick={() => startAssessment('pre_test')}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
                   >
                     Skip to Assessment
@@ -531,6 +634,15 @@ export default function QuizPage() {
                     New to UK Geography? Choose &quot;Learn First&quot; for guided instruction.
                   </p>
                 </div>
+
+                {delayedTestAvailable && (
+                  <button
+                    onClick={() => startAssessment('delayed_post_test', delayedTestAvailable.sessionId)}
+                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-all text-sm"
+                  >
+                    Take Retention Test (7-day follow-up)
+                  </button>
+                )}
 
                 <button
                   onClick={handleLogout}
@@ -673,13 +785,148 @@ export default function QuizPage() {
     };
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
             <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
           </div>
+          <button
+            onClick={() => startAssessment('post_test', sessionId)}
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+          >
+            Take Post-Test →
+          </button>
+          <p className="text-slate-500 text-xs text-center">
+            A retention test will be available in 7 days to measure long-term learning.
+          </p>
         </div>
       </main>
     );
+  }
+
+  // ——— Render: Assessment (Pre/Post/Delayed Test) ——————————————————————
+
+  if (appState === 'assessment') {
+    const typeLabels: Record<string, string> = {
+      pre_test: 'Pre-Test',
+      post_test: 'Post-Test',
+      delayed_post_test: 'Retention Test',
+    };
+    const typeLabel = typeLabels[assessmentType] || 'Assessment';
+
+    // Score screen after completion
+    if (assessmentScore && !assessmentQuestion) {
+      return (
+        <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6 text-center">
+              <div className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono tracking-widest uppercase">
+                {typeLabel} Complete
+              </div>
+              <div className="text-5xl font-bold text-white">
+                {Math.round(assessmentScore.score * 100)}%
+              </div>
+              <p className="text-slate-400">
+                You got {Math.round(assessmentScore.score * assessmentScore.maxScore)}/{assessmentScore.maxScore} questions correct
+              </p>
+              <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+                assessmentScore.passed
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+              }`}>
+                {assessmentScore.passed ? 'Passed' : 'Needs Improvement'}
+              </div>
+              <button
+                onClick={handleAssessmentComplete}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+              >
+                {assessmentType === 'pre_test' ? 'Continue to Learning →' : 'Done'}
+              </button>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // Question screen
+    if (assessmentQuestion) {
+      const aTotal = (assessmentQuestion.meta.questionsAnswered || 0) + (assessmentQuestion.meta.questionsRemaining || 0);
+      const aProgress = aTotal > 0 ? Math.round(((assessmentQuestion.meta.questionsAnswered || 0) / aTotal) * 100) : 0;
+
+      const assessOptionStyle = (label: string) => {
+        if (!assessmentResult) {
+          return assessmentSelected === label
+            ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+            : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer';
+        }
+        if (label === assessmentResult.correctAnswer) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
+        if (label === assessmentResult.selectedAnswer && !assessmentResult.correct) return 'border-red-400 bg-red-50 text-red-900';
+        return 'border-slate-200 bg-white text-slate-400';
+      };
+
+      return (
+        <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl space-y-4">
+            <div className="flex items-center justify-between text-xs text-slate-500 font-mono px-1">
+              <span className="inline-flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                  {typeLabel}
+                </span>
+                <span>{assessmentQuestion.meta.questionsAnswered}/{aTotal}</span>
+              </span>
+            </div>
+
+            <div className="h-1 w-full bg-slate-800 rounded-full">
+              <div
+                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                style={{ width: `${aProgress}%` }}
+              />
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${BLOOM_COLOURS[assessmentQuestion.bloom]}`}>
+                  {BLOOM_LABELS[assessmentQuestion.bloom]}
+                </span>
+              </div>
+
+              <h2 className="text-white text-lg font-medium leading-relaxed">
+                {assessmentQuestion.text}
+              </h2>
+
+              <div className="space-y-3">
+                {Object.entries(assessmentQuestion.options).map(([label, text]) => (
+                  <button
+                    key={label}
+                    onClick={() => !assessmentResult && !assessmentSelected && submitAssessmentAnswer(label)}
+                    disabled={!!assessmentResult || !!assessmentSelected}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${assessOptionStyle(label)}`}
+                  >
+                    <span className="font-mono font-bold text-sm mr-3 opacity-60">{label}</span>
+                    <span className="text-sm">{text}</span>
+                  </button>
+                ))}
+              </div>
+
+              {assessmentResult && (
+                <>
+                  <div className={`rounded-xl p-4 border ${assessmentResult.correct ? 'bg-emerald-950/50 border-emerald-800' : 'bg-red-950/50 border-red-800'}`}>
+                    <span className={`font-semibold text-sm ${assessmentResult.correct ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {assessmentResult.correct ? '✅ Correct!' : `❌ Incorrect — answer was ${assessmentResult.correctAnswer}`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleAssessmentNext}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+                  >
+                    Next Question →
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </main>
+      );
+    }
   }
 
   // ——— Render: Question / Feedback —————————————————————————————————————
