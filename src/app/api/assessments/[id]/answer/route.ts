@@ -76,11 +76,25 @@ export async function POST(
       isCorrect = selectedAnswer.toUpperCase() === correctLabel;
     }
 
-    // Store answer
+    // Store answer — questionId may be a QuestionVariant ID (not a Question ID).
+    // The Answer model FK points to Question, so for variant-based assessments
+    // we need to find a valid Question ID to use as a placeholder FK.
+    let storedQuestionId = questionId;
+    if (variant) {
+      // Get any question from the quiz for FK compliance (same approach as session answer route)
+      const anyQuestion = await prisma.question.findFirst({
+        where: { quizId: assessment.quizId },
+      });
+      if (anyQuestion) {
+        storedQuestionId = anyQuestion.id;
+      }
+    }
+
     await prisma.answer.create({
       data: {
         assessmentId,
-        questionId,
+        questionId: storedQuestionId,
+        selectedOptionId: questionId, // store the actual variant ID here for reference
         textAnswer: selectedAnswer.toUpperCase(),
         isCorrect,
       },
