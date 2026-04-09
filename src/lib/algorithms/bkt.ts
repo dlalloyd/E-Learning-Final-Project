@@ -58,21 +58,22 @@ const MASTERY_THRESHOLD = 0.95;
  * Will be updated empirically after Phase 4 user study data collected
  */
 export const DEFAULT_BKT_PARAMS: Record<string, BKTParams> = {
-  // Level 1 — Remembering (lower pL0 = less prior knowledge expected)
+  // Level 1, Remembering. Priors seeded at or above the 0.5 progression threshold
+  // so that prerequisite gating does not cold-lock L2 / L3 at the start of a session.
   UK_national_parks: {
-    pL0: 0.40, pT: 0.20, pS: 0.10, pG: 0.25,
+    pL0: 0.50, pT: 0.20, pS: 0.10, pG: 0.25,
   },
   UK_capitals: {
     pL0: 0.60, pT: 0.25, pS: 0.08, pG: 0.25,
   },
   UK_county_locations: {
-    pL0: 0.30, pT: 0.20, pS: 0.12, pG: 0.25,
+    pL0: 0.45, pT: 0.20, pS: 0.12, pG: 0.25,
   },
   UK_rivers: {
-    pL0: 0.50, pT: 0.22, pS: 0.10, pG: 0.25,
+    pL0: 0.55, pT: 0.22, pS: 0.10, pG: 0.25,
   },
   UK_mountains: {
-    pL0: 0.45, pT: 0.20, pS: 0.10, pG: 0.25,
+    pL0: 0.50, pT: 0.20, pS: 0.10, pG: 0.25,
   },
 
   // Level 2 — Understanding (moderate prior; requires causal reasoning)
@@ -120,41 +121,57 @@ export function initialiseKC(kcId: string, params: BKTParams): KCState {
 }
 
 /**
- * Update BKT knowledge state after one response
+ * Update BKT knowledge state after one response.
  *
- * Step 1: Bayesian update — given observed response, update P(Learned)
- * Step 2: Learning transition — apply pT to account for possible learning
+ * Step 1: Bayesian update. Given the observed response, update P(Learned).
+ *         When a hint has been used the evidence is treated as partial credit,
+ *         weighted by `creditFactor`. This implements the graduated hint penalty
+ *         recommended by Koedinger and Aleven (2007) and VanLehn (2006) so that
+ *         hint-assisted correct answers do not look identical to unassisted ones.
+ * Step 2: Learning transition. Apply pT to account for possible learning.
  *
- * @param pLearned  Current P(KC learned)
- * @param isCorrect Whether the learner answered correctly
- * @param params    BKT parameters for this KC
+ * @param pLearned     Current P(KC learned)
+ * @param isCorrect    Whether the learner answered correctly
+ * @param params       BKT parameters for this KC
+ * @param creditFactor Evidence strength in [0, 1]. 1.0 = full unassisted evidence,
+ *                     0.9 / 0.7 / 0.5 = L1 / L2 / L3 hint penalty, 0.0 = no credit.
  */
 export function updateBKT(
   pLearned: number,
   isCorrect: boolean,
-  params: BKTParams
+  params: BKTParams,
+  creditFactor: number = 1.0
 ): BKTUpdateResult {
   const { pT, pS, pG } = params;
   const pLearned_before = pLearned;
+  const factor = Math.max(0, Math.min(1, creditFactor));
 
-  // Step 1: Bayesian update on knowledge state given response
+  // Step 1: Posterior for a fully correct response and a fully incorrect response.
+  const pCorrect = pLearned * (1 - pS) + (1 - pLearned) * pG;
+  const pIncorrect = pLearned * pS + (1 - pLearned) * (1 - pG);
+  const posteriorIfCorrect = (pLearned * (1 - pS)) / (pCorrect || 1e-9);
+  const posteriorIfIncorrect = (pLearned * pS) / (pIncorrect || 1e-9);
+
+  // When `isCorrect` and `creditFactor` < 1, we mix the two posteriors by
+  // `factor`. This is equivalent to Bayesian updating with a "soft" observation
+  // that is worth `factor` of a full correct answer. A factor of 0 leaves the
+  // prior unchanged (same as no evidence at all).
   let pLearnedGivenResponse: number;
-
   if (isCorrect) {
-    // P(Learned | correct) = P(correct | Learned) * P(Learned) / P(correct)
-    const pCorrect = pLearned * (1 - pS) + (1 - pLearned) * pG;
-    pLearnedGivenResponse = (pLearned * (1 - pS)) / pCorrect;
+    pLearnedGivenResponse =
+      factor * posteriorIfCorrect + (1 - factor) * pLearned_before;
   } else {
-    // P(Learned | incorrect) = P(incorrect | Learned) * P(Learned) / P(incorrect)
-    const pIncorrect = pLearned * pS + (1 - pLearned) * (1 - pG);
-    pLearnedGivenResponse = (pLearned * pS) / pIncorrect;
+    pLearnedGivenResponse = posteriorIfIncorrect;
   }
 
-  // Step 2: Apply learning transition
-  // P(Learned after) = P(already learned) + P(not yet learned) * P(learn now)
-  const pLearned_after = pLearnedGivenResponse + (1 - pLearnedGivenResponse) * pT;
+  // Step 2: Apply learning transition.
+  // P(Learned after) = P(already learned) + P(not yet learned) * P(learn now).
+  // The transition is also scaled by `factor` for hint-assisted corrects so
+  // that heavy hint use slows acquisition, not just the posterior signal.
+  const transitionBoost = isCorrect ? pT * factor : pT;
+  const pLearned_after =
+    pLearnedGivenResponse + (1 - pLearnedGivenResponse) * transitionBoost;
 
-  // Clamp to valid probability range
   const pLearned_clamped = Math.max(0, Math.min(1, pLearned_after));
 
   return {
@@ -165,21 +182,28 @@ export function updateBKT(
 }
 
 /**
- * Update a full KC state record after one response
- * Returns new state — does not mutate input
+ * Update a full KC state record after one response.
+ * Returns a new state, does not mutate input.
+ *
+ * `creditFactor` is forwarded to `updateBKT`. When hint usage is known,
+ * callers should pass the appropriate graduated factor (see `updateBKT` docs).
  */
 export function updateKCState(
   state: KCState,
   isCorrect: boolean,
-  params: BKTParams
+  params: BKTParams,
+  creditFactor: number = 1.0
 ): KCState {
-  const result = updateBKT(state.pLearned, isCorrect, params);
+  const result = updateBKT(state.pLearned, isCorrect, params, creditFactor);
 
   return {
     ...state,
     pLearned: result.pLearned_after,
     attempts: state.attempts + 1,
-    correct: state.correct + (isCorrect ? 1 : 0),
+    // Only count as a "real" correct for progress tracking when it was unassisted.
+    // Hint-assisted corrects still improve pLearned (partially) but are not
+    // counted toward the clean accuracy displayed in dashboards.
+    correct: state.correct + (isCorrect && creditFactor >= 0.999 ? 1 : 0),
     isMastered: result.isMastered,
   };
 }

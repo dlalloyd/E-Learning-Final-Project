@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
 import { selectNextQuestion, itemInformation } from '@/lib/algorithms/irt';
 import type { IRTQuestion } from '@/lib/algorithms/irt';
+import type { KCState } from '@/lib/algorithms/bkt';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,6 +22,20 @@ function shuffleArray<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** Safely parse the session kcStates JSON into a Record<kcId, KCState> */
+function parseKcStates(raw: string | null | undefined): Record<string, KCState> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed as Record<string, KCState>;
+    }
+  } catch {
+    // fall through
+  }
+  return {};
 }
 
 /** Replace {variable} placeholders in template text */
@@ -101,16 +116,32 @@ export async function GET(
         .map((m) => m.kcId)
     );
 
-    const masteryMap = new Map<string, number>(kcMasteries.map((m) => [m.kcId, m.pLearned]));
+    // Mastery lookup: KCMastery rows are updated as the learner answers, but on
+    // a cold session they do not exist yet. We fall back to the in-session
+    // `kcStates` JSON which is seeded from BKT priors at session creation so
+    // prerequisite gating never starts from zero. KCMastery values always win
+    // when both sources disagree (they reflect the latest answer updates).
+    const sessionKcStates: Record<string, KCState> =
+      parseKcStates(session.kcStates);
+    const masteryMap = new Map<string, number>();
+    for (const [kcId, state] of Object.entries(sessionKcStates)) {
+      masteryMap.set(kcId, state.pLearned);
+    }
+    for (const m of kcMasteries) {
+      masteryMap.set(m.kcId, m.pLearned);
+    }
 
     function kcIsAccessible(kcId: string): boolean {
       const reqs = prerequisites.filter((p) => p.toKCId === kcId);
-      if (reqs.length === 0) return true; // no prerequisites — always accessible
-      // Use a relaxed threshold (0.5) so L2/L3 questions unlock after 1-2 correct L1 answers.
-      // The DB stores 0.8 for mastery gating, but for question selection we want
-      // progressive unlocking — full mastery gating is enforced at the KC level.
+      if (reqs.length === 0) return true; // no prerequisites
+      // 0.5 selection threshold so L2 / L3 unlock after the learner starts
+      // showing mastery of any prerequisite. We use `some` rather than `every`
+      // so a single satisfied prerequisite is enough to expose the dependent
+      // KC, which prevents cold-start lockout while still respecting the
+      // dependency graph for question selection. Full mastery gating (0.8)
+      // remains enforced separately at the KC mastery reporting layer.
       const SELECTION_THRESHOLD = 0.5;
-      return reqs.every((p) => (masteryMap.get(p.fromKCId) ?? 0) >= SELECTION_THRESHOLD);
+      return reqs.some((p) => (masteryMap.get(p.fromKCId) ?? 0) >= SELECTION_THRESHOLD);
     }
 
     // -------------------------------------------------------------------
@@ -212,7 +243,10 @@ export async function GET(
     const { options, correctLabel } = buildOptions(chosenVariant.correctAnswer, distractors);
 
     // -------------------------------------------------------------------
-    // Log VariantPresentation (for Isomorphic Variation tracking)
+    // Log VariantPresentation (for Isomorphic Variation tracking) and
+    // an AnalyticsEvent capturing the bloom level, kc, and theta at the
+    // point of selection. The analytics event is what lets us prove in the
+    // viva that the engine actually escalated across the session.
     // -------------------------------------------------------------------
     await prisma.variantPresentation.create({
       data: {
@@ -222,6 +256,22 @@ export async function GET(
         presentedAt: new Date(),
       },
     });
+
+    prisma.analyticsEvent
+      .create({
+        data: {
+          sessionId,
+          eventType: 'bloom_escalation',
+          payload: {
+            bloom: selectedCandidate.bloom,
+            kcId: selectedCandidate.kc,
+            templateId: selectedCandidate.templateId,
+            theta: session.theta,
+            questionIndex: totalPresentations + 1,
+          },
+        },
+      })
+      .catch((err: unknown) => console.warn('bloom_escalation log failed:', err));
 
     // -------------------------------------------------------------------
     // Calculate information value at current theta
