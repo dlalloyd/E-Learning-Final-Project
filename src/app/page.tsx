@@ -148,6 +148,10 @@ export default function QuizPage() {
   // ——— Cognitive Load State ———
   const [cognitiveLoad, setCognitiveLoad] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
 
+  // ——— Hint State (per question, reset on each new question) ———
+  const [hintsUsedThisQ, setHintsUsedThisQ] = useState(0);
+  const [hintLevelMaxThisQ, setHintLevelMaxThisQ] = useState(0);
+
   // ——— Instruction Mode State ———
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [currentKcId, setCurrentKcId] = useState<string>('');
@@ -199,6 +203,8 @@ export default function QuizPage() {
       setSelected(null);
       setResult(null);
       setCognitiveLoad(null);
+      setHintsUsedThisQ(0);
+      setHintLevelMaxThisQ(0);
       setStartTime(Date.now());
       setAppState('question');
     } catch (err) {
@@ -277,6 +283,8 @@ export default function QuizPage() {
           responseTimeMs,
           confidenceLevel,
           cognitiveLoad: cognitiveLoad ?? undefined,
+          hintsUsed: hintsUsedThisQ,
+          hintLevelMax: hintLevelMaxThisQ,
           optionsMap: question.options,
         }),
       });
@@ -1074,9 +1082,17 @@ export default function QuizPage() {
               </div>
             )}
 
-            {/* Hints (show after wrong answer) */}
-            {appState === 'feedback' && result && !result.correct && question && (
-              <HintPanel questionId={question.questionId} sessionId={sessionId} show={true} />
+            {/* Hints (available during question, before answering) */}
+            {appState === 'question' && question && !selected && (
+              <HintPanel
+                questionId={question.questionId}
+                sessionId={sessionId}
+                show={true}
+                onHintRevealed={(level) => {
+                  setHintsUsedThisQ((prev) => prev + 1);
+                  setHintLevelMaxThisQ((prev) => Math.max(prev, level));
+                }}
+              />
             )}
 
             {/* Next button */}

@@ -17,6 +17,7 @@ interface HintPanelProps {
   questionId: string;
   sessionId: string;
   show: boolean;
+  onHintRevealed?: (level: number) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,7 +34,7 @@ const HINT_LEVEL_LABELS: Record<number, string> = {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function HintPanel({ questionId, sessionId, show }: HintPanelProps) {
+export default function HintPanel({ questionId, sessionId, show, onHintRevealed }: HintPanelProps) {
   const [hints, setHints] = useState<Hint[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -108,7 +109,8 @@ export default function HintPanel({ questionId, sessionId, show }: HintPanelProp
     setRevealedCount(nextCount);
     setViewedIds((prev) => new Set(prev).add(nextHint.id));
     logHintEvent(nextHint);
-  }, [revealedCount, hints, logHintEvent]);
+    onHintRevealed?.(nextHint.hintLevel);
+  }, [revealedCount, hints, logHintEvent, onHintRevealed]);
 
   // Don't render anything when hidden
   if (!show) return null;
@@ -186,12 +188,17 @@ export default function HintPanel({ questionId, sessionId, show }: HintPanelProp
 
           {/* Reveal button */}
           {hasMore && (
-            <button
-              onClick={revealNextHint}
-              className="w-full rounded-md border border-indigo-500/30 bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30 hover:text-indigo-200"
-            >
-              {revealedCount === 0 ? 'Show Hint' : 'Show Next Hint'}
-            </button>
+            <div className="space-y-1">
+              <button
+                onClick={revealNextHint}
+                className="w-full rounded-md border border-indigo-500/30 bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30 hover:text-indigo-200"
+              >
+                {revealedCount === 0 ? 'Show Hint' : 'Show Next Hint'}
+              </button>
+              <p className="text-center text-xs text-slate-500">
+                Using hints reduces mastery credit for this question
+              </p>
+            </div>
           )}
 
           {/* All revealed */}

@@ -167,8 +167,12 @@ model Interaction {
   pLearned_before Float
   pLearned_after  Float
 
-  // Cognitive load rating (NASA-TLX style): 1=Very easy … 5=Very difficult
+  // Cognitive load rating (NASA-TLX style): 1=Very easy, 5=Very difficult
   cognitiveLoad Int?
+
+  // Hint usage tracking for graduated mastery penalty (Koedinger & Aleven, 2007)
+  hintsUsed    Int @default(0) // total hints revealed before answering
+  hintLevelMax Int @default(0) // highest hint level used (1=conceptual, 2=procedural, 3=worked example)
 
   createdAt DateTime @default(now())
 
