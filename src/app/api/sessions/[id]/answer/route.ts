@@ -167,9 +167,20 @@ export async function POST(
     const isMastered = updatedKCState.pLearned >= 0.95;
 
     // -------------------------------------------------------------------
-    // KCMastery + Confidence Calibration — fire-and-forget in parallel
+    // KCMastery + Confidence Calibration + UserVariantSeen — fire-and-forget
     // -------------------------------------------------------------------
     const sideEffects: Promise<unknown>[] = [];
+
+    // Track cross-session variant dedup: upsert whenever a variant is answered
+    if (isVariant) {
+      sideEffects.push(
+        prisma.userVariantSeen.upsert({
+          where: { userId_variantId: { userId: session.userId, variantId: questionId } },
+          create: { userId: session.userId, variantId: questionId },
+          update: {},
+        }).catch((err: unknown) => console.warn('UserVariantSeen upsert failed:', err))
+      );
+    }
 
     if (kc) {
       sideEffects.push(

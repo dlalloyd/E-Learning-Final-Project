@@ -89,7 +89,7 @@ export async function GET(
     // -------------------------------------------------------------------
     // Parallel fetch: all independent queries at once
     // -------------------------------------------------------------------
-    const [presentations, templates, kcMasteries, prerequisites] = await Promise.all([
+    const [presentations, templates, kcMasteries, prerequisites, userVariantsSeen] = await Promise.all([
       prisma.variantPresentation.findMany({
         where: { sessionId },
         select: { variantId: true },
@@ -101,9 +101,15 @@ export async function GET(
         where: { sessionId },
       }),
       prisma.prerequisiteEdge.findMany(),
+      // Cross-session dedup: all variants this user has ever seen
+      prisma.userVariantSeen.findMany({
+        where: { userId: session.userId },
+        select: { variantId: true },
+      }),
     ]);
 
     const presentedVariantIds = new Set(presentations.map((p) => p.variantId));
+    const seenVariantIds = new Set(userVariantsSeen.map((v) => v.variantId));
 
     if (templates.length === 0) {
       return serveStaticQuestion(session, sessionId);
@@ -150,21 +156,35 @@ export async function GET(
     // A template is eligible if it has at least one unseen variant
     const candidates: Array<IRTQuestion & { templateId: string; eligibleVariantIds: string[] }> = [];
 
+    // Track whether any template was excluded solely due to cross-session dedup
+    let crossSessionPoolExhausted = false;
+
     for (const template of templates) {
-      const unseenVariants = template.variants.filter(
+      // Session-level filter: not already answered this session
+      const notThisSession = template.variants.filter(
         (v) => !presentedVariantIds.has(v.id)
       );
-      if (unseenVariants.length === 0) continue;
+      if (notThisSession.length === 0) continue;
 
       // Skip KCs whose prerequisites are not yet mastered
       if (!kcIsAccessible(template.kcId)) continue;
+
+      // Cross-session filter: prefer unseen variants; fall back to seen ones
+      const freshVariants = notThisSession.filter((v) => !seenVariantIds.has(v.id));
+      const eligibleVariantIds = freshVariants.length > 0
+        ? freshVariants.map((v) => v.id)
+        : notThisSession.map((v) => v.id); // fallback: review question
+
+      if (freshVariants.length === 0 && notThisSession.length > 0) {
+        crossSessionPoolExhausted = true;
+      }
 
       // Boost information value for decayed KCs (successive relearning)
       const isDecayed = decayedKCIds.has(template.kcId);
 
       candidates.push({
         id: template.id,
-        text: template.templateText, // placeholder — will be rendered from variant
+        text: template.templateText, // placeholder, will be rendered from variant
         options: {},
         correct: 'A', // placeholder
         bloom: (template.bloomLevel as 1 | 2 | 3) || 1,
@@ -173,8 +193,21 @@ export async function GET(
         b: template.difficulty,
         c: template.guessingParam,
         templateId: template.id,
-        eligibleVariantIds: unseenVariants.map((v) => v.id),
+        eligibleVariantIds,
       });
+    }
+
+    // Log when pool is exhausted for analytics traceability
+    if (crossSessionPoolExhausted) {
+      prisma.analyticsEvent
+        .create({
+          data: {
+            sessionId,
+            eventType: 'variant_pool_exhausted',
+            payload: { userId: session.userId, totalSeen: seenVariantIds.size },
+          },
+        })
+        .catch(() => {});
     }
 
     // -------------------------------------------------------------------
@@ -297,6 +330,7 @@ export async function GET(
         questionsRemaining: Math.max(0, TARGET_QUESTIONS - totalPresentations),
         condition: session.condition,
         isVariant: true,
+        isReview: seenVariantIds.has(chosenVariantId), // true = user has seen this before
       },
     });
 
