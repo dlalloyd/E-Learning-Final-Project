@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Interaction" ADD COLUMN "hintsUsed" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Interaction" ADD COLUMN "hintLevelMax" INTEGER NOT NULL DEFAULT 0;

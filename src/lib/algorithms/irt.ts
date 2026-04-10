@@ -235,6 +235,35 @@ export function initialiseLearner(): LearnerState {
 }
 
 /**
+ * Estimate a starting theta from a short-form assessment score.
+ *
+ * Closed-form logit transformation with Laplace smoothing so that perfect and
+ * zero scores map to finite values. Output is clamped to a sensible range
+ * (-2.5 .. 2.5) because a 13-question pre-test cannot reliably distinguish
+ * beyond that band. Used by POST /api/sessions to seed the learning session
+ * from a completed pre-test, so the learner is not forced back to the default
+ * novice prior after demonstrating ability.
+ *
+ * References: Baker (2001), Item Response Theory: Parameter Estimation
+ * Techniques (2nd ed), chapter 4 on short-form calibration.
+ *
+ * @param correct Number of items answered correctly
+ * @param total   Total number of items in the assessment
+ * @returns EAP-like theta estimate, clamped to [-2.5, 2.5]
+ */
+export function estimateThetaFromAssessment(
+  correct: number,
+  total: number
+): number {
+  if (total <= 0) return THETA_INITIAL;
+  const c = Math.max(0, Math.min(correct, total));
+  const incorrect = total - c;
+  const logitRaw = Math.log((c + 0.5) / (incorrect + 0.5));
+  const theta = logitRaw / D;
+  return Math.max(-2.5, Math.min(2.5, theta));
+}
+
+/**
  * Update learner state after a response
  * Returns new state — does not mutate input
  */

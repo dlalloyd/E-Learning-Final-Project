@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
 import { selectNextQuestion, itemInformation } from '@/lib/algorithms/irt';
 import type { IRTQuestion } from '@/lib/algorithms/irt';
+import type { KCState } from '@/lib/algorithms/bkt';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,6 +22,20 @@ function shuffleArray<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** Safely parse the session kcStates JSON into a Record<kcId, KCState> */
+function parseKcStates(raw: string | null | undefined): Record<string, KCState> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed as Record<string, KCState>;
+    }
+  } catch {
+    // fall through
+  }
+  return {};
 }
 
 /** Replace {variable} placeholders in template text */
@@ -74,7 +89,7 @@ export async function GET(
     // -------------------------------------------------------------------
     // Parallel fetch: all independent queries at once
     // -------------------------------------------------------------------
-    const [presentations, templates, kcMasteries, prerequisites] = await Promise.all([
+    const [presentations, templates, kcMasteries, prerequisites, userVariantsSeen] = await Promise.all([
       prisma.variantPresentation.findMany({
         where: { sessionId },
         select: { variantId: true },
@@ -86,9 +101,15 @@ export async function GET(
         where: { sessionId },
       }),
       prisma.prerequisiteEdge.findMany(),
+      // Cross-session dedup: all variants this user has ever seen
+      prisma.userVariantSeen.findMany({
+        where: { userId: session.userId },
+        select: { variantId: true },
+      }),
     ]);
 
     const presentedVariantIds = new Set(presentations.map((p) => p.variantId));
+    const seenVariantIds = new Set(userVariantsSeen.map((v) => v.variantId));
 
     if (templates.length === 0) {
       return serveStaticQuestion(session, sessionId);
@@ -101,16 +122,32 @@ export async function GET(
         .map((m) => m.kcId)
     );
 
-    const masteryMap = new Map<string, number>(kcMasteries.map((m) => [m.kcId, m.pLearned]));
+    // Mastery lookup: KCMastery rows are updated as the learner answers, but on
+    // a cold session they do not exist yet. We fall back to the in-session
+    // `kcStates` JSON which is seeded from BKT priors at session creation so
+    // prerequisite gating never starts from zero. KCMastery values always win
+    // when both sources disagree (they reflect the latest answer updates).
+    const sessionKcStates: Record<string, KCState> =
+      parseKcStates(session.kcStates);
+    const masteryMap = new Map<string, number>();
+    for (const [kcId, state] of Object.entries(sessionKcStates)) {
+      masteryMap.set(kcId, state.pLearned);
+    }
+    for (const m of kcMasteries) {
+      masteryMap.set(m.kcId, m.pLearned);
+    }
 
     function kcIsAccessible(kcId: string): boolean {
       const reqs = prerequisites.filter((p) => p.toKCId === kcId);
-      if (reqs.length === 0) return true; // no prerequisites — always accessible
-      // Use a relaxed threshold (0.5) so L2/L3 questions unlock after 1-2 correct L1 answers.
-      // The DB stores 0.8 for mastery gating, but for question selection we want
-      // progressive unlocking — full mastery gating is enforced at the KC level.
+      if (reqs.length === 0) return true; // no prerequisites
+      // 0.5 selection threshold so L2 / L3 unlock after the learner starts
+      // showing mastery of any prerequisite. We use `some` rather than `every`
+      // so a single satisfied prerequisite is enough to expose the dependent
+      // KC, which prevents cold-start lockout while still respecting the
+      // dependency graph for question selection. Full mastery gating (0.8)
+      // remains enforced separately at the KC mastery reporting layer.
       const SELECTION_THRESHOLD = 0.5;
-      return reqs.every((p) => (masteryMap.get(p.fromKCId) ?? 0) >= SELECTION_THRESHOLD);
+      return reqs.some((p) => (masteryMap.get(p.fromKCId) ?? 0) >= SELECTION_THRESHOLD);
     }
 
     // -------------------------------------------------------------------
@@ -119,21 +156,35 @@ export async function GET(
     // A template is eligible if it has at least one unseen variant
     const candidates: Array<IRTQuestion & { templateId: string; eligibleVariantIds: string[] }> = [];
 
+    // Track whether any template was excluded solely due to cross-session dedup
+    let crossSessionPoolExhausted = false;
+
     for (const template of templates) {
-      const unseenVariants = template.variants.filter(
+      // Session-level filter: not already answered this session
+      const notThisSession = template.variants.filter(
         (v) => !presentedVariantIds.has(v.id)
       );
-      if (unseenVariants.length === 0) continue;
+      if (notThisSession.length === 0) continue;
 
       // Skip KCs whose prerequisites are not yet mastered
       if (!kcIsAccessible(template.kcId)) continue;
+
+      // Cross-session filter: prefer unseen variants; fall back to seen ones
+      const freshVariants = notThisSession.filter((v) => !seenVariantIds.has(v.id));
+      const eligibleVariantIds = freshVariants.length > 0
+        ? freshVariants.map((v) => v.id)
+        : notThisSession.map((v) => v.id); // fallback: review question
+
+      if (freshVariants.length === 0 && notThisSession.length > 0) {
+        crossSessionPoolExhausted = true;
+      }
 
       // Boost information value for decayed KCs (successive relearning)
       const isDecayed = decayedKCIds.has(template.kcId);
 
       candidates.push({
         id: template.id,
-        text: template.templateText, // placeholder — will be rendered from variant
+        text: template.templateText, // placeholder, will be rendered from variant
         options: {},
         correct: 'A', // placeholder
         bloom: (template.bloomLevel as 1 | 2 | 3) || 1,
@@ -142,8 +193,21 @@ export async function GET(
         b: template.difficulty,
         c: template.guessingParam,
         templateId: template.id,
-        eligibleVariantIds: unseenVariants.map((v) => v.id),
+        eligibleVariantIds,
       });
+    }
+
+    // Log when pool is exhausted for analytics traceability
+    if (crossSessionPoolExhausted) {
+      prisma.analyticsEvent
+        .create({
+          data: {
+            sessionId,
+            eventType: 'variant_pool_exhausted',
+            payload: { userId: session.userId, totalSeen: seenVariantIds.size },
+          },
+        })
+        .catch(() => {});
     }
 
     // -------------------------------------------------------------------
@@ -212,7 +276,10 @@ export async function GET(
     const { options, correctLabel } = buildOptions(chosenVariant.correctAnswer, distractors);
 
     // -------------------------------------------------------------------
-    // Log VariantPresentation (for Isomorphic Variation tracking)
+    // Log VariantPresentation (for Isomorphic Variation tracking) and
+    // an AnalyticsEvent capturing the bloom level, kc, and theta at the
+    // point of selection. The analytics event is what lets us prove in the
+    // viva that the engine actually escalated across the session.
     // -------------------------------------------------------------------
     await prisma.variantPresentation.create({
       data: {
@@ -222,6 +289,22 @@ export async function GET(
         presentedAt: new Date(),
       },
     });
+
+    prisma.analyticsEvent
+      .create({
+        data: {
+          sessionId,
+          eventType: 'bloom_escalation',
+          payload: {
+            bloom: selectedCandidate.bloom,
+            kcId: selectedCandidate.kc,
+            templateId: selectedCandidate.templateId,
+            theta: session.theta,
+            questionIndex: totalPresentations + 1,
+          },
+        },
+      })
+      .catch((err: unknown) => console.warn('bloom_escalation log failed:', err));
 
     // -------------------------------------------------------------------
     // Calculate information value at current theta
@@ -247,6 +330,7 @@ export async function GET(
         questionsRemaining: Math.max(0, TARGET_QUESTIONS - totalPresentations),
         condition: session.condition,
         isVariant: true,
+        isReview: seenVariantIds.has(chosenVariantId), // true = user has seen this before
       },
     });
 

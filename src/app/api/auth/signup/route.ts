@@ -2,9 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db/client';
 import { signToken, setAuthCookie } from '@/lib/auth/jwt';
+import { checkRateLimit, getClientIp } from '@/lib/auth/rate-limit';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PASSWORD_MIN_LENGTH = 8;
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`signup:${ip}`);
+    if (rl.limited) {
+      return NextResponse.json(
+        { error: 'Too many signup attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const { email, name, password } = await req.json();
 
     if (!email || !name || !password) {
@@ -14,9 +28,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Email validation
+    if (!EMAIL_REGEX.test(email)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Please enter a valid email address' },
+        { status: 400 }
+      );
+    }
+
+    // Password strength: min 8 chars, at least one letter and one digit
+    // (NIST SP 800-63B: no mandatory special characters)
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return NextResponse.json(
+        { error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+    if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one letter and one number' },
         { status: 400 }
       );
     }

@@ -23,7 +23,7 @@ export async function POST(
   try {
     const sessionId = params.id;
     const body = await req.json();
-    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel, cognitiveLoad, optionsMap } = body;
+    const { questionId, selectedAnswer, responseTimeMs, confidenceLevel, cognitiveLoad, optionsMap, hintsUsed, hintLevelMax } = body;
 
     if (!questionId || !selectedAnswer) {
       return NextResponse.json(
@@ -152,19 +152,35 @@ export async function POST(
     const eap = eapEstimate(allResponses);
 
     // -------------------------------------------------------------------
-    // BKT Update
+    // BKT Update with graduated hint penalty (Koedinger & Aleven, 2007)
+    // Credit factor: no hints = 1.0, L1 = 0.9, L2 = 0.7, L3 = 0.5
     // -------------------------------------------------------------------
+    const hintLevel = typeof hintLevelMax === 'number' ? hintLevelMax : 0;
+    const HINT_CREDIT: Record<number, number> = { 0: 1.0, 1: 0.9, 2: 0.7, 3: 0.5 };
+    const creditFactor = HINT_CREDIT[hintLevel] ?? 0.5;
+
     const kcStates: Record<string, KCState> = JSON.parse(session.kcStates || '{}');
     const currentKCState: KCState = kcStates[kc] || { ...DEFAULT_BKT_PARAMS };
     const bktParams = DEFAULT_BKT_PARAMS[kc] || DEFAULT_BKT_PARAMS['UK_capitals'];
-    const updatedKCState = updateKCState(currentKCState, isCorrect, bktParams);
+    const updatedKCState = updateKCState(currentKCState, isCorrect, bktParams, creditFactor);
     kcStates[kc] = updatedKCState;
     const isMastered = updatedKCState.pLearned >= 0.95;
 
     // -------------------------------------------------------------------
-    // KCMastery + Confidence Calibration — fire-and-forget in parallel
+    // KCMastery + Confidence Calibration + UserVariantSeen — fire-and-forget
     // -------------------------------------------------------------------
     const sideEffects: Promise<unknown>[] = [];
+
+    // Track cross-session variant dedup: upsert whenever a variant is answered
+    if (isVariant) {
+      sideEffects.push(
+        prisma.userVariantSeen.upsert({
+          where: { userId_variantId: { userId: session.userId, variantId: questionId } },
+          create: { userId: session.userId, variantId: questionId },
+          update: {},
+        }).catch((err: unknown) => console.warn('UserVariantSeen upsert failed:', err))
+      );
+    }
 
     if (kc) {
       sideEffects.push(
@@ -245,6 +261,8 @@ export async function POST(
               pLearned_before: currentKCState.pLearned,
               pLearned_after: updatedKCState.pLearned,
               cognitiveLoad: cognitiveLoad ?? null,
+              hintsUsed: typeof hintsUsed === 'number' ? hintsUsed : 0,
+              hintLevelMax: hintLevel,
             },
           }),
           prisma.session.update({
@@ -279,11 +297,13 @@ export async function POST(
             selectedAnswer: selectedAnswer.toString().toUpperCase(),
             isCorrect,
             responseTimeMs: responseTimeMs || 0,
-              theta_before: session.theta,
-              theta_after: eap.theta,
-              pLearned_before: currentKCState.pLearned,
-              pLearned_after: updatedKCState.pLearned,
-              cognitiveLoad: cognitiveLoad ?? null,
+            theta_before: session.theta,
+            theta_after: eap.theta,
+            pLearned_before: currentKCState.pLearned,
+            pLearned_after: updatedKCState.pLearned,
+            cognitiveLoad: cognitiveLoad ?? null,
+            hintsUsed: typeof hintsUsed === 'number' ? hintsUsed : 0,
+            hintLevelMax: hintLevel,
           },
         }),
         prisma.session.update({
@@ -320,6 +340,7 @@ export async function POST(
         pLearned_before: currentKCState.pLearned,
         pLearned_after: updatedKCState.pLearned,
         isMastered,
+        creditFactor,
       },
       interactionId,
     });

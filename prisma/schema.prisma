@@ -23,10 +23,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions    Session[]
-  assessments Assessment[]
-  progress    UserProgress[]
-  badges      UserBadge[]
+  sessions      Session[]
+  assessments   Assessment[]
+  progress      UserProgress[]
+  badges        UserBadge[]
+  variantsSeen  UserVariantSeen[]
 }
 
 // ─── Topic / Lesson / Quiz ────────────────────────────────────────────────────
@@ -125,11 +126,16 @@ model Session {
   analyticsEvents AnalyticsEvent[]
   completedAt     DateTime?
 
-  // IRT learner state — updated after each response via EAP
-  theta   Float @default(-0.780) // current ability estimate (self-pilot θ₀)
+  // Optional link to the assessment (pre-test) that seeded this session's
+  // initial theta and BKT priors. When set, the learner demonstrated ability
+  // in the pre-test and the engine started above the novice default.
+  startedFromAssessmentId String?
+
+  // IRT learner state, updated after each response via EAP
+  theta   Float @default(-0.780) // current ability estimate (self-pilot theta_0)
   thetaSd Float @default(0.543) // posterior standard deviation
 
-  // BKT state stored as JSON — Record<kcId, KCState>
+  // BKT state stored as JSON, Record<kcId, KCState>
   kcStates String @default("{}") // JSON serialised
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -142,6 +148,9 @@ model Session {
   variantPresentations  VariantPresentation[]
   confidenceCalibration ConfidenceCalibration?
   sessionSummary        SessionSummary?
+
+  @@index([userId])
+  @@index([quizId])
 }
 
 // ─── Interaction (single Q&A event) ──────────────────────────────────────────
@@ -162,13 +171,20 @@ model Interaction {
   pLearned_before Float
   pLearned_after  Float
 
-  // Cognitive load rating (NASA-TLX style): 1=Very easy … 5=Very difficult
+  // Cognitive load rating (NASA-TLX style): 1=Very easy, 5=Very difficult
   cognitiveLoad Int?
+
+  // Hint usage tracking for graduated mastery penalty (Koedinger & Aleven, 2007)
+  hintsUsed    Int @default(0) // total hints revealed before answering
+  hintLevelMax Int @default(0) // highest hint level used (1=conceptual, 2=procedural, 3=worked example)
 
   createdAt DateTime @default(now())
 
   session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([questionId])
 }
 
 // ─── Assessment (pre/post/delayed test) ──────────────────────────────────────
@@ -190,6 +206,10 @@ model Assessment {
   quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   session Session? @relation(fields: [sessionId], references: [id])
   answers Answer[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([quizId])
 }
 
 model Answer {
@@ -203,6 +223,9 @@ model Answer {
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([questionId])
 }
 
 // ─── Progress / Badges ────────────────────────────────────────────────────────
@@ -351,6 +374,8 @@ model AnalyticsEvent {
 
   sessionId String
   session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 // ============================================
@@ -423,6 +448,7 @@ model QuestionVariant {
 
   template      QuestionTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
   presentations VariantPresentation[]
+  seenBy        UserVariantSeen[]
 
   @@index([templateId])
 }
@@ -486,4 +512,20 @@ model SessionSummary {
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+}
+
+// ——— User Variant Seen (cross-session deduplication) ——————————————————
+
+model UserVariantSeen {
+  id          String   @id @default(cuid())
+  userId      String
+  variantId   String
+  firstSeenAt DateTime @default(now())
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant QuestionVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, variantId])
+  @@index([userId])
+  @@index([variantId])
 }

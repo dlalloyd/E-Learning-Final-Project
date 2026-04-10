@@ -6,13 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
-import { THETA_INITIAL, THETA_INITIAL_SD } from '@/lib/algorithms/irt';
+import { THETA_INITIAL, THETA_INITIAL_SD, estimateThetaFromAssessment } from '@/lib/algorithms/irt';
 import { initialiseAllKCs } from '@/lib/algorithms/bkt';
+import type { KCState } from '@/lib/algorithms/bkt';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, quizId, condition = 'adaptive' } = body;
+    const { userId, quizId, condition = 'adaptive', seedFromAssessmentId } = body;
 
     // Validate required fields
     if (!userId || !quizId) {
@@ -30,23 +31,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify user exists (authenticated users pass their cuid; legacy fallback for study IDs)
-    let resolvedUserId = userId;
+    // Verify user exists (must be an authenticated user)
     const existingUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!existingUser) {
-      // Legacy: create study participant with @study.local email
-      const user = await prisma.user.upsert({
-        where: { email: `${userId}@study.local` },
-        update: {},
-        create: {
-          email: `${userId}@study.local`,
-          name: userId,
-          password: 'study-participant',
-          role: 'learner',
-        },
-      });
-      resolvedUserId = user.id;
+      return NextResponse.json(
+        { error: 'User not found. Please log in first.' },
+        { status: 401 }
+      );
     }
+    const resolvedUserId = userId;
 
     // Verify quiz exists
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
@@ -57,15 +50,65 @@ export async function POST(req: NextRequest) {
     // Initialise BKT KC states for all 13 knowledge components
     const initialKCStates = initialiseAllKCs();
 
-    // Create session with IRT priors from self-pilot (θ₀ = -0.780)
+    // Seed from pre-test if assessment ID provided
+    let startingTheta = THETA_INITIAL;
+    let startingThetaSd = THETA_INITIAL_SD;
+    let assessmentLink: string | null = null;
+
+    if (seedFromAssessmentId) {
+      const assessment = await prisma.assessment.findUnique({
+        where: { id: seedFromAssessmentId },
+        include: {
+          answers: {
+            include: {
+              question: { select: { kc: true } },
+            },
+          },
+        },
+      });
+
+      if (assessment && assessment.completedAt) {
+        const totalQ = assessment.answers.length;
+        const correctCount = assessment.answers.filter((a) => a.isCorrect).length;
+
+        if (totalQ > 0) {
+          // Compute seeded theta from pre-test score
+          startingTheta = estimateThetaFromAssessment(correctCount, totalQ);
+          // Tighter prior SD because we have evidence from the pre-test
+          startingThetaSd = 0.35;
+          assessmentLink = assessment.id;
+
+          // Per-KC BKT nudge: +0.15 for each KC the learner answered correctly,
+          // capped at 0.85 so the session still has room to track mastery growth.
+          const correctKCs = new Set<string>();
+          for (const ans of assessment.answers) {
+            if (ans.isCorrect && ans.question.kc) {
+              correctKCs.add(ans.question.kc);
+            }
+          }
+          for (const kcId of correctKCs) {
+            if (initialKCStates[kcId]) {
+              const current = initialKCStates[kcId] as KCState;
+              initialKCStates[kcId] = {
+                ...current,
+                pLearned: Math.min(0.85, current.pLearned + 0.15),
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Create session with IRT priors (seeded from pre-test when available)
     const session = await prisma.session.create({
       data: {
         userId: resolvedUserId,
         quizId,
         condition,
-        theta: THETA_INITIAL,       // -0.780 logits (self-pilot EAP, 26/02/2026)
-        thetaSd: THETA_INITIAL_SD,  // 0.543
+        theta: startingTheta,
+        thetaSd: startingThetaSd,
         kcStates: JSON.stringify(initialKCStates),
+        startedFromAssessmentId: assessmentLink,
       },
     });
 
@@ -74,6 +117,7 @@ export async function POST(req: NextRequest) {
       condition: session.condition,
       theta: session.theta,
       thetaSd: session.thetaSd,
+      seededFromAssessment: !!assessmentLink,
       message: 'Session created successfully',
     }, { status: 201 });
 

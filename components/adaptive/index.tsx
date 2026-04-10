@@ -6,6 +6,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import {
+  TrendingUp, ArrowRight, TrendingDown, RefreshCw,
+  AlertTriangle, Lightbulb, Check,
+} from 'lucide-react';
 
 // ============================================================================
 // CONFIDENCE SELECTOR (CBM)
@@ -224,9 +228,9 @@ export function SessionSummary({
 }: SessionSummaryProps) {
   const getTypeIcon = (type: 'improvement' | 'maintenance' | 'decline') => {
     switch (type) {
-      case 'improvement': return '📈';
-      case 'maintenance': return '➡️';
-      case 'decline': return '📉';
+      case 'improvement': return <TrendingUp className="w-4 h-4" />;
+      case 'maintenance': return <ArrowRight className="w-4 h-4" />;
+      case 'decline': return <TrendingDown className="w-4 h-4" />;
     }
   };
 
@@ -241,7 +245,7 @@ export function SessionSummary({
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-        Session Complete! 🎉
+        Session Complete!
       </h2>
 
       {/* Accuracy Summary */}
@@ -259,9 +263,9 @@ export function SessionSummary({
       {/* Relearning Badge */}
       {itemsRelearned > 0 && (
         <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg mb-4 text-amber-700">
-          <span className="text-xl">↻</span>
+          <RefreshCw className="w-5 h-5" />
           <span className="text-sm">
-            <strong>{itemsRelearned} concepts reinforced</strong> — protecting against forgetting
+            <strong>{itemsRelearned} concepts reinforced</strong>, protecting against forgetting
           </span>
         </div>
       )}
@@ -404,7 +408,7 @@ export function CalibrationFeedback({
           </span>
           {isOverconfident && (
             <span className="ml-2 text-xs text-amber-600">
-              ⚠️ Consider being more careful
+              <AlertTriangle className="w-3 h-3 inline mr-1" />Consider being more careful
             </span>
           )}
         </div>
@@ -417,7 +421,7 @@ export function CalibrationFeedback({
           </span>
           {isUnderconfident && (
             <span className="ml-2 text-xs text-green-600">
-              💡 Trust yourself more!
+              <Lightbulb className="w-3 h-3 inline mr-1" />Trust yourself more!
             </span>
           )}
         </div>
@@ -425,7 +429,7 @@ export function CalibrationFeedback({
       
       {isWellCalibrated && (
         <div className="text-sm text-green-600 font-medium">
-          ✓ Well calibrated — your confidence matches your accuracy
+          <Check className="w-4 h-4 inline mr-1" />Well calibrated. Your confidence matches your accuracy.
         </div>
       )}
     </div>
