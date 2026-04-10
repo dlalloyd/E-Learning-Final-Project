@@ -147,6 +147,9 @@ model Session {
   variantPresentations  VariantPresentation[]
   confidenceCalibration ConfidenceCalibration?
   sessionSummary        SessionSummary?
+
+  @@index([userId])
+  @@index([quizId])
 }
 
 // ─── Interaction (single Q&A event) ──────────────────────────────────────────
@@ -178,6 +181,9 @@ model Interaction {
 
   session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([questionId])
 }
 
 // ─── Assessment (pre/post/delayed test) ──────────────────────────────────────
@@ -199,6 +205,10 @@ model Assessment {
   quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   session Session? @relation(fields: [sessionId], references: [id])
   answers Answer[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([quizId])
 }
 
 model Answer {
@@ -212,6 +222,9 @@ model Answer {
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([questionId])
 }
 
 // ─── Progress / Badges ────────────────────────────────────────────────────────
@@ -360,6 +373,8 @@ model AnalyticsEvent {
 
   sessionId String
   session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 // ============================================
