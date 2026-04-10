@@ -4,7 +4,7 @@ import prisma from '@/lib/db/client';
 import { signToken, setAuthCookie } from '@/lib/auth/jwt';
 import { checkRateLimit, getClientIp } from '@/lib/auth/rate-limit';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PASSWORD_MIN_LENGTH = 8;
 
 export async function POST(req: NextRequest) {

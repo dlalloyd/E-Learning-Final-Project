@@ -388,7 +388,7 @@ export default function QuizPage() {
 
     // Client-side validation for signup
     if (authMode === 'signup') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
       if (!emailRegex.test(authEmail)) {
         setAuthError('Please enter a valid email address');
         return;
