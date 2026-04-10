@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
+import FirstVisitTour from '@/components/FirstVisitTour';
+import HelpTooltip from '@/components/HelpTooltip';
 import { useSfx } from '@/lib/hooks/useSfx';
 
 // ——— Types ————————————————————————————————————————————————————————————
@@ -537,6 +539,7 @@ export default function QuizPage() {
   if (appState === 'start') {
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <FirstVisitTour />
         <div className="w-full max-w-md">
           <div className="mb-10 text-center">
             <div className="inline-block mb-4 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono tracking-widest uppercase">
@@ -1015,7 +1018,9 @@ export default function QuizPage() {
 
         {/* Theta bar */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <ThetaBar theta={theta} sd={thetaSd} />
+          <HelpTooltip text="Your ability estimate (theta) on a logit scale. It moves up when you answer correctly and down when you answer incorrectly. The shaded area shows confidence.">
+            <ThetaBar theta={theta} sd={thetaSd} />
+          </HelpTooltip>
         </div>
 
         {/* Question card */}
