@@ -31,23 +31,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify user exists (authenticated users pass their cuid; legacy fallback for study IDs)
-    let resolvedUserId = userId;
+    // Verify user exists (must be an authenticated user)
     const existingUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!existingUser) {
-      // Legacy: create study participant with @study.local email
-      const user = await prisma.user.upsert({
-        where: { email: `${userId}@study.local` },
-        update: {},
-        create: {
-          email: `${userId}@study.local`,
-          name: userId,
-          password: 'study-participant',
-          role: 'learner',
-        },
-      });
-      resolvedUserId = user.id;
+      return NextResponse.json(
+        { error: 'User not found. Please log in first.' },
+        { status: 401 }
+      );
     }
+    const resolvedUserId = userId;
 
     // Verify quiz exists
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });

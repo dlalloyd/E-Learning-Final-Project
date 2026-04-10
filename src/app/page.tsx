@@ -369,6 +369,24 @@ export default function QuizPage() {
 
   const handleAuth = async () => {
     setAuthError('');
+
+    // Client-side validation for signup
+    if (authMode === 'signup') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(authEmail)) {
+        setAuthError('Please enter a valid email address');
+        return;
+      }
+      if (authPassword.length < 8) {
+        setAuthError('Password must be at least 8 characters');
+        return;
+      }
+      if (!/[a-zA-Z]/.test(authPassword) || !/\d/.test(authPassword)) {
+        setAuthError('Password must contain at least one letter and one number');
+        return;
+      }
+    }
+
     setAuthLoading(true);
     try {
       const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
