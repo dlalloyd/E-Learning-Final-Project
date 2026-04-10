@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight,
+  AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight, Volume2, VolumeX,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
+import { useSfx } from '@/lib/hooks/useSfx';
 
 // ——— Types ————————————————————————————————————————————————————————————
 
@@ -96,6 +98,7 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
 // ——— Main Component ———————————————————————————————————————————————————
 
 export default function QuizPage() {
+  const { play: playSfx, muted: sfxMuted, toggleMute: toggleSfx } = useSfx();
   const [appState, setAppState] = useState<AppState>('start');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
@@ -195,6 +198,7 @@ export default function QuizPage() {
       const data = await res.json();
 
       if (data.completed) {
+        playSfx('complete');
         setAppState('complete');
         return;
       }
@@ -299,6 +303,13 @@ export default function QuizPage() {
       setTheta(data.theta.after);
       setThetaSd(data.theta.sd);
       setTotalAnswered((n) => n + 1);
+
+      // Sound feedback
+      if (data.correct) {
+        playSfx(data.bkt.isMastered ? 'levelup' : 'correct');
+      } else {
+        playSfx('incorrect');
+      }
 
       let newFailures = consecutiveFailures;
       if (data.correct) {
@@ -982,7 +993,16 @@ export default function QuizPage() {
         {/* Top bar */}
         <div className="flex items-center justify-between text-xs text-slate-500 font-mono px-1">
           <span>{condition} · {question?.meta.questionsAnswered ?? 0}/{questionsTotal} questions</span>
-          <span>{totalCorrect} correct</span>
+          <div className="flex items-center gap-3">
+            <span>{totalCorrect} correct</span>
+            <button
+              onClick={toggleSfx}
+              className="p-1 rounded hover:bg-slate-800 transition-colors"
+              title={sfxMuted ? 'Unmute sounds' : 'Mute sounds'}
+            >
+              {sfxMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -1031,15 +1051,23 @@ export default function QuizPage() {
             {/* Options */}
             <div className="space-y-3">
               {Object.entries(question.options).map(([label, text]) => (
-                <button
+                <motion.button
                   key={label}
-                  onClick={() => appState === 'question' && !selected && submitAnswer(label)}
+                  whileHover={appState === 'question' && !selected ? { scale: 1.02 } : {}}
+                  whileTap={appState === 'question' && !selected ? { scale: 0.98 } : {}}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  onClick={() => {
+                    if (appState === 'question' && !selected) {
+                      playSfx('click');
+                      submitAnswer(label);
+                    }
+                  }}
                   disabled={appState === 'feedback' || !!selected}
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${optionStyle(label)}`}
                 >
                   <span className="font-mono font-bold text-sm mr-3 opacity-60">{label}</span>
                   <span className="text-sm">{text}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
 
