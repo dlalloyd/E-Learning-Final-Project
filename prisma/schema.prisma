@@ -125,11 +125,16 @@ model Session {
   analyticsEvents AnalyticsEvent[]
   completedAt     DateTime?
 
-  // IRT learner state — updated after each response via EAP
-  theta   Float @default(-0.780) // current ability estimate (self-pilot θ₀)
+  // Optional link to the assessment (pre-test) that seeded this session's
+  // initial theta and BKT priors. When set, the learner demonstrated ability
+  // in the pre-test and the engine started above the novice default.
+  startedFromAssessmentId String?
+
+  // IRT learner state, updated after each response via EAP
+  theta   Float @default(-0.780) // current ability estimate (self-pilot theta_0)
   thetaSd Float @default(0.543) // posterior standard deviation
 
-  // BKT state stored as JSON — Record<kcId, KCState>
+  // BKT state stored as JSON, Record<kcId, KCState>
   kcStates String @default("{}") // JSON serialised
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

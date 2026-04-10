@@ -209,7 +209,7 @@ export default function QuizPage() {
 
   // —— Start session ————————————————————————————————————————————————————
 
-  const startSession = async () => {
+  const startSession = async (seedFromAssessmentId?: string) => {
     if (!userId.trim()) return;
     setAppState('loading');
 
@@ -221,6 +221,7 @@ export default function QuizPage() {
           userId: userId.trim(),
           quizId: STUDY_CONFIG.quizId,
           condition,
+          ...(seedFromAssessmentId ? { seedFromAssessmentId } : {}),
         }),
       });
 
@@ -477,10 +478,13 @@ export default function QuizPage() {
   };
 
   const handleAssessmentComplete = () => {
+    const completedId = assessmentId;
     setAssessmentId(null);
     setAssessmentScore(null);
-    if (assessmentType === 'pre_test') {
-      // Pre-test done → proceed to main session
+    if (assessmentType === 'pre_test' && completedId) {
+      // Pre-test done: seed the learning session from assessment results
+      startSession(completedId);
+    } else if (assessmentType === 'pre_test') {
       startSession();
     } else {
       // Post-test or delayed → back to start
