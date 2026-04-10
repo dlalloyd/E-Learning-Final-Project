@@ -4,6 +4,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { BookOpen } from 'lucide-react';
 import InstructionMode from '@/components/InstructionMode';
 import { useSessionMode } from '@/hooks/useSessionMode';
 
@@ -180,7 +181,7 @@ export default function QuizWithInstruction({ sessionId, quizId }: QuizWithInstr
               onClick={handleReviewMaterial}
               className="px-3 py-1 bg-blue-500 hover:bg-blue-400 rounded text-sm transition-colors"
             >
-              📚 Review Material
+              <BookOpen className="w-4 h-4 inline mr-1" />Review Material
             </button>
           </div>
 

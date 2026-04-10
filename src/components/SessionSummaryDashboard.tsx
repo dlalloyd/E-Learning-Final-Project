@@ -1,6 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import LearningTrajectoryChart from '@/components/LearningTrajectoryChart';
+import {
+  Trophy, Star, TrendingUp, Sprout,
+  Dices, RefreshCw, Zap, BookOpen, Moon, CheckCircle2,
+  BarChart3, Target, Lightbulb, ClipboardList,
+  Circle, Diamond, TrendingDown, ArrowRight, XCircle,
+} from 'lucide-react';
 
 interface KCPerformance {
   kcId: string;
@@ -71,11 +77,11 @@ interface Props {
 
 // ─── Helper: Ability Level ────────────────────────────────────────────────────
 
-function getAbilityLevel(theta: number): { label: string; colour: string; emoji: string } {
-  if (theta >= 1.5) return { label: 'Expert', colour: 'text-emerald-400', emoji: '🏆' };
-  if (theta >= 0.5) return { label: 'Competent', colour: 'text-blue-400', emoji: '⭐' };
-  if (theta >= -0.5) return { label: 'Developing', colour: 'text-amber-400', emoji: '📈' };
-  return { label: 'Beginner', colour: 'text-slate-400', emoji: '🌱' };
+function getAbilityLevel(theta: number): { label: string; colour: string; icon: React.ReactNode } {
+  if (theta >= 1.5) return { label: 'Expert', colour: 'text-emerald-400', icon: <Trophy className="w-5 h-5 text-emerald-400" /> };
+  if (theta >= 0.5) return { label: 'Competent', colour: 'text-blue-400', icon: <Star className="w-5 h-5 text-blue-400" /> };
+  if (theta >= -0.5) return { label: 'Developing', colour: 'text-amber-400', icon: <TrendingUp className="w-5 h-5 text-amber-400" /> };
+  return { label: 'Beginner', colour: 'text-slate-400', icon: <Sprout className="w-5 h-5 text-slate-400" /> };
 }
 
 function getGrade(accuracy: number): { letter: string; colour: string } {
@@ -86,16 +92,16 @@ function getGrade(accuracy: number): { letter: string; colour: string } {
   return { letter: 'F', colour: 'text-red-400' };
 }
 
-function getPatternEmoji(pattern: string): string {
-  const map: Record<string, string> = {
-    guessing: '🎲',
-    misconception: '🔄',
-    careless_error: '⚡',
-    knowledge_gap: '📚',
-    fatigue: '😴',
-    none: '✅',
+function getPatternIcon(pattern: string): React.ReactNode {
+  const map: Record<string, React.ReactNode> = {
+    guessing: <Dices className="w-4 h-4 text-purple-400" />,
+    misconception: <RefreshCw className="w-4 h-4 text-orange-400" />,
+    careless_error: <Zap className="w-4 h-4 text-yellow-400" />,
+    knowledge_gap: <BookOpen className="w-4 h-4 text-red-400" />,
+    fatigue: <Moon className="w-4 h-4 text-slate-400" />,
+    none: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
   };
-  return map[pattern] || '📊';
+  return map[pattern] || <BarChart3 className="w-4 h-4 text-slate-400" />;
 }
 
 // ─── Circular Progress Ring ───────────────────────────────────────────────────
@@ -132,14 +138,18 @@ function ProgressRing({ value, size = 120, label, sublabel, colour }: {
 function MasteryBar({ kc, errorProfile }: { kc: KCPerformance; errorProfile?: KCErrorProfile }) {
   const pct = Math.round(kc.currentMastery * 100);
   const barColour = pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-  const statusIcon = pct >= 80 ? '✅' : pct >= 50 ? '🔶' : '🔴';
+  const statusIcon = pct >= 80
+    ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+    : pct >= 50
+      ? <Diamond className="w-4 h-4 text-amber-400" />
+      : <Circle className="w-4 h-4 text-red-400 fill-red-400" />;
   const topCluster = errorProfile?.clusters?.[0];
 
   return (
     <div className="bg-slate-800/60 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm">{statusIcon}</span>
+          {statusIcon}
           <span className="text-sm text-slate-300 font-medium">{kc.kcName}</span>
         </div>
         <span className="text-xs font-mono text-slate-500">
@@ -154,7 +164,7 @@ function MasteryBar({ kc, errorProfile }: { kc: KCPerformance; errorProfile?: KC
       </div>
       {topCluster && topCluster.type !== 'none' && (
         <div className="text-xs text-slate-500 flex items-center gap-1">
-          <span>{getPatternEmoji(topCluster.type)}</span>
+          {getPatternIcon(topCluster.type)}
           <span className="capitalize">{topCluster.type.replace('_', ' ')}</span>
           <span className="text-slate-600">({Math.round(topCluster.confidence * 100)}% confidence)</span>
         </div>
@@ -235,7 +245,7 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
     <div className="space-y-6">
       {/* ── Header ── */}
       <div className="text-center space-y-3">
-        <div className="text-5xl">{ability.emoji}</div>
+        <div className="flex justify-center">{ability.icon}</div>
         <h2 className="text-2xl font-bold text-white">Session Complete!</h2>
         <p className={`text-lg font-semibold ${ability.colour}`}>{ability.label} Level</p>
         <p className="text-slate-400 text-sm max-w-sm mx-auto">{data.feedbackMessage}</p>
@@ -269,7 +279,7 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
         </div>
         {errorProfile && (
           <div className="flex items-center gap-1.5">
-            <span>{getPatternEmoji(errorProfile.dominantPattern)}</span>
+            {getPatternIcon(errorProfile.dominantPattern)}
             <span className="text-slate-400 capitalize">{errorProfile.dominantPattern.replace('_', ' ')}</span>
           </div>
         )}
@@ -285,7 +295,9 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
               activeTab === tab ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            {tab === 'overview' ? '📊 Progress' : tab === 'skills' ? '🎯 Skills' : '💡 Insights'}
+            <span className="flex items-center justify-center gap-1">
+              {tab === 'overview' ? <><BarChart3 className="w-3 h-3" /> Progress</> : tab === 'skills' ? <><Target className="w-3 h-3" /> Skills</> : <><Lightbulb className="w-3 h-3" /> Insights</>}
+            </span>
           </button>
         ))}
       </div>
@@ -306,7 +318,11 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
             }`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm">
-                  {errorProfile.temporalPattern.trend === 'improving' ? '📈' : errorProfile.temporalPattern.trend === 'declining' ? '📉' : '➡️'}
+                  {errorProfile.temporalPattern.trend === 'improving'
+                    ? <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    : errorProfile.temporalPattern.trend === 'declining'
+                      ? <TrendingDown className="w-4 h-4 text-red-400" />
+                      : <ArrowRight className="w-4 h-4 text-slate-400" />}
                 </span>
                 <span className="text-sm font-medium text-slate-300 capitalize">
                   {errorProfile.temporalPattern.trend} performance
@@ -386,7 +402,7 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
           {data.areasForReview.length > 0 && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
-                <span>📋</span> Priority Review Areas
+                <ClipboardList className="w-4 h-4 inline" /> Priority Review Areas
               </h3>
               <div className="space-y-2">
                 {data.areasForReview.slice(0, 5).map((kc) => (
@@ -434,8 +450,8 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
                   {data.confidenceCalibration.calibrationScore >= 0.7
                     ? 'Well Calibrated'
                     : data.confidenceCalibration.highConfWrong > data.confidenceCalibration.highConfCorrect
-                      ? 'Overconfident — slow down on uncertain questions'
-                      : 'Underconfident — trust your knowledge more'}
+                      ? 'Overconfident. Slow down on uncertain questions.'
+                      : 'Underconfident. Trust your knowledge more.'}
                 </span>
               </div>
             </div>

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight,
+} from 'lucide-react';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
@@ -711,7 +714,7 @@ export default function QuizPage() {
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center space-y-4">
-          <div className="text-4xl">⚠️</div>
+          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto" />
           <h2 className="text-white font-bold text-xl">Something went wrong</h2>
           <p className="text-red-400 text-sm font-mono">{errorMsg}</p>
           <button
@@ -941,7 +944,9 @@ export default function QuizPage() {
                 <>
                   <div className={`rounded-xl p-4 border ${assessmentResult.correct ? 'bg-emerald-950/50 border-emerald-800' : 'bg-red-950/50 border-red-800'}`}>
                     <span className={`font-semibold text-sm ${assessmentResult.correct ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {assessmentResult.correct ? '✅ Correct!' : `❌ Incorrect — answer was ${assessmentResult.correctAnswer}`}
+                      {assessmentResult.correct
+                        ? <><CheckCircle2 className="w-4 h-4 inline mr-1 text-emerald-400" />Correct!</>
+                        : <><XCircle className="w-4 h-4 inline mr-1 text-red-400" />Incorrect, answer was {assessmentResult.correctAnswer}</>}
                     </span>
                   </div>
                   <button
@@ -1013,7 +1018,7 @@ export default function QuizPage() {
                   onClick={handleReviewRequest}
                   className="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300 transition-colors"
                 >
-                  📚 Review Material
+                  <BookOpen className="w-3.5 h-3.5 inline mr-1" />Review Material
                 </button>
               )}
             </div>
@@ -1042,9 +1047,9 @@ export default function QuizPage() {
             {appState === 'feedback' && result && (
               <div className={`rounded-xl p-4 border ${result.correct ? 'bg-emerald-950/50 border-emerald-800' : 'bg-red-950/50 border-red-800'}`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{result.correct ? '✅' : '❌'}</span>
+                  {result.correct ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <XCircle className="w-5 h-5 text-red-400" />}
                   <span className={`font-semibold text-sm ${result.correct ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {result.correct ? 'Correct!' : `Incorrect — answer was ${result.correctAnswer}`}
+                    {result.correct ? 'Correct!' : `Incorrect, answer was ${result.correctAnswer}`}
                   </span>
                 </div>
                 <div className="text-xs font-mono text-slate-500 space-y-1">
@@ -1056,7 +1061,7 @@ export default function QuizPage() {
                   </div>
                   <div>
                     P(Learned) [{result.bkt.kc}]: {result.bkt.pLearned_before.toFixed(3)} → {result.bkt.pLearned_after.toFixed(3)}
-                    {result.bkt.isMastered && <span className="ml-2 text-amber-400">★ Mastered</span>}
+                    {result.bkt.isMastered && <span className="ml-2 text-amber-400 flex items-center gap-1 inline-flex"><Star className="w-3 h-3" /> Mastered</span>}
                   </div>
                   {consecutiveFailures > 0 && !result.correct && (
                     <div className="text-amber-500">
@@ -1068,7 +1073,7 @@ export default function QuizPage() {
                 {willTriggerInstruction && (
                   <div className="mt-3 p-3 bg-blue-950/50 border border-blue-800 rounded-lg">
                     <p className="text-blue-400 text-sm">
-                      📚 Let's review this topic before continuing.
+                      <BookOpen className="w-4 h-4 inline mr-1" />Let's review this topic before continuing.
                     </p>
                   </div>
                 )}
@@ -1123,7 +1128,9 @@ export default function QuizPage() {
                     : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                 }`}
               >
-                {willTriggerInstruction ? '📚 Review Material →' : 'Next Question →'}
+                {willTriggerInstruction
+                  ? <><BookOpen className="w-4 h-4 inline mr-1" />Review Material <ArrowRight className="w-4 h-4 inline ml-1" /></>
+                  : <>Next Question <ArrowRight className="w-4 h-4 inline ml-1" /></>}
               </button>
             )}
           </div>
