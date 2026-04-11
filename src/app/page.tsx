@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight, Volume2, VolumeX,
+  Flame, Gem, MapPin, User as UserIcon, Trophy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import InstructionMode from '@/components/InstructionMode';
@@ -14,7 +15,10 @@ import ProgressDashboard from '@/components/ProgressDashboard';
 import PostSessionFlow from '@/components/PostSessionFlow';
 import ElaborationPrompt from '@/components/ElaborationPrompt';
 import SUSQuestionnaire from '@/components/SUSQuestionnaire';
+import InteractiveMap from '@/components/InteractiveMap';
+import LearnerProfile from '@/components/LearnerProfile';
 import { useSfx } from '@/lib/hooks/useSfx';
+import { xpProgress } from '@/lib/achievements';
 
 // --- Types ------------------------------------------------------------
 
@@ -30,6 +34,7 @@ interface QuestionData {
     itemInformation: number;
     questionsAnswered: number;
     questionsRemaining: number;
+    isLastQuestion?: boolean;
     condition: string;
   };
 }
@@ -53,7 +58,7 @@ interface AnswerResult {
   };
 }
 
-type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'learn' | 'complete' | 'error' | 'assessment';
+type AppState = 'start' | 'loading' | 'question' | 'feedback' | 'instruction' | 'learn' | 'complete' | 'error';
 type InstructionTrigger = 'low_mastery' | 'consecutive_failures' | 'user_request';
 
 const BLOOM_LABELS: Record<number, string> = {
@@ -131,17 +136,19 @@ export default function QuizPage() {
           setResumableSessionId(data.incompleteSession.id);
           setCondition(data.incompleteSession.condition);
         }
-        // Check for delayed test availability
-        fetch(`/api/assessments?userId=${data.user.id}`).then(r => r.json()).then(aData => {
-          if (aData.delayedTestAvailability) {
-            const available = aData.delayedTestAvailability.find(
-              (d: { delayedTestAvailable: boolean; delayedTestCompleted: boolean }) =>
-                d.delayedTestAvailable && !d.delayedTestCompleted
-            );
-            if (available) {
-              setDelayedTestAvailable({ sessionId: available.sessionId });
-            }
+        // Fetch XP data for replayability UI
+        fetch('/api/xp').then(r => r.json()).then(xp => {
+          if (!xp.error) {
+            setXpData({ totalXp: xp.totalXp, level: xp.level, currentStreak: xp.currentStreak, levelProgress: xp.levelProgress });
+            // Shake the profile icon to catch attention after 2 sessions
+            if (xp.totalXp > 50) setProfileShake(true);
           }
+        }).catch(() => {});
+        // Award daily login XP
+        fetch('/api/xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'daily_login' }),
         }).catch(() => {});
       }
     }).catch(() => {});
@@ -169,21 +176,17 @@ export default function QuizPage() {
   const [currentKcId, setCurrentKcId] = useState<string>('');
   const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
 
-  // --- Assessment State (Pre/Post/Delayed Tests) ---
-  const [assessmentId, setAssessmentId] = useState<string | null>(null);
-  const [assessmentType, setAssessmentType] = useState<'pre_test' | 'post_test' | 'delayed_post_test'>('pre_test');
-  const [assessmentQuestion, setAssessmentQuestion] = useState<QuestionData | null>(null);
-  const [assessmentResult, setAssessmentResult] = useState<{ correct: boolean; correctAnswer: string; selectedAnswer: string } | null>(null);
-  const [assessmentSelected, setAssessmentSelected] = useState<string | null>(null);
-  const [assessmentScore, setAssessmentScore] = useState<{ score: number; maxScore: number; passed: boolean } | null>(null);
-  const [delayedTestAvailable, setDelayedTestAvailable] = useState<{ sessionId: string; daysRemaining?: number } | null>(null);
-
-  // --- New Features State ---
+  // --- Replayability State ---
   const [showProgressDashboard, setShowProgressDashboard] = useState(false);
   const [showPostSessionFlow, setShowPostSessionFlow] = useState(false);
   const [showElaboration, setShowElaboration] = useState(false);
   const [showSUS, setShowSUS] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [profileShake, setProfileShake] = useState(false);
   const [elaborationChance] = useState(0.2); // 20% chance after correct answer
+  const [xpData, setXpData] = useState<{ totalXp: number; level: number; currentStreak: number; levelProgress: number } | null>(null);
+  const [xpToast, setXpToast] = useState<{ amount: number; reason: string } | null>(null);
 
   // --- Learning-First Onboarding ---
   const FOUNDATION_KCS = [
@@ -282,6 +285,23 @@ export default function QuizPage() {
     return null;
   };
 
+  // -- Award XP helper ---------------------------------------------------
+  const awardXP = async (reason: string) => {
+    try {
+      const res = await fetch('/api/xp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, sessionId }),
+      });
+      const data = await res.json();
+      if (data.awarded) {
+        setXpToast({ amount: data.awarded + (data.streakBonus || 0), reason });
+        setXpData({ totalXp: data.totalXp, level: data.level, currentStreak: data.streak, levelProgress: data.levelProgress });
+        setTimeout(() => setXpToast(null), 2000);
+      }
+    } catch { /* ignore XP errors */ }
+  };
+
   // -- Submit answer ----------------------------------------------------
 
   const submitAnswer = async (answer: string) => {
@@ -329,6 +349,14 @@ export default function QuizPage() {
         setTotalCorrect((n) => n + 1);
         setConsecutiveFailures(0);
         newFailures = 0;
+        // Award XP based on bloom level and hint usage
+        const bloom = question?.bloom || 1;
+        if (bloom >= 3) awardXP('correct_bloom_3');
+        else if (bloom >= 2) awardXP('correct_bloom_2');
+        else if (hintsUsedThisQ === 0) awardXP('correct_no_hints');
+        else awardXP('correct_answer');
+        // Check mastery achievement
+        if (data.bkt.isMastered) awardXP('mastery_achieved');
       } else {
         newFailures = consecutiveFailures + 1;
         setConsecutiveFailures(newFailures);
@@ -470,90 +498,8 @@ export default function QuizPage() {
     fetchNextQuestion(resumableSessionId);
   };
 
-  // -- Assessment flow helpers ----------------------------------------
-
-  const startAssessment = async (type: 'pre_test' | 'post_test' | 'delayed_post_test', linkedSessionId?: string) => {
-    setAppState('loading');
-    setAssessmentType(type);
-    try {
-      const res = await fetch('/api/assessments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sessionId: linkedSessionId || null, type }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create assessment');
-      setAssessmentId(data.assessmentId);
-      await fetchAssessmentQuestion(data.assessmentId);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
-      setAppState('error');
-    }
-  };
-
-  const fetchAssessmentQuestion = async (aId: string) => {
-    try {
-      const res = await fetch(`/api/assessments/${aId}/next-question`);
-      const data = await res.json();
-      if (data.completed) {
-        setAssessmentScore({ score: data.score, maxScore: data.maxScore, passed: data.passed });
-        setAssessmentQuestion(null);
-        setAssessmentResult(null);
-        setAssessmentSelected(null);
-        setAppState('assessment');
-        return;
-      }
-      if (!res.ok) throw new Error(data.error || 'Failed to load question');
-      setAssessmentQuestion(data);
-      setAssessmentResult(null);
-      setAssessmentSelected(null);
-      setAppState('assessment');
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
-      setAppState('error');
-    }
-  };
-
-  const submitAssessmentAnswer = async (answer: string) => {
-    if (!assessmentQuestion || !assessmentId) return;
-    setAssessmentSelected(answer);
-    try {
-      const res = await fetch(`/api/assessments/${assessmentId}/answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          questionId: assessmentQuestion.questionId,
-          selectedAnswer: answer,
-          optionsMap: assessmentQuestion.options,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to submit answer');
-      setAssessmentResult(data);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
-      setAppState('error');
-    }
-  };
-
-  const handleAssessmentNext = () => {
-    if (assessmentId) fetchAssessmentQuestion(assessmentId);
-  };
-
-  const handleAssessmentComplete = () => {
-    const completedId = assessmentId;
-    setAssessmentId(null);
-    setAssessmentScore(null);
-    if (assessmentType === 'pre_test' && completedId) {
-      // Pre-test done: seed the learning session from assessment results
-      startSession(completedId);
-    } else if (assessmentType === 'pre_test') {
-      startSession();
-    } else {
-      // Post-test or delayed → back to start
-      setAppState('start');
-    }
-  };
+  // Assessment flow is removed - the adaptive session now handles
+  // mixed difficulty and bloom levels directly. No separate pre/post tests.
 
   // --- Render: Start Screen -------------------------------------------
 
@@ -659,26 +605,30 @@ export default function QuizPage() {
                   </button>
                 )}
 
-                <div>
-                  <label className="block text-slate-400 text-xs font-mono uppercase tracking-widest mb-2">
-                    Condition
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(['adaptive', 'static'] as const).map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setCondition(c)}
-                        className={`py-3 rounded-lg border text-sm font-medium transition-all ${
-                          condition === c
-                            ? 'bg-indigo-600 border-indigo-500 text-white'
-                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
-                        }`}
-                      >
-                        {c.charAt(0).toUpperCase() + c.slice(1)}
-                      </button>
-                    ))}
+{/* XP / Streak / Level bar */}
+                {xpData && (
+                  <div className="bg-slate-800/50 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Gem className="w-4 h-4 text-indigo-400" />
+                        <span className="text-white text-sm font-bold">Level {xpData.level}</span>
+                        <span className="text-slate-500 text-xs">{xpData.totalXp} XP</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Flame className={`w-4 h-4 ${xpData.currentStreak > 0 ? 'text-orange-400' : 'text-slate-600'}`} />
+                        <span className={`text-sm font-bold ${xpData.currentStreak > 0 ? 'text-orange-400' : 'text-slate-600'}`}>
+                          {xpData.currentStreak}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-slate-700 rounded-full">
+                      <div
+                        className="h-full bg-indigo-500 rounded-full transition-all duration-700"
+                        style={{ width: `${(xpData.levelProgress || 0) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-3">
                   <button
@@ -690,34 +640,45 @@ export default function QuizPage() {
                     }}
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all"
                   >
-                    Learn First, Then Assess →
+                    Learn First, Then Quiz
                   </button>
                   <button
-                    onClick={() => startAssessment('pre_test')}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
+                    onClick={() => startSession()}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all text-sm"
                   >
-                    Start with Pre-Test
+                    Jump Into Questions
                   </button>
                   <p className="text-slate-600 text-xs text-center">
-                    New to UK Geography? Choose &quot;Learn First&quot; for guided instruction.
+                    New? Choose &quot;Learn First&quot; for guided instruction. Ready to test? Jump straight in.
                   </p>
                 </div>
 
-                {delayedTestAvailable && (
+                {/* Action buttons row */}
+                <div className="grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => startAssessment('delayed_post_test', delayedTestAvailable.sessionId)}
-                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-all text-sm"
+                    onClick={() => setShowMap(true)}
+                    className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1"
                   >
-                    Take Retention Test (7-day follow-up)
+                    <MapPin className="w-4 h-4 text-emerald-400" />
+                    Explore Map
                   </button>
-                )}
-
-                <button
-                  onClick={() => setShowProgressDashboard(!showProgressDashboard)}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
-                >
-                  {showProgressDashboard ? 'Hide Progress' : 'View My Progress'}
-                </button>
+                  <button
+                    onClick={() => setShowProfile(true)}
+                    className={`py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1 ${
+                      profileShake ? 'animate-bounce' : ''
+                    }`}
+                  >
+                    <UserIcon className="w-4 h-4 text-violet-400" />
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => setShowProgressDashboard(!showProgressDashboard)}
+                    className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1"
+                  >
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    Progress
+                  </button>
+                </div>
 
                 <button
                   onClick={handleLogout}
@@ -742,6 +703,23 @@ export default function QuizPage() {
                   startSession();
                 }}
               />
+            </div>
+          )}
+
+          {/* Interactive Map Modal */}
+          {showMap && (
+            <div className="mt-4">
+              <InteractiveMap
+                onClose={() => setShowMap(false)}
+                onFactUnlocked={() => awardXP('map_fact_unlocked')}
+              />
+            </div>
+          )}
+
+          {/* Learner Profile Modal */}
+          {showProfile && (
+            <div className="mt-4">
+              <LearnerProfile onClose={() => { setShowProfile(false); setProfileShake(false); }} />
             </div>
           )}
 
@@ -877,37 +855,77 @@ export default function QuizPage() {
       setConsecutiveFailures(0);
     };
 
-    // Show SUS questionnaire after 3+ sessions (check via simple heuristic)
+    // Award session completion XP
+    useEffect(() => {
+      awardXP('session_complete');
+      // Show SUS after first session to get initial thoughts
+      fetch('/api/progress').then(r => r.json()).then(d => {
+        if (d.stats?.totalSessions === 1) setShowSUS(true);
+      }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handlePostSessionDone = () => {
       setShowPostSessionFlow(false);
-      // After 3 sessions, offer the SUS questionnaire
-      fetch('/api/progress').then((r) => r.json()).then((d) => {
-        if (d.stats?.totalSessions >= 3) setShowSUS(true);
-      }).catch(() => {});
     };
 
     return (
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-4">
-          {/* SUS questionnaire */}
           {showSUS ? (
             <SUSQuestionnaire onComplete={() => setShowSUS(false)} onSkip={() => setShowSUS(false)} />
-          ) : showPostSessionFlow ? (
-            <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
           ) : (
             <>
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
                 <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
               </div>
               <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
-              <button
-                onClick={() => startAssessment('post_test', sessionId)}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
-              >
-                Take Post-Test
-              </button>
+
+              {/* XP summary */}
+              {xpData && (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gem className="w-5 h-5 text-indigo-400" />
+                    <span className="text-white font-bold">Level {xpData.level}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-indigo-400 text-sm">{xpData.totalXp} XP</span>
+                    {xpData.currentStreak > 0 && (
+                      <span className="flex items-center gap-1 text-orange-400 text-sm">
+                        <Flame className="w-4 h-4" />{xpData.currentStreak} day streak
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowMap(true)}
+                  className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <MapPin className="w-4 h-4 text-emerald-400" /> Explore Map
+                </button>
+                <button
+                  onClick={() => setShowProfile(true)}
+                  className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <UserIcon className="w-4 h-4 text-violet-400" /> My Profile
+                </button>
+              </div>
+
+              {showMap && (
+                <InteractiveMap
+                  onClose={() => setShowMap(false)}
+                  onFactUnlocked={() => awardXP('map_fact_unlocked')}
+                />
+              )}
+              {showProfile && (
+                <LearnerProfile onClose={() => setShowProfile(false)} />
+              )}
+
               <p className="text-slate-500 text-xs text-center">
-                A retention test will be available in 7 days to measure long-term learning.
+                Come back tomorrow to keep your streak going.
               </p>
             </>
           )}
@@ -916,133 +934,7 @@ export default function QuizPage() {
     );
   }
 
-  // --- Render: Assessment (Pre/Post/Delayed Test) ----------------------
-
-  if (appState === 'assessment') {
-    const typeLabels: Record<string, string> = {
-      pre_test: 'Pre-Test',
-      post_test: 'Post-Test',
-      delayed_post_test: 'Retention Test',
-    };
-    const typeLabel = typeLabels[assessmentType] || 'Assessment';
-
-    // Score screen after completion
-    if (assessmentScore && !assessmentQuestion) {
-      return (
-        <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6 text-center">
-              <div className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono tracking-widest uppercase">
-                {typeLabel} Complete
-              </div>
-              <div className="text-5xl font-bold text-white">
-                {Math.round(assessmentScore.score * 100)}%
-              </div>
-              <p className="text-slate-400">
-                You got {Math.round(assessmentScore.score * assessmentScore.maxScore)}/{assessmentScore.maxScore} questions correct
-              </p>
-              <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
-                assessmentScore.passed
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
-                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
-              }`}>
-                {assessmentScore.passed ? 'Passed' : 'Needs Improvement'}
-              </div>
-              <button
-                onClick={handleAssessmentComplete}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
-              >
-                {assessmentType === 'pre_test' ? 'Continue to Learning →' : 'Done'}
-              </button>
-            </div>
-          </div>
-        </main>
-      );
-    }
-
-    // Question screen
-    if (assessmentQuestion) {
-      const aTotal = (assessmentQuestion.meta.questionsAnswered || 0) + (assessmentQuestion.meta.questionsRemaining || 0);
-      const aProgress = aTotal > 0 ? Math.round(((assessmentQuestion.meta.questionsAnswered || 0) / aTotal) * 100) : 0;
-
-      const assessOptionStyle = (label: string) => {
-        if (!assessmentResult) {
-          return assessmentSelected === label
-            ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-            : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer';
-        }
-        if (label === assessmentResult.correctAnswer) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
-        if (label === assessmentResult.selectedAnswer && !assessmentResult.correct) return 'border-red-400 bg-red-50 text-red-900';
-        return 'border-slate-200 bg-white text-slate-400';
-      };
-
-      return (
-        <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl space-y-4">
-            <div className="flex items-center justify-between text-xs text-slate-500 font-mono px-1">
-              <span className="inline-flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  {typeLabel}
-                </span>
-                <span>{assessmentQuestion.meta.questionsAnswered}/{aTotal}</span>
-              </span>
-            </div>
-
-            <div className="h-1 w-full bg-slate-800 rounded-full">
-              <div
-                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                style={{ width: `${aProgress}%` }}
-              />
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${BLOOM_COLOURS[assessmentQuestion.bloom]}`}>
-                  {BLOOM_LABELS[assessmentQuestion.bloom]}
-                </span>
-              </div>
-
-              <h2 className="text-white text-lg font-medium leading-relaxed">
-                {assessmentQuestion.text}
-              </h2>
-
-              <div className="space-y-3">
-                {Object.entries(assessmentQuestion.options).map(([label, text]) => (
-                  <button
-                    key={label}
-                    onClick={() => !assessmentResult && !assessmentSelected && submitAssessmentAnswer(label)}
-                    disabled={!!assessmentResult || !!assessmentSelected}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${assessOptionStyle(label)}`}
-                  >
-                    <span className="font-mono font-bold text-sm mr-3 opacity-60">{label}</span>
-                    <span className="text-sm">{text}</span>
-                  </button>
-                ))}
-              </div>
-
-              {assessmentResult && (
-                <>
-                  <div className={`rounded-xl p-4 border ${assessmentResult.correct ? 'bg-emerald-950/50 border-emerald-800' : 'bg-red-950/50 border-red-800'}`}>
-                    <span className={`font-semibold text-sm ${assessmentResult.correct ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {assessmentResult.correct
-                        ? <><CheckCircle2 className="w-4 h-4 inline mr-1 text-emerald-400" />Correct!</>
-                        : <><XCircle className="w-4 h-4 inline mr-1 text-red-400" />Incorrect, answer was {assessmentResult.correctAnswer}</>}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleAssessmentNext}
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
-                  >
-                    Next Question →
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </main>
-      );
-    }
-  }
+  // Assessment render section removed - adaptive session handles all question types
 
   // --- Render: Question / Feedback -------------------------------------
 
@@ -1229,22 +1121,39 @@ export default function QuizPage() {
               />
             )}
 
-            {/* Next button */}
+            {/* Next / Finish button */}
             {appState === 'feedback' && !showElaboration && (
               <button
                 onClick={handleNextAfterFeedback}
                 className={`w-full py-4 font-semibold rounded-xl transition-all ${
                   willTriggerInstruction
                     ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                    : question?.meta?.isLastQuestion
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                     : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                 }`}
               >
                 {willTriggerInstruction
                   ? <><BookOpen className="w-4 h-4 inline mr-1" />Review Material <ArrowRight className="w-4 h-4 inline ml-1" /></>
+                  : question?.meta?.isLastQuestion
+                  ? <>Finish Quiz <CheckCircle2 className="w-4 h-4 inline ml-1" /></>
                   : <>Next Question <ArrowRight className="w-4 h-4 inline ml-1" /></>}
               </button>
             )}
           </div>
+        )}
+
+        {/* XP Toast */}
+        {xpToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed bottom-6 right-6 bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50"
+          >
+            <Gem className="w-4 h-4" />
+            <span className="font-bold">+{xpToast.amount} XP</span>
+          </motion.div>
         )}
       </div>
     </main>

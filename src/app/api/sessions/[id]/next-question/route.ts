@@ -214,7 +214,7 @@ export async function GET(
     // Check completion: no eligible candidates left
     // -------------------------------------------------------------------
     const totalPresentations = presentations.length;
-    const TARGET_QUESTIONS = 27; // match original session length
+    const TARGET_QUESTIONS = 15; // concise sessions for replayability
 
     if (candidates.length === 0 || totalPresentations >= TARGET_QUESTIONS) {
       await prisma.session.update({
@@ -230,20 +230,53 @@ export async function GET(
     }
 
     // -------------------------------------------------------------------
-    // IRT selection
+    // Bloom-level progression policy (fixes L1 lock-in bug)
+    // Instead of pure IRT maximum information (which keeps weak learners
+    // stuck on easy items), we enforce progression with challenge gates:
+    //   Q1-4:  Bloom 1-2 (establish baseline, mix difficulty)
+    //   Q5-9:  Prefer Bloom 2, inject Bloom 3 challenges
+    //   Q10+:  Full IRT-driven range, prefer higher bloom
+    // If learner aces higher-bloom, immediately unlock. If fail, drop back.
+    // -------------------------------------------------------------------
+    const recentResults = await prisma.interaction.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { isCorrect: true },
+    });
+    const recentCorrectRate = recentResults.length > 0
+      ? recentResults.filter(r => r.isCorrect).length / recentResults.length
+      : 0.5;
+
+    let maxBloom = 3;
+    let minBloom = 1;
+    if (totalPresentations < 4) {
+      maxBloom = recentCorrectRate >= 0.8 ? 3 : 2;
+      minBloom = 1;
+    } else if (totalPresentations < 9) {
+      minBloom = recentCorrectRate >= 0.6 ? 2 : 1;
+      maxBloom = 3;
+    } else {
+      minBloom = recentCorrectRate >= 0.7 ? 2 : 1;
+    }
+
+    // Filter candidates by bloom progression range
+    const bloomFiltered = candidates.filter(c => c.bloom >= minBloom && c.bloom <= maxBloom);
+    const finalCandidates = bloomFiltered.length > 0 ? bloomFiltered : candidates;
+
+    // -------------------------------------------------------------------
+    // IRT selection (on bloom-filtered candidates)
     // -------------------------------------------------------------------
     let selectedCandidate: typeof candidates[0] | null = null;
 
     if (session.condition === 'adaptive') {
-      // Maximum information criterion at current theta
-      const selected = selectNextQuestion(candidates, {
+      const selected = selectNextQuestion(finalCandidates, {
         targetTheta: session.theta,
-        excludeIds: [], // candidates already filtered
+        excludeIds: [],
       });
-      selectedCandidate = candidates.find((c) => c.id === selected?.id) || candidates[0];
+      selectedCandidate = finalCandidates.find((c) => c.id === selected?.id) || finalCandidates[0];
     } else {
-      // STATIC: fixed order by difficulty
-      const sorted = [...candidates].sort((a, b) => a.b - b.b);
+      const sorted = [...finalCandidates].sort((a, b) => a.b - b.b);
       selectedCandidate = sorted[0];
     }
 
@@ -327,7 +360,8 @@ export async function GET(
         itemDifficulty: selectedCandidate.b,
         itemInformation: Math.round(infoAtTheta * 1000) / 1000,
         questionsAnswered: totalPresentations,
-        questionsRemaining: Math.max(0, TARGET_QUESTIONS - totalPresentations),
+        questionsRemaining: Math.max(0, TARGET_QUESTIONS - totalPresentations - 1),
+        isLastQuestion: totalPresentations + 1 >= TARGET_QUESTIONS,
         condition: session.condition,
         isVariant: true,
         isReview: seenVariantIds.has(chosenVariantId), // true = user has seen this before
