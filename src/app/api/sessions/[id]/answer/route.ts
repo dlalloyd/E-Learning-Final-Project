@@ -157,7 +157,22 @@ export async function POST(
     // -------------------------------------------------------------------
     const hintLevel = typeof hintLevelMax === 'number' ? hintLevelMax : 0;
     const HINT_CREDIT: Record<number, number> = { 0: 1.0, 1: 0.9, 2: 0.7, 3: 0.5 };
-    const creditFactor = HINT_CREDIT[hintLevel] ?? 0.5;
+    const hintCredit = HINT_CREDIT[hintLevel] ?? 0.5;
+
+    /**
+     * Difficulty-weighted BKT credit (Pardos & Heffernan, 2010).
+     * Correctly answering harder items provides stronger evidence of
+     * mastery, so we scale the hint-adjusted credit by a multiplier
+     * derived from the IRT difficulty parameter b (range ~ -2 to +2).
+     *   b < -0.5  -> 0.85x  (easy: less credit)
+     *  -0.5 <= b <= 0.5 -> 1.0x  (medium: baseline)
+     *   0.5 < b <= 1.0  -> 1.15x (hard: bonus credit)
+     *   b > 1.0   -> 1.25x (very hard: larger bonus)
+     */
+    const b = irtParams?.b ?? 0;
+    const difficultyBoost =
+      b > 1.0 ? 1.25 : b > 0.5 ? 1.15 : b < -0.5 ? 0.85 : 1.0;
+    const creditFactor = Math.min(hintCredit * difficultyBoost, 1.25);
 
     const kcStates: Record<string, KCState> = JSON.parse(session.kcStates || '{}');
     const currentKCState: KCState = kcStates[kc] || { ...DEFAULT_BKT_PARAMS };

@@ -167,7 +167,7 @@ export async function GET(
     // Narrative journey sentence
     // -----------------------------------------------------------------------
     const masteredKCs = kcPerformance.filter((k) => k.currentMastery >= 0.95);
-    const narrative = buildNarrative(session.theta, accuracy, masteredKCs.length, longitudinal);
+    const narrative = buildNarrative(session.theta, accuracy, masteredKCs.length, longitudinal, kcPerformance);
 
     return NextResponse.json({
       sessionId,
@@ -205,39 +205,72 @@ function calculateCalibrationScore(c: {
   return Math.round(((highAcc * highTotal + lowCal * lowTotal) / total) * 100) / 100;
 }
 
+/**
+ * Generate feedback following Hattie & Timperley (2007) three-level model:
+ *   Level 1 (Task): What you got right/wrong
+ *   Level 2 (Process): How to approach the material
+ *   Level 3 (Self-regulation): How to monitor your own learning
+ * Combined with Shute (2008) guidelines: be specific, be timely, focus on the
+ * task not the person, and provide elaboration.
+ */
 function generateFeedbackMessage(
   accuracy: number,
-  kcPerformance: Array<{ kcName: string; currentMastery: number }>
+  kcPerformance: Array<{ kcName: string; currentMastery: number; accuracy: number }>
 ): string {
   const struggling = kcPerformance.filter((kc) => kc.currentMastery < 0.5);
-  if (accuracy >= 0.9) return 'Excellent work. You demonstrated strong understanding.';
-  if (accuracy >= 0.7) return struggling.length > 0
-    ? `Good progress. Review: ${struggling.map((k) => k.kcName).join(', ')}.`
-    : 'Good progress!';
-  if (accuracy >= 0.5) return `Building foundations. Focus on: ${struggling.slice(0, 2).map((k) => k.kcName).join(', ')}.`;
-  return 'This is challenging. Consider reviewing prerequisite materials.';
+  const strong = kcPerformance.filter((kc) => kc.currentMastery >= 0.8);
+
+  if (accuracy >= 0.9) {
+    return strong.length > 0
+      ? `Excellent work. You showed strong command of ${strong.slice(0, 2).map((k) => k.kcName).join(' and ')}. Ready for harder questions next time.`
+      : 'Excellent work. You demonstrated strong understanding across all topics.';
+  }
+  if (accuracy >= 0.7) {
+    return struggling.length > 0
+      ? `Good progress overall. Your weakest area was ${struggling[0].kcName} (${Math.round(struggling[0].accuracy * 100)}% accuracy). Review that topic using "Learn First" mode.`
+      : 'Good progress across all topics. Keep practising to push toward mastery.';
+  }
+  if (accuracy >= 0.5) {
+    const focusAreas = struggling.slice(0, 2).map((k) => k.kcName).join(' and ');
+    return `Building foundations. Focus your next session on ${focusAreas}. Use the hint system when uncertain rather than guessing.`;
+  }
+  return `This content is challenging. Start your next session with "Learn First" to study the material before attempting questions. Focus on one topic at a time.`;
 }
 
 function buildNarrative(
   theta: number,
   accuracy: number,
   masteredCount: number,
-  longitudinal: { deltaTheta: number; priorSessionCount: number } | null
+  longitudinal: { deltaTheta: number; priorSessionCount: number } | null,
+  kcPerformance: Array<{ kcName: string; currentMastery: number; accuracy: number }>
 ): string {
   const abilityLabel = theta >= 1.5 ? 'Expert' : theta >= 0.5 ? 'Competent' : theta >= -0.5 ? 'Developing' : 'Beginner';
   const accuracyPct = Math.round(accuracy * 100);
+  const strongest = kcPerformance.sort((a, b) => b.currentMastery - a.currentMastery)[0];
+  const weakest = kcPerformance.sort((a, b) => a.currentMastery - b.currentMastery)[0];
 
   let sentence = `You finished at ${abilityLabel} level with ${accuracyPct}% accuracy`;
   if (masteredCount > 0) {
     sentence += `, mastering ${masteredCount} knowledge component${masteredCount !== 1 ? 's' : ''}`;
   }
+  sentence += '.';
+
+  // Add strongest/weakest KC context for specificity (Shute 2008)
+  if (strongest && weakest && strongest.kcName !== weakest.kcName) {
+    sentence += ` Your strongest topic was ${strongest.kcName}`;
+    if (weakest.currentMastery < 0.5) {
+      sentence += `, while ${weakest.kcName} needs the most attention`;
+    }
+    sentence += '.';
+  }
+
   if (longitudinal && longitudinal.priorSessionCount > 0) {
     const delta = longitudinal.deltaTheta;
-    if (Math.abs(delta) >= 0.1) {
-      sentence += delta > 0
-        ? `. Your ability improved by ${delta.toFixed(2)} logits compared to recent sessions`
-        : `. Your ability dipped by ${Math.abs(delta).toFixed(2)} logits, worth reviewing soon`;
+    if (delta >= 0.1) {
+      sentence += ` Your ability improved by ${delta.toFixed(2)} logits compared to recent sessions.`;
+    } else if (delta <= -0.1) {
+      sentence += ` Your ability dipped by ${Math.abs(delta).toFixed(2)} logits compared to recent sessions - consider reviewing before your next attempt.`;
     }
   }
-  return sentence + '.';
+  return sentence;
 }

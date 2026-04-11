@@ -174,7 +174,7 @@ function getSectionTheme(heading: string): SectionTheme {
 }
 
 // ---------------------------------------------------------------------------
-// Markdown custom renderers — replaces the prose dump
+// Markdown custom renderers - replaces the prose dump
 // ---------------------------------------------------------------------------
 
 const mdComponents = {
@@ -375,7 +375,7 @@ export default function InstructionMode({
     }
   };
 
-  // ——— Loading ————————————————————————————————————————————————————————————
+  // --- Loading ------------------------------------------------------------
 
   if (loading) {
     return (
@@ -386,7 +386,7 @@ export default function InstructionMode({
     );
   }
 
-  // ——— Error ——————————————————————————————————————————————————————————————
+  // --- Error --------------------------------------------------------------
 
   if (error) {
     return (
@@ -404,7 +404,7 @@ export default function InstructionMode({
     );
   }
 
-  // ——— Empty state ————————————————————————————————————————————————————————
+  // --- Empty state --------------------------------------------------------
 
   if (learningObjects.length === 0) {
     return (
@@ -422,7 +422,7 @@ export default function InstructionMode({
     );
   }
 
-  // ——— Parse content sections ——————————————————————————————————————————————
+  // --- Parse content sections ----------------------------------------------
 
   const rawContent = showEli5 && currentContent.eli5Content
     ? currentContent.eli5Content
@@ -433,12 +433,12 @@ export default function InstructionMode({
   const progressPct = ((currentIndex + 1) / learningObjects.length) * 100;
   const isLastPage = currentIndex === learningObjects.length - 1;
 
-  // ——— Main render ————————————————————————————————————————————————————————
+  // --- Main render --------------------------------------------------------
 
   return (
     <div className="max-w-3xl mx-auto">
 
-      {/* ——— Header card ——— */}
+      {/* --- Header card --- */}
       <div className="bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden mb-4">
         <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border-b border-slate-700/50 px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-3">
@@ -505,7 +505,7 @@ export default function InstructionMode({
         )}
       </div>
 
-      {/* ——— Prerequisite warning ——— */}
+      {/* --- Prerequisite warning --- */}
       {unmasteredPrereqs.length > 0 && (
         <div className="bg-amber-950/30 border border-amber-700/40 rounded-xl px-5 py-4 mb-4 flex items-start gap-3">
           <TriangleAlert size={16} className="text-amber-400 shrink-0 mt-0.5" />
@@ -526,14 +526,14 @@ export default function InstructionMode({
         </div>
       )}
 
-      {/* ——— Section cards ——— */}
+      {/* --- Section cards --- */}
       <div>
         {sections.map((section, idx) => (
           <SectionCard key={idx} section={section} />
         ))}
       </div>
 
-      {/* ——— Self-assessment (last page only) ——— */}
+      {/* --- Self-assessment (last page only) --- */}
       {isLastPage && (
         <div className="bg-slate-900 border border-slate-700/50 rounded-xl px-6 py-5 mb-4">
           <p className="text-slate-300 text-sm font-medium mb-3">
@@ -561,7 +561,7 @@ export default function InstructionMode({
         </div>
       )}
 
-      {/* ——— Navigation footer ——— */}
+      {/* --- Navigation footer --- */}
       <div className="bg-slate-900 border border-slate-700/50 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
         <button
           onClick={handlePrevious}

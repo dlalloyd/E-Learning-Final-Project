@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/analytics/error-patterns?sessionId=xxx
- * Error Pattern Fingerprinting — clusters mistakes into cognitive profiles
+ * Error Pattern Fingerprinting - clusters mistakes into cognitive profiles
  * and generates targeted remediation recommendations.
  *
  * Analyses:
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Build where clause — can analyse a single session or all sessions for a user
+    // Build where clause - can analyse a single session or all sessions for a user
     const sessionWhere = sessionId
       ? { id: sessionId }
       : { userId: userId! };
@@ -199,7 +199,7 @@ export async function GET(req: NextRequest) {
           confidence: Math.min(1, errorRate),
           evidence: [
             `P(Learned)=${currentMastery.toFixed(2)} after ${interactions.length} attempts`,
-            `Error rate: ${(errorRate * 100).toFixed(0)}% — fundamental gap in this KC`,
+            `Error rate: ${(errorRate * 100).toFixed(0)}% - fundamental gap in this KC`,
           ],
         });
       }
@@ -299,19 +299,42 @@ export async function GET(req: NextRequest) {
     }
 
     if (fatigueDetected) {
-      remediationPlan.push('Consider shorter study sessions — fatigue detected in final 30% of session with increased error rate.');
+      remediationPlan.push('Consider shorter study sessions. Fatigue detected in the final 30% of the session with increased error rate.');
     }
 
     const mostVulnerableBloom = bloomVulnerabilities[0];
     if (mostVulnerableBloom && mostVulnerableBloom.errorRate > 0.4) {
       remediationPlan.push(
-        `Focus on ${mostVulnerableBloom.label} (Bloom Level ${mostVulnerableBloom.level}) — ` +
+        `Focus on ${mostVulnerableBloom.label} (Bloom Level ${mostVulnerableBloom.level}): ` +
         `${(mostVulnerableBloom.errorRate * 100).toFixed(0)}% error rate indicates difficulty at this cognitive level.`
       );
     }
 
+    // ---- Hattie & Timperley (2007) 4-level feedback ----
+    // Level 1 (Task): What went wrong on specific questions
+    // Level 2 (Process): How you approached the questions
+    // Level 3 (Self-regulation): How to monitor and adjust your learning
+    // We add all three levels for richer, more actionable feedback.
+
+    // Process-level feedback based on response-time patterns
+    const avgAllResponseMs = allInteractions.reduce((s, i) => s + i.responseTimeMs, 0) / allInteractions.length;
+    if (avgAllResponseMs < 4000 && overallErrorRate > 0.3) {
+      remediationPlan.push(
+        'You are answering very quickly (avg ' + (avgAllResponseMs / 1000).toFixed(1) +
+        's). Try reading each option fully before selecting. Slower, deliberate responses tend to improve accuracy (Shute, 2008).'
+      );
+    }
+
+    // Self-regulation feedback
+    if (overallErrorRate > 0.4) {
+      remediationPlan.push(
+        'Before each answer, try pausing to ask yourself: "Am I certain, or am I guessing?" ' +
+        'This self-monitoring strategy helps you identify when to use hints instead of guessing (Narciss & Huth, 2004).'
+      );
+    }
+
     if (remediationPlan.length === 0) {
-      remediationPlan.push('No significant error patterns detected. Continue with adaptive practice.');
+      remediationPlan.push('Strong performance across all topics. Keep practising to maintain your mastery over time.');
     }
 
     const fingerprint: ErrorFingerprint = {
@@ -338,10 +361,16 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ─── Remediation Generator ────────────────────────────────────────────────────
+// --- Remediation Generator ---
+// Based on Hattie & Timperley (2007) feedback model:
+//   Level 1 (Task): specific information about what was wrong
+//   Level 2 (Process): strategies for approaching the task
+//   Level 3 (Self-regulation): metacognitive monitoring guidance
+// Also informed by Shute (2008) guidelines for formative feedback
+// and Narciss & Huth (2004) elaborated feedback taxonomy.
 
 function generateRemediation(
-  kcId: string,
+  _kcId: string,
   kcName: string,
   cluster: ErrorCluster | undefined,
   bloomLevel: number,
@@ -350,32 +379,36 @@ function generateRemediation(
 
   switch (cluster.type) {
     case 'guessing':
-      return `${kcName}: Slow down and read each option carefully. ` +
-        `Your fast responses suggest you may be guessing. ` +
-        `Review the foundational concepts before attempting more questions.`;
+      return `${kcName}: Your response times suggest rapid guessing (most errors under 5 seconds). ` +
+        `Try using the hint system instead of guessing randomly. ` +
+        (bloomLevel === 1
+          ? 'Use the "Learn First" mode to review key facts before attempting questions again.'
+          : 'Read all four options before selecting. Eliminate two wrong answers first, then choose between the remaining two.');
 
     case 'misconception':
-      return `${kcName}: You have a systematic misunderstanding here. ` +
-        `Re-read the instructional material carefully, paying attention to distinctions between similar concepts. ` +
-        (bloomLevel >= 2 ? 'Try explaining the concept in your own words before answering.' : '');
+      return `${kcName}: You spent time thinking but reached the wrong conclusion, which suggests a specific misunderstanding. ` +
+        (bloomLevel === 1
+          ? 'Pay close attention to details that distinguish similar items (e.g. which national park is in which region).'
+          : bloomLevel === 2
+            ? 'Try to explain the "why" behind your answer before submitting. If you cannot explain it, use a hint.'
+            : 'Break the problem into smaller parts and check each part separately before committing to an answer.');
 
     case 'careless_error':
-      return `${kcName}: You know this material but are making avoidable mistakes. ` +
-        `Take an extra moment to verify your answer before submitting.`;
+      return `${kcName}: You understand this topic (high mastery) but made quick mistakes. ` +
+        `Before submitting, re-read the question stem to make sure you are answering what was actually asked.`;
 
     case 'knowledge_gap':
-      return `${kcName}: This is a fundamental knowledge gap. ` +
-        `Start with the "Learn First" mode to build foundational understanding. ` +
+      return `${kcName}: This needs focused study. ` +
         (bloomLevel === 1
-          ? 'Focus on memorising key facts.'
+          ? 'Start a new session using "Learn First" and study the review material for this topic. Focus on the memory aids provided.'
           : bloomLevel === 2
-            ? 'Work on understanding relationships between concepts.'
-            : 'Practice applying concepts to new scenarios.');
+            ? 'Review the cause-and-effect relationships in this topic. Try to connect each concept to a real-world example.'
+            : 'Revisit the foundational concepts first (Level 1 and 2) before attempting application questions.');
 
     case 'fatigue':
-      return `${kcName}: Errors increased later in the session — consider taking a break and revisiting.`;
+      return `${kcName}: Your accuracy dropped in the later part of the session. Consider shorter, more frequent study sessions rather than one long one.`;
 
     default:
-      return `Review ${kcName} learning materials and practice with varied question formats.`;
+      return `Review ${kcName} learning materials and practise with varied question formats.`;
   }
 }

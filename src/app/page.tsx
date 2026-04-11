@@ -12,7 +12,7 @@ import FirstVisitTour from '@/components/FirstVisitTour';
 import HelpTooltip from '@/components/HelpTooltip';
 import { useSfx } from '@/lib/hooks/useSfx';
 
-// ——— Types ————————————————————————————————————————————————————————————
+// --- Types ------------------------------------------------------------
 
 interface QuestionData {
   questionId: string;
@@ -68,11 +68,11 @@ const STUDY_CONFIG = {
   quizId: 'quiz-uk-geo-adaptive',
 };
 
-// ——— Instruction Mode Thresholds ——————————————————————————————————————
+// --- Instruction Mode Thresholds --------------------------------------
 const MASTERY_THRESHOLD = 0.3;
 const CONSECUTIVE_FAIL_THRESHOLD = 3;
 
-// ——— Theta Bar ————————————————————————————————————————————————————————
+// --- Theta Bar --------------------------------------------------------
 
 function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
   const pct = Math.round(((theta + 3) / 6) * 100);
@@ -97,7 +97,7 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
   );
 }
 
-// ——— Main Component ———————————————————————————————————————————————————
+// --- Main Component ---------------------------------------------------
 
 export default function QuizPage() {
   const { play: playSfx, muted: sfxMuted, toggleMute: toggleSfx } = useSfx();
@@ -106,7 +106,7 @@ export default function QuizPage() {
   const [userName, setUserName] = useState('');
   const [condition, setCondition] = useState<'adaptive' | 'static'>('adaptive');
 
-  // ——— Auth State ———
+  // --- Auth State ---
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -153,19 +153,19 @@ export default function QuizPage() {
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // ——— Cognitive Load State ———
+  // --- Cognitive Load State ---
   const [cognitiveLoad, setCognitiveLoad] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
 
-  // ——— Hint State (per question, reset on each new question) ———
+  // --- Hint State (per question, reset on each new question) ---
   const [hintsUsedThisQ, setHintsUsedThisQ] = useState(0);
   const [hintLevelMaxThisQ, setHintLevelMaxThisQ] = useState(0);
 
-  // ——— Instruction Mode State ———
+  // --- Instruction Mode State ---
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [currentKcId, setCurrentKcId] = useState<string>('');
   const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
 
-  // ——— Assessment State (Pre/Post/Delayed Tests) ———
+  // --- Assessment State (Pre/Post/Delayed Tests) ---
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [assessmentType, setAssessmentType] = useState<'pre_test' | 'post_test' | 'delayed_post_test'>('pre_test');
   const [assessmentQuestion, setAssessmentQuestion] = useState<QuestionData | null>(null);
@@ -174,7 +174,7 @@ export default function QuizPage() {
   const [assessmentScore, setAssessmentScore] = useState<{ score: number; maxScore: number; passed: boolean } | null>(null);
   const [delayedTestAvailable, setDelayedTestAvailable] = useState<{ sessionId: string; daysRemaining?: number } | null>(null);
 
-  // ——— Learning-First Onboarding ———
+  // --- Learning-First Onboarding ---
   const FOUNDATION_KCS = [
     'UK_capitals', 'UK_county_locations', 'UK_rivers',
     'UK_mountains', 'UK_national_parks',
@@ -182,7 +182,7 @@ export default function QuizPage() {
   const [learnQueue, setLearnQueue] = useState<string[]>([]);
   const learnQueueRef = useRef<string[]>([]);
 
-  // —— Fetch next question ——————————————————————————————————————————————
+  // -- Fetch next question ----------------------------------------------
 
   const fetchNextQuestion = useCallback(async (sid: string) => {
     // Check ref (not state) to avoid stale closure
@@ -222,7 +222,7 @@ export default function QuizPage() {
     }
   }, []);
 
-  // —— Start session ————————————————————————————————————————————————————
+  // -- Start session ----------------------------------------------------
 
   const startSession = async (seedFromAssessmentId?: string) => {
     if (!userId.trim()) return;
@@ -254,7 +254,7 @@ export default function QuizPage() {
     }
   };
 
-  // —— Check if instruction mode should trigger ——————————————————————————
+  // -- Check if instruction mode should trigger --------------------------
 
   const shouldTriggerInstruction = (answerResult: AnswerResult, failures: number): InstructionTrigger | null => {
     if (condition !== 'adaptive') return null;
@@ -271,7 +271,7 @@ export default function QuizPage() {
     return null;
   };
 
-  // —— Submit answer ————————————————————————————————————————————————————
+  // -- Submit answer ----------------------------------------------------
 
   const submitAnswer = async (answer: string) => {
     if (!question || !sessionId) return;
@@ -335,28 +335,28 @@ export default function QuizPage() {
     }
   };
 
-  // —— Handle "Review Material" button click ——————————————————————————————
+  // -- Handle "Review Material" button click ------------------------------
 
   const handleReviewRequest = () => {
     setInstructionTrigger('user_request');
     setAppState('instruction');
   };
 
-  // —— Handle instruction complete ————————————————————————————————————————
+  // -- Handle instruction complete ----------------------------------------
 
   const handleInstructionComplete = () => {
     setConsecutiveFailures(0);
     if (instructionTrigger === 'user_request' && question) {
-      // User clicked "Review Material" mid-question — return to the same question
+      // User clicked "Review Material" mid-question - return to the same question
       setStartTime(Date.now());
       setAppState('question');
     } else {
-      // Auto-triggered after wrong answer — fetch next question
+      // Auto-triggered after wrong answer - fetch next question
       fetchNextQuestion(sessionId);
     }
   };
 
-  // —— Handle next after feedback —————————————————————————————————————————
+  // -- Handle next after feedback -----------------------------------------
 
   const handleNextAfterFeedback = () => {
     const trigger = shouldTriggerInstruction(result!, consecutiveFailures);
@@ -368,7 +368,7 @@ export default function QuizPage() {
     }
   };
 
-  // —— Option button style ——————————————————————————————————————————————
+  // -- Option button style ----------------------------------------------
 
   const optionStyle = (label: string) => {
     if (appState !== 'feedback') {
@@ -381,7 +381,7 @@ export default function QuizPage() {
     return 'border-slate-200 bg-white text-slate-400';
   };
 
-  // ——— Auth handlers ————————————————————————————————————————————————————
+  // --- Auth handlers ----------------------------------------------------
 
   const handleAuth = async () => {
     setAuthError('');
@@ -449,7 +449,7 @@ export default function QuizPage() {
     fetchNextQuestion(resumableSessionId);
   };
 
-  // —— Assessment flow helpers ————————————————————————————————————————
+  // -- Assessment flow helpers ----------------------------------------
 
   const startAssessment = async (type: 'pre_test' | 'post_test' | 'delayed_post_test', linkedSessionId?: string) => {
     setAppState('loading');
@@ -534,7 +534,7 @@ export default function QuizPage() {
     }
   };
 
-  // ——— Render: Start Screen ———————————————————————————————————————————
+  // --- Render: Start Screen -------------------------------------------
 
   if (appState === 'start') {
     return (
@@ -622,7 +622,7 @@ export default function QuizPage() {
                 </button>
               </>
             ) : (
-              /* Logged in — show session options */
+              /* Logged in - show session options */
               <>
                 <div className="text-center">
                   <p className="text-white font-medium">Welcome back, {userName}</p>
@@ -709,7 +709,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Loading ————————————————————————————————————————————————
+  // --- Render: Loading ------------------------------------------------
 
   if (appState === 'loading') {
     return (
@@ -722,7 +722,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Error ——————————————————————————————————————————————————
+  // --- Render: Error --------------------------------------------------
 
   if (appState === 'error') {
     return (
@@ -742,7 +742,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Learning-First Onboarding ——————————————————————————————
+  // --- Render: Learning-First Onboarding ------------------------------
 
   if (appState === 'learn') {
     const handleLearnComplete = () => {
@@ -796,7 +796,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Instruction Mode (mid-quiz remediation) ————————————————
+  // --- Render: Instruction Mode (mid-quiz remediation) ----------------
 
   if (appState === 'instruction') {
     return (
@@ -818,7 +818,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Complete ———————————————————————————————————————————————
+  // --- Render: Complete -----------------------------------------------
 
   if (appState === 'complete') {
     const handleNewSession = () => {
@@ -850,7 +850,7 @@ export default function QuizPage() {
     );
   }
 
-  // ——— Render: Assessment (Pre/Post/Delayed Test) ——————————————————————
+  // --- Render: Assessment (Pre/Post/Delayed Test) ----------------------
 
   if (appState === 'assessment') {
     const typeLabels: Record<string, string> = {
@@ -978,7 +978,7 @@ export default function QuizPage() {
     }
   }
 
-  // ——— Render: Question / Feedback —————————————————————————————————————
+  // --- Render: Question / Feedback -------------------------------------
 
   const questionsTotal = question
     ? question.meta.questionsAnswered + question.meta.questionsRemaining
@@ -1113,7 +1113,7 @@ export default function QuizPage() {
               </div>
             )}
 
-            {/* Cognitive Load Rating — compact inline */}
+            {/* Cognitive Load Rating - compact inline */}
             {appState === 'feedback' && (
               <div className="flex items-center gap-3 px-1">
                 <span className="text-slate-500 text-xs whitespace-nowrap">Difficulty:</span>
