@@ -10,6 +10,10 @@ import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
 import FirstVisitTour from '@/components/FirstVisitTour';
 import HelpTooltip from '@/components/HelpTooltip';
+import ProgressDashboard from '@/components/ProgressDashboard';
+import PostSessionFlow from '@/components/PostSessionFlow';
+import ElaborationPrompt from '@/components/ElaborationPrompt';
+import SUSQuestionnaire from '@/components/SUSQuestionnaire';
 import { useSfx } from '@/lib/hooks/useSfx';
 
 // --- Types ------------------------------------------------------------
@@ -173,6 +177,13 @@ export default function QuizPage() {
   const [assessmentSelected, setAssessmentSelected] = useState<string | null>(null);
   const [assessmentScore, setAssessmentScore] = useState<{ score: number; maxScore: number; passed: boolean } | null>(null);
   const [delayedTestAvailable, setDelayedTestAvailable] = useState<{ sessionId: string; daysRemaining?: number } | null>(null);
+
+  // --- New Features State ---
+  const [showProgressDashboard, setShowProgressDashboard] = useState(false);
+  const [showPostSessionFlow, setShowPostSessionFlow] = useState(false);
+  const [showElaboration, setShowElaboration] = useState(false);
+  const [showSUS, setShowSUS] = useState(false);
+  const [elaborationChance] = useState(0.2); // 20% chance after correct answer
 
   // --- Learning-First Onboarding ---
   const FOUNDATION_KCS = [
@@ -359,6 +370,16 @@ export default function QuizPage() {
   // -- Handle next after feedback -----------------------------------------
 
   const handleNextAfterFeedback = () => {
+    // Check if elaboration prompt should show (20% chance after correct, unassisted)
+    if (result?.correct && hintsUsedThisQ === 0 && Math.random() < elaborationChance) {
+      setShowElaboration(true);
+      return;
+    }
+    proceedAfterFeedback();
+  };
+
+  const proceedAfterFeedback = () => {
+    setShowElaboration(false);
     const trigger = shouldTriggerInstruction(result!, consecutiveFailures);
     if (trigger) {
       setInstructionTrigger(trigger);
@@ -692,6 +713,13 @@ export default function QuizPage() {
                 )}
 
                 <button
+                  onClick={() => setShowProgressDashboard(!showProgressDashboard)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm"
+                >
+                  {showProgressDashboard ? 'Hide Progress' : 'View My Progress'}
+                </button>
+
+                <button
                   onClick={handleLogout}
                   className="w-full py-2 text-slate-500 hover:text-slate-300 text-xs transition-colors"
                 >
@@ -700,6 +728,22 @@ export default function QuizPage() {
               </>
             )}
           </div>
+
+          {/* Progress Dashboard (expandable) */}
+          {isLoggedIn && showProgressDashboard && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-4">
+              <ProgressDashboard
+                onStartSession={() => { setShowProgressDashboard(false); startSession(); }}
+                onStartReview={(kcId) => {
+                  setShowProgressDashboard(false);
+                  const queue = [kcId];
+                  setLearnQueue(queue);
+                  learnQueueRef.current = queue;
+                  startSession();
+                }}
+              />
+            </div>
+          )}
 
           <p className="mt-6 text-center text-slate-600 text-xs">
             University of Hull · CS Final Year Project · Dylan Bengi
@@ -822,6 +866,8 @@ export default function QuizPage() {
 
   if (appState === 'complete') {
     const handleNewSession = () => {
+      setShowPostSessionFlow(false);
+      setShowSUS(false);
       setAppState('start');
       setSessionId('');
       setTotalAnswered(0);
@@ -830,21 +876,41 @@ export default function QuizPage() {
       setThetaSd(0.543);
       setConsecutiveFailures(0);
     };
+
+    // Show SUS questionnaire after 3+ sessions (check via simple heuristic)
+    const handlePostSessionDone = () => {
+      setShowPostSessionFlow(false);
+      // After 3 sessions, offer the SUS questionnaire
+      fetch('/api/progress').then((r) => r.json()).then((d) => {
+        if (d.stats?.totalSessions >= 3) setShowSUS(true);
+      }).catch(() => {});
+    };
+
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
-          </div>
-          <button
-            onClick={() => startAssessment('post_test', sessionId)}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
-          >
-            Take Post-Test →
-          </button>
-          <p className="text-slate-500 text-xs text-center">
-            A retention test will be available in 7 days to measure long-term learning.
-          </p>
+          {/* SUS questionnaire */}
+          {showSUS ? (
+            <SUSQuestionnaire onComplete={() => setShowSUS(false)} onSkip={() => setShowSUS(false)} />
+          ) : showPostSessionFlow ? (
+            <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
+          ) : (
+            <>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
+                <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
+              </div>
+              <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
+              <button
+                onClick={() => startAssessment('post_test', sessionId)}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+              >
+                Take Post-Test
+              </button>
+              <p className="text-slate-500 text-xs text-center">
+                A retention test will be available in 7 days to measure long-term learning.
+              </p>
+            </>
+          )}
         </div>
       </main>
     );
@@ -1151,8 +1217,20 @@ export default function QuizPage() {
               />
             )}
 
+            {/* Elaboration prompt (Feature 6 - 20% chance after correct) */}
+            {showElaboration && question && (
+              <ElaborationPrompt
+                sessionId={sessionId}
+                questionId={question.questionId}
+                kcId={currentKcId}
+                bloomLevel={question.bloom || 1}
+                onComplete={proceedAfterFeedback}
+                onSkip={proceedAfterFeedback}
+              />
+            )}
+
             {/* Next button */}
-            {appState === 'feedback' && (
+            {appState === 'feedback' && !showElaboration && (
               <button
                 onClick={handleNextAfterFeedback}
                 className={`w-full py-4 font-semibold rounded-xl transition-all ${
