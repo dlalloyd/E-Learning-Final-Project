@@ -19,7 +19,8 @@ export async function GET(
       );
     }
 
-    const hints = await prisma.hint.findMany({
+    // First try direct lookup (questionId is a Question.id from the old model)
+    let hints = await prisma.hint.findMany({
       where: { questionId },
       orderBy: { hintLevel: 'asc' },
       select: {
@@ -29,6 +30,39 @@ export async function GET(
         orderIndex: true,
       },
     });
+
+    // If no hints found, the questionId might be a QuestionVariant ID.
+    // Look up the variant's template, then find the original Question that
+    // shares the same KC + bloom level to fetch its hints.
+    if (hints.length === 0) {
+      const variant = await prisma.questionVariant.findUnique({
+        where: { id: questionId },
+        include: { template: true },
+      });
+
+      if (variant?.template) {
+        // Find the original Question model that matches this template's KC and bloom
+        const originalQuestion = await prisma.question.findFirst({
+          where: {
+            kc: variant.template.kcId,
+            bloom: variant.template.bloomLevel,
+          },
+        });
+
+        if (originalQuestion) {
+          hints = await prisma.hint.findMany({
+            where: { questionId: originalQuestion.id },
+            orderBy: { hintLevel: 'asc' },
+            select: {
+              id: true,
+              hintText: true,
+              hintLevel: true,
+              orderIndex: true,
+            },
+          });
+        }
+      }
+    }
 
     return NextResponse.json({ hints });
   } catch (error) {
