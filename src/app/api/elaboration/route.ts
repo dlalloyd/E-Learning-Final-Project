@@ -31,7 +31,7 @@ const ELABORATION_PROMPTS: Record<number, string[]> = {
   ],
 };
 
-export function getRandomPrompt(bloomLevel: number): string {
+function getRandomPrompt(bloomLevel: number): string {
   const prompts = ELABORATION_PROMPTS[bloomLevel] || ELABORATION_PROMPTS[1];
   return prompts[Math.floor(Math.random() * prompts.length)];
 }

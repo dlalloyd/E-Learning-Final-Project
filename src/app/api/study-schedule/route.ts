@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const schedules = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schedules: any[] = [];
 
     for (const kc of weakKCs) {
       // Only schedule the first interval; subsequent ones created on completion

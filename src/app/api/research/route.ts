@@ -76,7 +76,8 @@ export async function GET(req: NextRequest) {
       where: { consentGiven: true },
     });
 
-    const participants = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const participants: any[] = [];
 
     for (const consent of consented) {
       const userId = consent.userId;
