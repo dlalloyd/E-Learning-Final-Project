@@ -1,17 +1,17 @@
 /**
- * Prisma Seed — Hint bank for progressive scaffolding
+ * Prisma Seed - Hint bank for progressive scaffolding
  *
  * 81 hints total: 3 hints per question across all 27 questions.
  *
  * Hint levels follow a scaffolding progression:
- *   Level 1 (Conceptual)      — Points to the relevant concept without revealing the answer
- *   Level 2 (Procedural)      — Provides the approach or reasoning strategy
- *   Level 3 (Worked Example)  — Shows a similar solved problem or near-direct guidance
+ *   Level 1 (Conceptual)      - Points to the relevant concept without revealing the answer
+ *   Level 2 (Procedural)      - Provides the approach or reasoning strategy
+ *   Level 3 (Worked Example)  - Shows a similar solved problem or near-direct guidance
  *
  * Bloom-level pedagogy:
- *   Bloom 1 (Remembering)     — Hints jog memory via associations and spatial cues
- *   Bloom 2 (Understanding)   — Hints build causal reasoning step by step
- *   Bloom 3 (Applying)        — Hints demonstrate the analytical framework on analogous cases
+ *   Bloom 1 (Remembering)     - Hints jog memory via associations and spatial cues
+ *   Bloom 2 (Understanding)   - Hints build causal reasoning step by step
+ *   Bloom 3 (Applying)        - Hints demonstrate the analytical framework on analogous cases
  *
  * Run: npx tsx prisma/seedHints.ts
  */
@@ -29,7 +29,7 @@ interface HintData {
 
 const hintsData: HintData[] = [
   // ──────────────────────────────────────────────────────────────
-  // BLOOM 1 — REMEMBERING
+  // BLOOM 1 - REMEMBERING
   // ──────────────────────────────────────────────────────────────
 
   // q-001: "Which county is home to the Peak District National Park?" (Derbyshire)
@@ -37,7 +37,7 @@ const hintsData: HintData[] = [
     questionId: 'q-001',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'Think about the counties in the central-north of England — the Peak District sits at the southern end of the Pennines.',
+    hintText: 'Think about the counties in the central-north of England - the Peak District sits at the southern end of the Pennines.',
   },
   {
     questionId: 'q-001',
@@ -69,7 +69,7 @@ const hintsData: HintData[] = [
     questionId: 'q-002',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'London is to England as this city — home to the Principality Stadium and Cardiff Bay — is to Wales.',
+    hintText: 'London is to England as this city - home to the Principality Stadium and Cardiff Bay - is to Wales.',
   },
 
   // q-003: "Which county is located at the far south-west tip of England?" (Cornwall)
@@ -77,13 +77,13 @@ const hintsData: HintData[] = [
     questionId: 'q-003',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'Picture the map of England — which county forms the narrow peninsula that juts out into the Atlantic?',
+    hintText: 'Picture the map of England - which county forms the narrow peninsula that juts out into the Atlantic?',
   },
   {
     questionId: 'q-003',
     hintLevel: 2,
     orderIndex: 1,
-    hintText: 'This county is famous for its rugged coastline, tin mining heritage, and Land\'s End — the most westerly point of mainland England.',
+    hintText: 'This county is famous for its rugged coastline, tin mining heritage, and Land\'s End - the most westerly point of mainland England.',
   },
   {
     questionId: 'q-003',
@@ -109,7 +109,7 @@ const hintsData: HintData[] = [
     questionId: 'q-006',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Glasgow is Scotland\'s largest city, but the capital is the other major Scottish city — the one with the Royal Mile and Arthur\'s Seat.',
+    hintText: 'Glasgow is Scotland\'s largest city, but the capital is the other major Scottish city - the one with the Royal Mile and Arthur\'s Seat.',
   },
 
   // q-007: "What is the capital city of Northern Ireland?" (Belfast)
@@ -129,7 +129,7 @@ const hintsData: HintData[] = [
     questionId: 'q-007',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'This city — famous for the shipyard where the Titanic was built — shares its name with the lough on which it sits. It starts with "Bel-".',
+    hintText: 'This city - famous for the shipyard where the Titanic was built - shares its name with the lough on which it sits. It starts with "Bel-".',
   },
 
   // q-008: "Which river flows through the centre of London?" (Thames)
@@ -137,7 +137,7 @@ const hintsData: HintData[] = [
     questionId: 'q-008',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'Think about the famous river crossings in London — Tower Bridge, Westminster Bridge, and the Millennium Bridge all span this river.',
+    hintText: 'Think about the famous river crossings in London - Tower Bridge, Westminster Bridge, and the Millennium Bridge all span this river.',
   },
   {
     questionId: 'q-008',
@@ -157,7 +157,7 @@ const hintsData: HintData[] = [
     questionId: 'q-009',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'The longest river in the UK is not in England\'s south-east — it rises in Wales and flows through the English Midlands.',
+    hintText: 'The longest river in the UK is not in England\'s south-east - it rises in Wales and flows through the English Midlands.',
   },
   {
     questionId: 'q-009',
@@ -189,7 +189,7 @@ const hintsData: HintData[] = [
     questionId: 'q-010',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Snowdon (1,085m) is the highest in Wales, Scafell Pike (978m) the highest in England. The UK\'s tallest summit is Ben _____ — the second word means "malicious" or "venomous" in Gaelic.',
+    hintText: 'Snowdon (1,085m) is the highest in Wales, Scafell Pike (978m) the highest in England. The UK\'s tallest summit is Ben _____ - the second word means "malicious" or "venomous" in Gaelic.',
   },
 
   // q-011: "Which mountain is the highest peak in England?" (Scafell Pike)
@@ -209,7 +209,7 @@ const hintsData: HintData[] = [
     questionId: 'q-011',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Helvellyn (950m) is the third-highest peak in England. The highest is a "Pike" — a two-word name starting with "Sca-" — found near Wastwater in the western Lake District.',
+    hintText: 'Helvellyn (950m) is the third-highest peak in England. The highest is a "Pike" - a two-word name starting with "Sca-" - found near Wastwater in the western Lake District.',
   },
 
   // q-012: "Which national park covers the mountainous region of north-west Wales?" (Snowdonia)
@@ -229,7 +229,7 @@ const hintsData: HintData[] = [
     questionId: 'q-012',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'The Brecon Beacons cover south Wales, while this park — named after the mountain Snowdon (Yr Wyddfa) — covers the mountainous north-west.',
+    hintText: 'The Brecon Beacons cover south Wales, while this park - named after the mountain Snowdon (Yr Wyddfa) - covers the mountainous north-west.',
   },
 
   // q-013: "In which county is the historic city of York located?" (North Yorkshire)
@@ -249,7 +249,7 @@ const hintsData: HintData[] = [
     questionId: 'q-013',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'There is West Yorkshire (Leeds/Bradford), South Yorkshire (Sheffield), East Riding, and one more — the largest by area, containing York, Harrogate, and Scarborough.',
+    hintText: 'There is West Yorkshire (Leeds/Bradford), South Yorkshire (Sheffield), East Riding, and one more - the largest by area, containing York, Harrogate, and Scarborough.',
   },
 
   // q-014: "Which is the northernmost county in England?" (Northumberland)
@@ -269,11 +269,11 @@ const hintsData: HintData[] = [
     questionId: 'q-014',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Cumbria borders Scotland in the north-west, but the northernmost county overall is in the north-east — its name literally means "the land north of the Humber" and starts with "North-".',
+    hintText: 'Cumbria borders Scotland in the north-west, but the northernmost county overall is in the north-east - its name literally means "the land north of the Humber" and starts with "North-".',
   },
 
   // ──────────────────────────────────────────────────────────────
-  // BLOOM 2 — UNDERSTANDING
+  // BLOOM 2 - UNDERSTANDING
   // ──────────────────────────────────────────────────────────────
 
   // q-004: "Why does the west coast of the UK receive more rainfall than the east coast?" (Prevailing westerly winds bring moist air from the Atlantic)
@@ -293,7 +293,7 @@ const hintsData: HintData[] = [
     questionId: 'q-004',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'The same mechanism explains why Bergen, Norway receives 2,250mm of rain annually — moist westerly air from the Atlantic hits coastal mountains. In the UK, the prevailing south-westerly winds carry moisture-laden air that meets western uplands first.',
+    hintText: 'The same mechanism explains why Bergen, Norway receives 2,250mm of rain annually - moist westerly air from the Atlantic hits coastal mountains. In the UK, the prevailing south-westerly winds carry moisture-laden air that meets western uplands first.',
   },
 
   // q-005: "Which area of England lies in the rain shadow of the Pennines?" (The Vale of York)
@@ -313,7 +313,7 @@ const hintsData: HintData[] = [
     questionId: 'q-005',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'The rain shadow principle: Death Valley is dry because the Sierra Nevada strips moisture from Pacific air. Similarly, the broad lowland valley east of the Pennines — stretching from the city of York northward — receives notably less rainfall than the western slopes.',
+    hintText: 'The rain shadow principle: Death Valley is dry because the Sierra Nevada strips moisture from Pacific air. Similarly, the broad lowland valley east of the Pennines - stretching from the city of York northward - receives notably less rainfall than the western slopes.',
   },
 
   // q-015: "Which combination of characteristics best describes a maritime climate?" (Mild temperatures year-round with high rainfall)
@@ -321,13 +321,13 @@ const hintsData: HintData[] = [
     questionId: 'q-015',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'Consider what "maritime" means — it relates to the sea. How does proximity to the ocean affect temperature extremes and moisture?',
+    hintText: 'Consider what "maritime" means - it relates to the sea. How does proximity to the ocean affect temperature extremes and moisture?',
   },
   {
     questionId: 'q-015',
     hintLevel: 2,
     orderIndex: 1,
-    hintText: 'Water heats and cools more slowly than land. A maritime climate is therefore moderated by the ocean — think about what this means for seasonal temperature range and moisture availability.',
+    hintText: 'Water heats and cools more slowly than land. A maritime climate is therefore moderated by the ocean - think about what this means for seasonal temperature range and moisture availability.',
   },
   {
     questionId: 'q-015',
@@ -353,7 +353,7 @@ const hintsData: HintData[] = [
     questionId: 'q-016',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Compare annual temperature ranges: Glasgow (west coast) varies about 10°C between summer and winter means, while a city in Norfolk — the capital of East Anglia — varies about 14°C and receives only ~650mm of rain. That eastern city starts with "N".',
+    hintText: 'Compare annual temperature ranges: Glasgow (west coast) varies about 10°C between summer and winter means, while a city in Norfolk - the capital of East Anglia - varies about 14°C and receives only ~650mm of rain. That eastern city starts with "N".',
   },
 
   // q-017: "How does the North Atlantic Drift primarily affect the UK's winter climate?" (It carries warm water from the Gulf of Mexico, moderating temperatures)
@@ -387,13 +387,13 @@ const hintsData: HintData[] = [
     questionId: 'q-018',
     hintLevel: 2,
     orderIndex: 1,
-    hintText: 'The North Atlantic Drift flows north-east past the western British Isles. The regions that benefit most are those directly exposed to these warmed ocean waters — western and north-western coastal areas at higher latitudes where the warming effect is most pronounced compared to what temperatures would otherwise be.',
+    hintText: 'The North Atlantic Drift flows north-east past the western British Isles. The regions that benefit most are those directly exposed to these warmed ocean waters - western and north-western coastal areas at higher latitudes where the warming effect is most pronounced compared to what temperatures would otherwise be.',
   },
   {
     questionId: 'q-018',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Gardens in south-west Scotland can grow subtropical plants like palm trees despite being at 55°N — the same latitude as Moscow. This is because the North Atlantic Drift warms the sea surface along the western coast, giving these exposed Atlantic-facing regions the greatest temperature boost relative to their latitude.',
+    hintText: 'Gardens in south-west Scotland can grow subtropical plants like palm trees despite being at 55°N - the same latitude as Moscow. This is because the North Atlantic Drift warms the sea surface along the western coast, giving these exposed Atlantic-facing regions the greatest temperature boost relative to their latitude.',
   },
 
   // q-019: "Why does eastern England experience significantly lower annual rainfall?" (Air masses lose moisture crossing high ground before reaching the east)
@@ -413,7 +413,7 @@ const hintsData: HintData[] = [
     questionId: 'q-019',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Seathwaite in Cumbria (western uplands) receives ~3,400mm of rain per year, while Cambridge (eastern lowlands) receives only ~550mm. The mechanism is the same as the Atacama Desert behind the Andes — air masses lose their moisture crossing elevated terrain before reaching the leeward side.',
+    hintText: 'Seathwaite in Cumbria (western uplands) receives ~3,400mm of rain per year, while Cambridge (eastern lowlands) receives only ~550mm. The mechanism is the same as the Atacama Desert behind the Andes - air masses lose their moisture crossing elevated terrain before reaching the leeward side.',
   },
 
   // q-020: "Which factor best explains why south-east England typically records the UK's highest summer temperatures?" (Continental air masses from Europe encounter minimal cooling)
@@ -433,7 +433,7 @@ const hintsData: HintData[] = [
     questionId: 'q-020',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Paris and south-east England are only ~340km apart across a narrow channel. When a continental heatwave builds over France, the hot dry air crosses the Channel with minimal marine cooling — the water crossing is simply too short to moderate the temperature significantly. This is why Kent and London regularly hit 35°C+ while western Scotland rarely exceeds 25°C.',
+    hintText: 'Paris and south-east England are only ~340km apart across a narrow channel. When a continental heatwave builds over France, the hot dry air crosses the Channel with minimal marine cooling - the water crossing is simply too short to moderate the temperature significantly. This is why Kent and London regularly hit 35°C+ while western Scotland rarely exceeds 25°C.',
   },
 
   // q-021: "What is the primary mechanism by which mountains in the Lake District generate high local rainfall?" (Orographic uplift forcing moist Atlantic air to rise and cool)
@@ -453,14 +453,14 @@ const hintsData: HintData[] = [
     questionId: 'q-021',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'The process is identical to why the Hawaiian peak of Mount Waialeale (1,569m) is one of the wettest places on Earth: trade winds carry moist Pacific air that is forced upward by the mountain, cooling and condensing. In the Lake District, moist south-westerly Atlantic air hits peaks like Helvellyn (950m) — Seathwaite receives ~3,400mm/year through this orographic mechanism.',
+    hintText: 'The process is identical to why the Hawaiian peak of Mount Waialeale (1,569m) is one of the wettest places on Earth: trade winds carry moist Pacific air that is forced upward by the mountain, cooling and condensing. In the Lake District, moist south-westerly Atlantic air hits peaks like Helvellyn (950m) - Seathwaite receives ~3,400mm/year through this orographic mechanism.',
   },
 
   // ──────────────────────────────────────────────────────────────
-  // BLOOM 3 — APPLYING
+  // BLOOM 3 - APPLYING
   // ──────────────────────────────────────────────────────────────
 
-  // q-022: "Which Köppen climate classification best describes the climate of lowland England?" (Cfb — Oceanic)
+  // q-022: "Which Köppen climate classification best describes the climate of lowland England?" (Cfb - Oceanic)
   {
     questionId: 'q-022',
     hintLevel: 1,
@@ -471,16 +471,16 @@ const hintsData: HintData[] = [
     questionId: 'q-022',
     hintLevel: 2,
     orderIndex: 1,
-    hintText: 'In Köppen classification: "C" = temperate (coldest month above -3°C), "f" = no dry season, "b" = warmest month below 22°C. Lowland England has mild winters, cool summers, and year-round rainfall — which three-letter code does this produce?',
+    hintText: 'In Köppen classification: "C" = temperate (coldest month above -3°C), "f" = no dry season, "b" = warmest month below 22°C. Lowland England has mild winters, cool summers, and year-round rainfall - which three-letter code does this produce?',
   },
   {
     questionId: 'q-022',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the same logic used to classify Paris or Amsterdam: both have temperate winters (C), no dry season (f), and warm but not hot summers under 22°C (b). London\'s climate is very similar — the classification is C + f + b, which defines the "Oceanic" climate type.',
+    hintText: 'Apply the same logic used to classify Paris or Amsterdam: both have temperate winters (C), no dry season (f), and warm but not hot summers under 22°C (b). London\'s climate is very similar - the classification is C + f + b, which defines the "Oceanic" climate type.',
   },
 
-  // q-023: "How does the climate of the Scottish Highlands differ from lowland England?" (Colder with shorter growing seasons — transitioning toward Dfc (subarctic))
+  // q-023: "How does the climate of the Scottish Highlands differ from lowland England?" (Colder with shorter growing seasons - transitioning toward Dfc (subarctic))
   {
     questionId: 'q-023',
     hintLevel: 1,
@@ -497,7 +497,7 @@ const hintsData: HintData[] = [
     questionId: 'q-023',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the elevation-latitude analogy: Tromsø, Norway (69°N, sea level) and the Cairngorms (57°N, ~1,000m) both have short growing seasons with only 1-3 months above 10°C. When fewer than 4 months exceed 10°C with no dry season, Köppen shifts from Cfb toward Dfc — the subarctic classification.',
+    hintText: 'Apply the elevation-latitude analogy: Tromsø, Norway (69°N, sea level) and the Cairngorms (57°N, ~1,000m) both have short growing seasons with only 1-3 months above 10°C. When fewer than 4 months exceed 10°C with no dry season, Köppen shifts from Cfb toward Dfc - the subarctic classification.',
   },
 
   // q-024: "Based on current UK climate projections, which region faces the greatest increase in winter flood risk by 2050?" (North-west England and Wales, due to intensified westerly rainfall)
@@ -511,13 +511,13 @@ const hintsData: HintData[] = [
     questionId: 'q-024',
     hintLevel: 2,
     orderIndex: 1,
-    hintText: 'Climate models project stronger westerly winds and warmer air (holding more moisture via the Clausius-Clapeyron relation — roughly 7% more per 1°C). Regions already exposed to Atlantic frontal systems and orographic rainfall will see the greatest amplification.',
+    hintText: 'Climate models project stronger westerly winds and warmer air (holding more moisture via the Clausius-Clapeyron relation - roughly 7% more per 1°C). Regions already exposed to Atlantic frontal systems and orographic rainfall will see the greatest amplification.',
   },
   {
     questionId: 'q-024',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the same reasoning used for Norwegian flood projections: western Norway faces increased flood risk because stronger Atlantic storms deliver more moisture to terrain that already forces orographic rainfall. In the UK, the equivalent regions are the mountainous areas facing the Atlantic — the Lake District, Snowdonia, and the western Pennines — which sit in north-west England and Wales.',
+    hintText: 'Apply the same reasoning used for Norwegian flood projections: western Norway faces increased flood risk because stronger Atlantic storms deliver more moisture to terrain that already forces orographic rainfall. In the UK, the equivalent regions are the mountainous areas facing the Atlantic - the Lake District, Snowdonia, and the western Pennines - which sit in north-west England and Wales.',
   },
 
   // q-025: "A farmer in East Anglia records increasingly dry summers..." (Amplification of the continental effect as climate change shifts jet stream patterns)
@@ -537,7 +537,7 @@ const hintsData: HintData[] = [
     questionId: 'q-025',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the principle of amplified continental influence: the Mediterranean region is drying because the subtropical high-pressure belt is expanding poleward. Similarly, as the jet stream shifts north in summer, East Anglia increasingly falls under the influence of European continental highs — amplifying the existing continental effect that already makes it the UK\'s driest region.',
+    hintText: 'Apply the principle of amplified continental influence: the Mediterranean region is drying because the subtropical high-pressure belt is expanding poleward. Similarly, as the jet stream shifts north in summer, East Anglia increasingly falls under the influence of European continental highs - amplifying the existing continental effect that already makes it the UK\'s driest region.',
   },
 
   // q-026: "A low-lying Somerset village floods every winter..." (High westerly rainfall on Exmoor and Mendips draining onto impermeable clay floodplains)
@@ -557,15 +557,15 @@ const hintsData: HintData[] = [
     questionId: 'q-026',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the same framework used for the 2014 Somerset Levels floods: Exmoor received 150% of average winter rainfall (Atlantic westerlies), which drained into the River Parrett and its tributaries. The Somerset Levels are flat, low-lying clay floodplains — impermeable clay prevents drainage, so the water has nowhere to go. The answer integrates upland rainfall source, drainage pathways, and floodplain geology.',
+    hintText: 'Apply the same framework used for the 2014 Somerset Levels floods: Exmoor received 150% of average winter rainfall (Atlantic westerlies), which drained into the River Parrett and its tributaries. The Somerset Levels are flat, low-lying clay floodplains - impermeable clay prevents drainage, so the water has nowhere to go. The answer integrates upland rainfall source, drainage pathways, and floodplain geology.',
   },
 
-  // q-027: "A UK government report proposes three flood risk interventions..." (Catchment position — upstream interventions should take priority)
+  // q-027: "A UK government report proposes three flood risk interventions..." (Catchment position - upstream interventions should take priority)
   {
     questionId: 'q-027',
     hintLevel: 1,
     orderIndex: 0,
-    hintText: 'Think about where in a river\'s catchment it is most effective to intervene — at the source of the water, or where it has already accumulated?',
+    hintText: 'Think about where in a river\'s catchment it is most effective to intervene - at the source of the water, or where it has already accumulated?',
   },
   {
     questionId: 'q-027',
@@ -577,7 +577,7 @@ const hintsData: HintData[] = [
     questionId: 'q-027',
     hintLevel: 3,
     orderIndex: 2,
-    hintText: 'Apply the Pickering (North Yorkshire) case study: upstream tree planting and "leaky dams" in headwater streams reduced peak flow by 15-25%, protecting the town without expensive engineered defences. The key evaluation criterion is catchment position — upstream interventions address the cause (water volume entering the system) while downstream interventions only treat the symptom (water arriving at a specific point).',
+    hintText: 'Apply the Pickering (North Yorkshire) case study: upstream tree planting and "leaky dams" in headwater streams reduced peak flow by 15-25%, protecting the town without expensive engineered defences. The key evaluation criterion is catchment position - upstream interventions address the cause (water volume entering the system) while downstream interventions only treat the symptom (water arriving at a specific point).',
   },
 ];
 

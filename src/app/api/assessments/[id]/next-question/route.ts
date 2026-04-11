@@ -7,7 +7,7 @@
  * across pre/post/delayed conditions.
  *
  * Key design:
- *   - Static ordering (no IRT selection) — assessments must be equivalent
+ *   - Static ordering (no IRT selection) - assessments must be equivalent
  *   - One question per KC for balanced coverage
  *   - Different variant per assessment type to prevent memorisation
  */
@@ -141,7 +141,7 @@ export async function GET(
       });
     }
 
-    // All questions answered — complete the assessment
+    // All questions answered - complete the assessment
     const answers = await prisma.answer.findMany({
       where: { assessmentId },
     });

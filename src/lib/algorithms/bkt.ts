@@ -7,10 +7,10 @@
  *   - BKT handles per-knowledge-component mastery tracking (binary learned/unlearned)
  *
  * Four parameters per knowledge component (KC):
- *   pL0   — prior probability of knowing KC before any practice
- *   pT    — probability of learning KC on any given opportunity (transit)
- *   pS    — probability of answering incorrectly despite knowing (slip)
- *   pG    — probability of answering correctly without knowing (guess)
+ *   pL0   - prior probability of knowing KC before any practice
+ *   pT    - probability of learning KC on any given opportunity (transit)
+ *   pS    - probability of answering incorrectly despite knowing (slip)
+ *   pG    - probability of answering correctly without knowing (guess)
  *
  * References:
  *   Corbett, A.T., & Anderson, J.R. (1995). Knowledge tracing: Modelling
@@ -46,7 +46,7 @@ export interface BKTUpdateResult {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /**
- * Mastery threshold — Ritter et al. (2016)
+ * Mastery threshold - Ritter et al. (2016)
  * KC considered mastered when P(Learned) >= 0.95
  * Note: higher than IRT mastery (0.80) because BKT is binary state estimation
  */
@@ -76,7 +76,7 @@ export const DEFAULT_BKT_PARAMS: Record<string, BKTParams> = {
     pL0: 0.50, pT: 0.20, pS: 0.10, pG: 0.25,
   },
 
-  // Level 2 — Understanding (moderate prior; requires causal reasoning)
+  // Level 2 - Understanding (moderate prior; requires causal reasoning)
   westerly_winds_rainfall: {
     pL0: 0.25, pT: 0.18, pS: 0.12, pG: 0.25,
   },
@@ -93,7 +93,7 @@ export const DEFAULT_BKT_PARAMS: Record<string, BKTParams> = {
     pL0: 0.18, pT: 0.15, pS: 0.15, pG: 0.25,
   },
 
-  // Level 3 — Applying (lowest prior; requires synthesis)
+  // Level 3 - Applying (lowest prior; requires synthesis)
   climate_classification: {
     pL0: 0.15, pT: 0.15, pS: 0.18, pG: 0.25,
   },

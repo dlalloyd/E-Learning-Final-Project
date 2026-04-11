@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" fill="none">
+  <title>UK Major Rivers Map</title>
+  <style>
+    text { font-family: system-ui, sans-serif; }
+    .label { font-size: 8px; fill: #e2e8f0; }
+    .river-label { font-size: 7.5px; fill: #93c5fd; font-weight: 600; }
+    .region-label { font-size: 9px; fill: #94a3b8; font-weight: 500; }
+    .country-label { font-size: 11px; fill: #cbd5e1; font-weight: 700; letter-spacing: 2px; }
+  </style>
+
+  <rect width="400" height="600" fill="#0f172a" rx="12"/>
+
+  <!-- UK outline (simplified) -->
+  <path d="M160,60 L180,50 L220,55 L240,70 L250,90 L245,110 L260,120 L255,140 L240,150
+           L230,160 L220,155 L200,165 L190,160 L175,170 L165,155 L155,160 L150,145
+           L160,130 L155,115 L165,100 L155,85 Z"
+        fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <path d="M175,170 L190,160 L200,165 L220,155 L230,160 L240,150 L255,165 L260,185
+           L265,200 L260,220 L255,240 L260,260 L255,280 L250,300 L245,320 L240,340
+           L235,360 L225,380 L215,390 L205,400 L195,410 L185,405 L175,395 L170,380
+           L160,370 L155,355 L150,340 L145,325 L140,310 L150,295 L155,280 L150,265
+           L155,250 L150,235 L145,220 L150,205 L155,190 L160,180 Z"
+        fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <text x="195" y="105" class="country-label" text-anchor="middle">SCOTLAND</text>
+  <text x="215" y="290" class="country-label" text-anchor="middle">ENGLAND</text>
+
+  <!-- Rivers as blue curved paths -->
+  <!-- River Thames -->
+  <path d="M185,350 Q200,345 215,340 Q230,335 240,340 Q250,345 260,350"
+        stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <text x="255" y="338" class="river-label">Thames</text>
+  <text x="255" y="346" class="label">(346 km, London)</text>
+
+  <!-- River Severn -->
+  <path d="M155,225 Q160,240 165,260 Q168,275 165,290 Q162,305 158,320 Q155,335 150,345"
+        stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <text x="120" y="300" class="river-label">Severn</text>
+  <text x="110" y="308" class="label">(354 km, longest)</text>
+
+  <!-- River Trent -->
+  <path d="M220,250 Q225,260 230,270 Q235,280 240,285 Q250,290 260,288"
+        stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="242" y="278" class="river-label">Trent</text>
+  <text x="242" y="286" class="label">(297 km)</text>
+
+  <!-- River Tay (Scotland) -->
+  <path d="M185,120 Q195,125 205,128 Q215,130 225,128"
+        stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="228" y="126" class="river-label">Tay</text>
+  <text x="228" y="134" class="label">(Longest in Scotland)</text>
+
+  <!-- River Clyde -->
+  <path d="M170,135 Q175,140 180,142 Q185,144 190,142"
+        stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="192" y="140" class="river-label">Clyde</text>
+  <text x="192" y="148" class="label">(Glasgow)</text>
+
+  <!-- River Mersey -->
+  <path d="M190,235 Q195,238 200,240 Q205,238 210,235"
+        stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="195" y="230" class="river-label">Mersey</text>
+  <text x="195" y="222" class="label">(Liverpool)</text>
+
+  <!-- River Humber -->
+  <path d="M240,235 Q250,238 260,240"
+        stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="262" y="238" class="river-label">Humber</text>
+
+  <!-- River Taff -->
+  <path d="M150,270 Q153,278 155,285"
+        stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="130" y="286" class="river-label">Taff</text>
+  <text x="125" y="294" class="label">(Cardiff)</text>
+
+  <!-- River Lagan -->
+  <circle cx="135" cy="175" r="3" fill="#3b82f6" opacity="0.6"/>
+  <text x="100" y="173" class="river-label">Lagan</text>
+  <text x="97" y="181" class="label">(Belfast)</text>
+
+  <!-- River Avon -->
+  <path d="M180,340 Q185,345 190,348"
+        stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="168" y="340" class="river-label">Avon</text>
+  <text x="162" y="348" class="label">(Bristol)</text>
+
+  <!-- Legend -->
+  <rect x="15" y="440" width="370" height="145" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="200" y="460" class="region-label" text-anchor="middle" fill="#e2e8f0" font-weight="700">UK Major Rivers - Quick Reference</text>
+
+  <line x1="25" y1="475" x2="55" y2="475" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+  <text x="60" y="478" class="label">Major river (width indicates relative length)</text>
+
+  <text x="30" y="498" class="label" fill="#93c5fd">LONGEST:</text>
+  <text x="90" y="498" class="label">Severn (354 km) - rises in Wales, flows through England to Bristol Channel</text>
+
+  <text x="30" y="513" class="label" fill="#93c5fd">2nd LONGEST:</text>
+  <text x="105" y="513" class="label">Thames (346 km) - flows through London to the North Sea</text>
+
+  <text x="30" y="528" class="label" fill="#93c5fd">SCOTLAND:</text>
+  <text x="90" y="528" class="label">Tay (longest in Scotland), Clyde (Glasgow)</text>
+
+  <text x="30" y="543" class="label" fill="#93c5fd">CAPITALS:</text>
+  <text x="90" y="543" class="label">London (Thames), Cardiff (Taff), Belfast (Lagan), Edinburgh (Forth)</text>
+
+  <text x="30" y="558" class="label" fill="#93c5fd">KEY FACT:</text>
+  <text x="90" y="558" class="label">Severn is longest, Thames is most famous. Do not confuse them.</text>
+
+  <text x="30" y="578" class="label" fill="#64748b">Tip: "S before T" - Severn is longer than Thames (354 > 346)</text>
+</svg>

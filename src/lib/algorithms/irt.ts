@@ -5,10 +5,10 @@
  * Model: P(correct | θ) = c + (1 - c) / (1 + exp(-1.7 * a * (θ - b)))
  *
  * Parameters:
- *   θ (theta) — learner ability (logit scale, mean=0, SD=1)
- *   a         — item discrimination (typically 0.5–2.0)
- *   b         — item difficulty (logit scale, same as θ)
- *   c         — pseudo-guessing parameter (fixed at 0.25 for 4-option MCQ)
+ *   θ (theta) - learner ability (logit scale, mean=0, SD=1)
+ *   a         - item discrimination (typically 0.5–2.0)
+ *   b         - item difficulty (logit scale, same as θ)
+ *   c         - pseudo-guessing parameter (fixed at 0.25 for 4-option MCQ)
  *
  * References:
  *   Lord, F.M. (1980). Applications of item response theory to practical
@@ -19,19 +19,19 @@
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-/** Default starting ability — derived from self-pilot EAP (26/02/2026) */
+/** Default starting ability - derived from self-pilot EAP (26/02/2026) */
 export const THETA_INITIAL = -0.780;
 
-/** Posterior SD from self-pilot — used to seed prior width */
+/** Posterior SD from self-pilot - used to seed prior width */
 export const THETA_INITIAL_SD = 0.543;
 
-/** Scaling constant (Lord, 1980) — approximates normal ogive */
+/** Scaling constant (Lord, 1980) - approximates normal ogive */
 const D = 1.7;
 
 /** Fixed guessing parameter for all 4-option MCQ items */
 const C_DEFAULT = 0.25;
 
-/** Mastery threshold — Ritter et al. (2016) empirically validated */
+/** Mastery threshold - Ritter et al. (2016) empirically validated */
 const MASTERY_PROBABILITY = 0.8;
 
 /** EAP grid range and resolution */
@@ -94,7 +94,7 @@ export function p3PL(theta: number, params: IRTParams): number {
 }
 
 /**
- * Item Information Function — how much information item provides at θ
+ * Item Information Function - how much information item provides at θ
  * Higher = more precise ability estimation at this point
  */
 export function itemInformation(theta: number, params: IRTParams): number {
@@ -265,7 +265,7 @@ export function estimateThetaFromAssessment(
 
 /**
  * Update learner state after a response
- * Returns new state — does not mutate input
+ * Returns new state - does not mutate input
  */
 export function updateLearnerState(
   state: LearnerState,

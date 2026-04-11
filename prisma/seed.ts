@@ -1,18 +1,18 @@
 /**
- * Prisma Seed — Full question bank for adaptive study (25 questions)
+ * Prisma Seed - Full question bank for adaptive study (25 questions)
  * IRT 3PL parameters calibrated against self-pilot EAP data (26/02/2026)
  *
  * Distribution:
- *   Bloom 1 (Remembering)  — 10 questions, b: −2.0 to −0.30
- *   Bloom 2 (Understanding) —  9 questions, b: −0.20 to +1.00
- *   Bloom 3 (Applying)     —  6 questions, b: +1.10 to +2.00
+ *   Bloom 1 (Remembering)  - 10 questions, b: −2.0 to −0.30
+ *   Bloom 2 (Understanding) -  9 questions, b: −0.20 to +1.00
+ *   Bloom 3 (Applying)     -  6 questions, b: +1.10 to +2.00
  *
  * KC coverage: all 13 knowledge components from DEFAULT_BKT_PARAMS
  *
  * Parameter conventions:
- *   a  — discrimination (0.70–1.80; higher = sharper ability boundary)
- *   b  — difficulty in logits (same scale as θ; self-pilot EAP = −0.780)
- *   c  — guessing fixed at 0.25 (4-option MCQ throughout)
+ *   a  - discrimination (0.70–1.80; higher = sharper ability boundary)
+ *   b  - difficulty in logits (same scale as θ; self-pilot EAP = −0.780)
+ *   c  - guessing fixed at 0.25 (4-option MCQ throughout)
  *
  * Run: npx prisma db seed
  */
@@ -57,7 +57,7 @@ const prerequisiteEdges = [
 ];
 
 async function main() {
-  console.log('🌱 Seeding database — 25 question bank...');
+  console.log('🌱 Seeding database - 25 question bank...');
 
   // Seed Knowledge Components
   console.log('\n🧠 Seeding Knowledge Components...');
@@ -133,22 +133,22 @@ async function main() {
 
   // ── Questions ─────────────────────────────────────────────────────────────
   //
-  // BLOOM 1 — REMEMBERING (10 items)
+  // BLOOM 1 - REMEMBERING (10 items)
   // Target: floor items that rapidly establish a θ baseline.
   // b range: −2.00 to −0.30 (all easier than self-pilot starting θ of −0.780)
   //
-  // BLOOM 2 — UNDERSTANDING (9 items)
+  // BLOOM 2 - UNDERSTANDING (9 items)
   // Target: ZPD core; causal/relational reasoning required.
   // b range: −0.20 to +1.00
   //
-  // BLOOM 3 — APPLYING (6 items)
+  // BLOOM 3 - APPLYING (6 items)
   // Target: ceiling items; synthesis across concepts required.
   // b range: +1.10 to +2.00
   //
   const questionsData = [
 
     // ═══════════════════════════════════════════════════════════════════════
-    // BLOOM 1 — REMEMBERING
+    // BLOOM 1 - REMEMBERING
     // ═══════════════════════════════════════════════════════════════════════
 
     // q-001 ── UK_national_parks ── b=−0.80 (retained from self-pilot seed)
@@ -247,7 +247,7 @@ async function main() {
 
     // q-009 ── UK_rivers ── b=−0.90
     // Severn as longest river is commonly confused with Thames.
-    // Moderate difficulty — requires specific factual knowledge.
+    // Moderate difficulty - requires specific factual knowledge.
     {
       id: 'q-009',
       text: 'Which river is the longest in the United Kingdom?',
@@ -279,7 +279,7 @@ async function main() {
     },
 
     // q-011 ── UK_mountains ── b=−0.50
-    // Scafell Pike requires distinguishing England vs UK — harder.
+    // Scafell Pike requires distinguishing England vs UK - harder.
     {
       id: 'q-011',
       text: 'Which mountain is the highest peak in England?',
@@ -327,7 +327,7 @@ async function main() {
     },
 
     // q-014 ── UK_county_locations ── b=−0.30
-    // Northumberland as northernmost — slightly harder due to low salience.
+    // Northumberland as northernmost - slightly harder due to low salience.
     {
       id: 'q-014',
       text: 'Which is the northernmost county in England?',
@@ -343,7 +343,7 @@ async function main() {
     },
 
     // ═══════════════════════════════════════════════════════════════════════
-    // BLOOM 2 — UNDERSTANDING
+    // BLOOM 2 - UNDERSTANDING
     // ═══════════════════════════════════════════════════════════════════════
 
     // q-004 ── westerly_winds_rainfall ── b=+0.20 (retained from self-pilot)
@@ -377,7 +377,7 @@ async function main() {
     },
 
     // q-015 ── maritime_continental ── b=−0.20
-    // Defines maritime climate — accessible causal reasoning.
+    // Defines maritime climate - accessible causal reasoning.
     {
       id: 'q-015',
       text: 'Which combination of characteristics best describes a maritime climate?',
@@ -394,7 +394,7 @@ async function main() {
 
     // q-016 ── maritime_continental ── b=+0.60
     // Requires applying continental vs maritime to specific UK city.
-    // Norwich/Cambridge area is genuinely more continental — tests synthesis.
+    // Norwich/Cambridge area is genuinely more continental - tests synthesis.
     {
       id: 'q-016',
       text: 'Which UK city has the most continental climate characteristics, with lower rainfall and greater temperature extremes?',
@@ -442,7 +442,7 @@ async function main() {
     },
 
     // q-019 ── continental_effect ── b=+0.80
-    // Distance from ocean + rain shadow combined — multi-factor reasoning.
+    // Distance from ocean + rain shadow combined - multi-factor reasoning.
     {
       id: 'q-019',
       text: 'Why does eastern England experience significantly lower annual rainfall than western regions at equivalent latitudes?',
@@ -458,7 +458,7 @@ async function main() {
     },
 
     // q-020 ── continental_effect ── b=+1.00
-    // Requires understanding why SE England has hottest summers — urban + continental.
+    // Requires understanding why SE England has hottest summers - urban + continental.
     {
       id: 'q-020',
       text: 'Which factor best explains why south-east England typically records the UK\'s highest summer temperatures?',
@@ -474,7 +474,7 @@ async function main() {
     },
 
     // q-021 ── westerly_winds_rainfall ── b=+0.30
-    // Extends q-004 — requires knowing orographic enhancement mechanism.
+    // Extends q-004 - requires knowing orographic enhancement mechanism.
     {
       id: 'q-021',
       text: 'What is the primary mechanism by which mountains in the Lake District generate high local rainfall?',
@@ -490,7 +490,7 @@ async function main() {
     },
 
     // ═══════════════════════════════════════════════════════════════════════
-    // BLOOM 3 — APPLYING
+    // BLOOM 3 - APPLYING
     // ═══════════════════════════════════════════════════════════════════════
 
     // q-022 ── climate_classification ── b=+1.10
@@ -502,10 +502,10 @@ async function main() {
       irt_a: 1.40, irt_b: 1.10, irt_c: 0.25,
       bloom: 3, kc: 'climate_classification',
       options: [
-        { text: 'Dfc — Subarctic with cool summers',                                isCorrect: false, order: 1 },
-        { text: 'Cfb — Oceanic, with mild summers and no dry season',               isCorrect: true,  order: 2 },
-        { text: 'BSk — Cold semi-arid steppe',                                      isCorrect: false, order: 3 },
-        { text: 'Csa — Mediterranean with hot, dry summers',                        isCorrect: false, order: 4 },
+        { text: 'Dfc - Subarctic with cool summers',                                isCorrect: false, order: 1 },
+        { text: 'Cfb - Oceanic, with mild summers and no dry season',               isCorrect: true,  order: 2 },
+        { text: 'BSk - Cold semi-arid steppe',                                      isCorrect: false, order: 3 },
+        { text: 'Csa - Mediterranean with hot, dry summers',                        isCorrect: false, order: 4 },
       ],
     },
 
@@ -518,15 +518,15 @@ async function main() {
       irt_a: 1.45, irt_b: 1.40, irt_c: 0.25,
       bloom: 3, kc: 'climate_classification',
       options: [
-        { text: 'Warmer and drier — shifting toward Csa (Mediterranean)',                    isCorrect: false, order: 1 },
-        { text: 'Colder with shorter growing seasons — transitioning toward Dfc (subarctic)', isCorrect: true, order: 2 },
-        { text: 'More continental, with greater annual temperature range — toward Dfb',      isCorrect: false, order: 3 },
-        { text: 'Wetter but warmer — remaining firmly Cfb throughout',                       isCorrect: false, order: 4 },
+        { text: 'Warmer and drier - shifting toward Csa (Mediterranean)',                    isCorrect: false, order: 1 },
+        { text: 'Colder with shorter growing seasons - transitioning toward Dfc (subarctic)', isCorrect: true, order: 2 },
+        { text: 'More continental, with greater annual temperature range - toward Dfb',      isCorrect: false, order: 3 },
+        { text: 'Wetter but warmer - remaining firmly Cfb throughout',                       isCorrect: false, order: 4 },
       ],
     },
 
     // q-024 ── climate_change_application ── b=+1.30
-    // Requires applying trend data to predict regional impact — novel synthesis.
+    // Requires applying trend data to predict regional impact - novel synthesis.
     {
       id: 'q-024',
       text: 'Based on current UK climate projections, which region faces the greatest increase in winter flood risk by 2050?',
@@ -559,7 +559,7 @@ async function main() {
 
     // q-026 ── flood_risk_integration ── b=+1.80
     // Highest difficulty item. Requires integrating topography, precipitation,
-    // land use and drainage — true cross-concept synthesis.
+    // land use and drainage - true cross-concept synthesis.
     {
       id: 'q-026',
       text: 'A low-lying Somerset village floods every winter despite being 15 miles from the coast. Which combination of factors best explains its persistent flood risk?',
@@ -575,7 +575,7 @@ async function main() {
     },
 
     // q-027 ── flood_risk_integration ── b=+2.00
-    // Ceiling item. Requires evaluating competing interventions — highest-order application.
+    // Ceiling item. Requires evaluating competing interventions - highest-order application.
     {
       id: 'q-027',
       text: 'A UK government report proposes three interventions to reduce flood risk in a northern river valley: upstream afforestation, flood storage reservoirs, and urban sustainable drainage. Which evaluation framework should prioritise the interventions, and why?',
@@ -583,10 +583,10 @@ async function main() {
       irt_a: 1.65, irt_b: 2.00, irt_c: 0.25,
       bloom: 3, kc: 'flood_risk_integration',
       options: [
-        { text: 'Cost alone — the cheapest intervention should always be prioritised regardless of effectiveness', isCorrect: false, order: 1 },
-        { text: 'Catchment position — upstream interventions should take priority as they address root causes before downstream symptoms', isCorrect: true, order: 2 },
-        { text: 'Speed of implementation — the fastest intervention should be prioritised to reduce immediate risk', isCorrect: false, order: 3 },
-        { text: 'Population density — interventions protecting the most people should always take precedence', isCorrect: false, order: 4 },
+        { text: 'Cost alone - the cheapest intervention should always be prioritised regardless of effectiveness', isCorrect: false, order: 1 },
+        { text: 'Catchment position - upstream interventions should take priority as they address root causes before downstream symptoms', isCorrect: true, order: 2 },
+        { text: 'Speed of implementation - the fastest intervention should be prioritised to reduce immediate risk', isCorrect: false, order: 3 },
+        { text: 'Population density - interventions protecting the most people should always take precedence', isCorrect: false, order: 4 },
       ],
     },
 

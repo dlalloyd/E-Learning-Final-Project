@@ -1,4 +1,4 @@
-// Prisma Schema — Adaptive E-Learning System
+// Prisma Schema - Adaptive E-Learning System
 // Updated: IRT 3PL + BKT architecture (ADR-001, ADR-003, ADR-004)
 // Replaces Elo-based difficulty field with IRT parameters (a, b, c)
 
@@ -281,7 +281,7 @@ model SystemLog {
 // Decision: ADR-005
 // ============================================
 
-// ——— Knowledge Component (explicit model for KC tracking) ———————————————————
+// --- Knowledge Component (explicit model for KC tracking) -------------------
 
 model KnowledgeComponent {
   id          String  @id // Use the kc string as ID (e.g., "UK_capitals")
@@ -300,7 +300,7 @@ model KnowledgeComponent {
   questionTemplates QuestionTemplate[]
 }
 
-// ——— Learning Object (instructional content chunks) —————————————————————————
+// --- Learning Object (instructional content chunks) -------------------------
 
 model LearningObject {
   id          String  @id @default(cuid())
@@ -318,7 +318,7 @@ model LearningObject {
   updatedAt DateTime @updatedAt
 }
 
-// ——— Hint (graduated scaffolding per question) ——————————————————————————————
+// --- Hint (graduated scaffolding per question) ------------------------------
 
 model Hint {
   id         String @id @default(cuid())
@@ -332,7 +332,7 @@ model Hint {
   createdAt DateTime @default(now())
 }
 
-// ——— Prerequisite Edge (KC dependency graph) ————————————————————————————————
+// --- Prerequisite Edge (KC dependency graph) --------------------------------
 
 model PrerequisiteEdge {
   id               String @id @default(cuid())
@@ -347,7 +347,7 @@ model PrerequisiteEdge {
   @@unique([fromKCId, toKCId])
 }
 
-// ——— User Session State (mode tracking for ITS) —————————————————————————————
+// --- User Session State (mode tracking for ITS) -----------------------------
 
 model UserSessionState {
   id                String  @id @default(cuid())
@@ -364,7 +364,7 @@ model UserSessionState {
   updatedAt DateTime @updatedAt
 }
 
-// ——— Analytics Event (detailed logging for dissertation) ————————————————————
+// --- Analytics Event (detailed logging for dissertation) --------------------
 
 model AnalyticsEvent {
   id        String   @id @default(cuid())
@@ -384,7 +384,7 @@ model AnalyticsEvent {
 // Purpose: 5 evidence-based learning mechanics
 // ============================================
 
-// ——— KC Mastery (Successive Relearning / Nemesis System) ———————————————————
+// --- KC Mastery (Successive Relearning / Nemesis System) -------------------
 
 model KCMastery {
   id        String @id @default(cuid())
@@ -409,7 +409,7 @@ model KCMastery {
   @@index([sessionId])
 }
 
-// ——— Question Template (Isomorphic Variation) ——————————————————————————————
+// --- Question Template (Isomorphic Variation) ------------------------------
 
 model QuestionTemplate {
   id           String @id @default(cuid())
@@ -473,7 +473,7 @@ model VariantPresentation {
   @@index([presentedAt])
 }
 
-// ——— Confidence Calibration (CBM) ——————————————————————————————————————————
+// --- Confidence Calibration (CBM) ------------------------------------------
 
 model ConfidenceCalibration {
   id        String @id @default(cuid())
@@ -491,7 +491,7 @@ model ConfidenceCalibration {
   updatedAt DateTime @updatedAt
 }
 
-// ——— Session Summary (Self-Referenced Feedback) ————————————————————————————
+// --- Session Summary (Self-Referenced Feedback) ----------------------------
 
 model SessionSummary {
   id        String @id @default(cuid())
@@ -514,7 +514,7 @@ model SessionSummary {
   createdAt DateTime @default(now())
 }
 
-// ——— User Variant Seen (cross-session deduplication) ——————————————————
+// --- User Variant Seen (cross-session deduplication) ------------------
 
 model UserVariantSeen {
   id          String   @id @default(cuid())

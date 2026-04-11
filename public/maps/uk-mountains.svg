@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" fill="none">
+  <title>UK Mountains and Uplands Map</title>
+  <style>
+    text { font-family: system-ui, sans-serif; }
+    .label { font-size: 8px; fill: #e2e8f0; }
+    .peak-label { font-size: 7.5px; fill: #fbbf24; font-weight: 600; }
+    .region-label { font-size: 9px; fill: #94a3b8; font-weight: 500; }
+    .country-label { font-size: 11px; fill: #cbd5e1; font-weight: 700; letter-spacing: 2px; }
+  </style>
+
+  <rect width="400" height="600" fill="#0f172a" rx="12"/>
+
+  <!-- UK outline -->
+  <path d="M160,60 L180,50 L220,55 L240,70 L250,90 L245,110 L260,120 L255,140 L240,150
+           L230,160 L220,155 L200,165 L190,160 L175,170 L165,155 L155,160 L150,145
+           L160,130 L155,115 L165,100 L155,85 Z"
+        fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <path d="M175,170 L190,160 L200,165 L220,155 L230,160 L240,150 L255,165 L260,185
+           L265,200 L260,220 L255,240 L260,260 L255,280 L250,300 L245,320 L240,340
+           L235,360 L225,380 L215,390 L205,400 L195,410 L185,405 L175,395 L170,380
+           L160,370 L155,355 L150,340 L145,325 L140,310 L150,295 L155,280 L150,265
+           L155,250 L150,235 L145,220 L150,205 L155,190 L160,180 Z"
+        fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <text x="195" y="105" class="country-label" text-anchor="middle">SCOTLAND</text>
+  <text x="215" y="290" class="country-label" text-anchor="middle">ENGLAND</text>
+
+  <!-- Mountain peaks as triangles -->
+  <!-- Ben Nevis -->
+  <polygon points="185,78 190,68 195,78" fill="#f59e0b" opacity="0.9"/>
+  <text x="198" y="70" class="peak-label">Ben Nevis</text>
+  <text x="198" y="78" class="label">1,345m (UK highest)</text>
+
+  <!-- Cairn Gorm -->
+  <polygon points="215,85 220,75 225,85" fill="#f59e0b" opacity="0.7"/>
+  <text x="228" y="80" class="peak-label">Cairn Gorm</text>
+  <text x="228" y="88" class="label">1,245m</text>
+
+  <!-- Ben Macdui -->
+  <polygon points="210,80 215,70 220,80" fill="#f59e0b" opacity="0.8"/>
+  <text x="185" y="90" class="label">(Cairngorms range)</text>
+
+  <!-- Scottish Highlands shaded area -->
+  <ellipse cx="200" cy="90" rx="40" ry="30" fill="#f59e0b" opacity="0.05" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="200" y="55" class="label" text-anchor="middle" fill="#fbbf24">Scottish Highlands</text>
+
+  <!-- Grampian Mountains -->
+  <text x="240" y="100" class="label" fill="#d97706">Grampians</text>
+
+  <!-- Southern Uplands -->
+  <ellipse cx="210" cy="150" rx="25" ry="10" fill="#f59e0b" opacity="0.05" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="230" y="148" class="label" fill="#d97706">Southern Uplands</text>
+
+  <!-- Pennines (spine of England) -->
+  <path d="M220,175 L225,200 L228,225 L225,250 L220,265"
+        stroke="#f59e0b" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <text x="233" y="220" class="peak-label">The Pennines</text>
+  <text x="233" y="228" class="label">"Backbone of England"</text>
+
+  <!-- Scafell Pike -->
+  <polygon points="193,195 198,185 203,195" fill="#f59e0b" opacity="0.9"/>
+  <text x="165" y="188" class="peak-label">Scafell Pike</text>
+  <text x="160" y="196" class="label">978m (England highest)</text>
+
+  <!-- Cross Fell (Pennines) -->
+  <polygon points="225,200 230,192 235,200" fill="#f59e0b" opacity="0.6"/>
+  <text x="238" y="197" class="label">Cross Fell 893m</text>
+
+  <!-- Snowdon -->
+  <polygon points="150,218 155,208 160,218" fill="#f59e0b" opacity="0.9"/>
+  <text x="112" y="210" class="peak-label">Snowdon (Yr Wyddfa)</text>
+  <text x="108" y="218" class="label">1,085m (Wales highest)</text>
+
+  <!-- Pen y Fan (Brecon Beacons) -->
+  <polygon points="155,268 160,260 165,268" fill="#f59e0b" opacity="0.7"/>
+  <text x="118" y="262" class="peak-label">Pen y Fan</text>
+  <text x="118" y="270" class="label">886m (Brecon Beacons)</text>
+
+  <!-- Lake District -->
+  <ellipse cx="198" cy="200" rx="15" ry="12" fill="#f59e0b" opacity="0.05" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="175" y="210" class="label" fill="#d97706">Lake District</text>
+
+  <!-- Cheviot Hills -->
+  <polygon points="228,172 233,164 238,172" fill="#f59e0b" opacity="0.5"/>
+  <text x="241" y="170" class="label" fill="#d97706">Cheviot Hills</text>
+
+  <!-- Legend -->
+  <rect x="15" y="440" width="370" height="145" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="200" y="460" class="region-label" text-anchor="middle" fill="#e2e8f0" font-weight="700">UK Mountains - Quick Reference</text>
+
+  <polygon points="25,478 30,468 35,478" fill="#f59e0b" opacity="0.8"/>
+  <text x="42" y="476" class="label">Mountain peak (triangle size = relative height)</text>
+
+  <text x="30" y="498" class="label" fill="#fbbf24">HIGHEST IN EACH NATION:</text>
+
+  <text x="30" y="513" class="label" fill="#fbbf24">Scotland:</text>
+  <text x="80" y="513" class="label">Ben Nevis, 1,345m (UK's highest mountain)</text>
+
+  <text x="30" y="528" class="label" fill="#fbbf24">Wales:</text>
+  <text x="80" y="528" class="label">Snowdon (Yr Wyddfa), 1,085m (in Snowdonia National Park)</text>
+
+  <text x="30" y="543" class="label" fill="#fbbf24">England:</text>
+  <text x="80" y="543" class="label">Scafell Pike, 978m (in the Lake District)</text>
+
+  <text x="30" y="563" class="label" fill="#fbbf24">KEY RANGES:</text>
+  <text x="95" y="563" class="label">Pennines ("backbone of England"), Grampians (Scotland)</text>
+
+  <text x="30" y="578" class="label" fill="#64748b">Tip: "BSS" order - Ben Nevis > Snowdon > Scafell Pike (1345 > 1085 > 978)</text>
+</svg>

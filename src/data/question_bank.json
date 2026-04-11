@@ -8,7 +8,7 @@
     "model": "3PL-constrained",
     "c_estimation": "fixed at 0.25 (4-option MCQ theoretical bound)",
     "total_items": 15,
-    "domain": "UK Geography — Counties and Climate Systems",
+    "domain": "UK Geography - Counties and Climate Systems",
     "bloom_distribution": {
       "L1_remembering": 5,
       "L2_understanding": 5,

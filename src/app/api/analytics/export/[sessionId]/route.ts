@@ -3,8 +3,8 @@
  * Exports full session data for research analysis.
  *
  * Query params:
- *   ?format=json  (default) — structured JSON payload
- *   ?format=csv   — flat CSV of interactions with Content-Disposition attachment header
+ *   ?format=json  (default) - structured JSON payload
+ *   ?format=csv   - flat CSV of interactions with Content-Disposition attachment header
  */
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';

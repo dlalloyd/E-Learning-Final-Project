@@ -262,6 +262,41 @@ function SectionCard({ section }: { section: ContentSection }) {
 }
 
 // ---------------------------------------------------------------------------
+// KC-to-map lookup - serves SVG reference maps for spatial topics
+// ---------------------------------------------------------------------------
+
+const KC_MAP_ASSETS: Record<string, { src: string; alt: string }> = {
+  UK_national_parks: { src: '/maps/uk-national-parks.svg', alt: 'Map showing UK national park locations' },
+  UK_rivers:         { src: '/maps/uk-rivers.svg',         alt: 'Map showing UK major rivers' },
+  UK_mountains:      { src: '/maps/uk-mountains.svg',      alt: 'Map showing UK mountain peaks and ranges' },
+};
+
+function ReferenceMap({ kcId }: { kcId: string }) {
+  const asset = KC_MAP_ASSETS[kcId];
+  if (!asset) return null;
+
+  return (
+    <div className="rounded-xl bg-slate-900/60 border-l-4 border-teal-500 p-4 sm:p-5 mb-4">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-900/60 text-teal-300 border border-teal-700/50">
+          <MapPin size={12} />
+          Reference Map
+        </span>
+      </div>
+      <img
+        src={asset.src}
+        alt={asset.alt}
+        className="w-full max-w-md mx-auto rounded-lg"
+        loading="eager"
+      />
+      <p className="text-xs text-slate-500 text-center mt-2">
+        Study this map before answering questions. Tap to zoom on mobile.
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Bloom level label
 // ---------------------------------------------------------------------------
 
@@ -525,6 +560,9 @@ export default function InstructionMode({
           </div>
         </div>
       )}
+
+      {/* --- Reference map (if available for this KC) --- */}
+      <ReferenceMap kcId={kcId} />
 
       {/* --- Section cards --- */}
       <div>

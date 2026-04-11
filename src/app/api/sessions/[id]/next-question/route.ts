@@ -313,10 +313,10 @@ export async function GET(
 
     // -------------------------------------------------------------------
     // Return rendered question
-    // NOTE: variantId is returned as questionId — answer route handles both
+    // NOTE: variantId is returned as questionId - answer route handles both
     // -------------------------------------------------------------------
     return NextResponse.json({
-      questionId: chosenVariantId,       // variant ID — answer route detects this
+      questionId: chosenVariantId,       // variant ID - answer route detects this
       templateId: selectedCandidate.templateId,
       text: renderedText,
       options,

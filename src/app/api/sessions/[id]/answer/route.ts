@@ -182,7 +182,7 @@ export async function POST(
     const isMastered = updatedKCState.pLearned >= 0.95;
 
     // -------------------------------------------------------------------
-    // KCMastery + Confidence Calibration + UserVariantSeen — fire-and-forget
+    // KCMastery + Confidence Calibration + UserVariantSeen - fire-and-forget
     // -------------------------------------------------------------------
     const sideEffects: Promise<unknown>[] = [];
 
@@ -291,7 +291,7 @@ export async function POST(
         ]);
         interactionId = interaction.id;
       } else {
-        // No questions at all — just update session
+        // No questions at all - just update session
         await prisma.session.update({
           where: { id: sessionId },
           data: {

@@ -3,7 +3,7 @@
  * Submits an answer for a pre/post/delayed assessment question.
  *
  * Unlike the main session answer route, assessments do NOT update IRT theta
- * or BKT mastery — they are purely measurement instruments.
+ * or BKT mastery - they are purely measurement instruments.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
@@ -43,7 +43,7 @@ export async function POST(
       return NextResponse.json({ error: 'Question already answered' }, { status: 400 });
     }
 
-    // Determine correctness — variant-based (same logic as session answer route)
+    // Determine correctness - variant-based (same logic as session answer route)
     const variant = await prisma.questionVariant.findUnique({
       where: { id: questionId },
     });
@@ -76,7 +76,7 @@ export async function POST(
       isCorrect = selectedAnswer.toUpperCase() === correctLabel;
     }
 
-    // Store answer — questionId may be a QuestionVariant ID (not a Question ID).
+    // Store answer - questionId may be a QuestionVariant ID (not a Question ID).
     // The Answer model FK points to Question, so for variant-based assessments
     // we need to find a valid Question ID to use as a placeholder FK.
     let storedQuestionId = questionId;
