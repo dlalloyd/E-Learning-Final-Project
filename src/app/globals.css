@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── GeoMentor design system ───────────────────────────────────────── */
+
+/* Grid background texture — subtle 40px lines at 3% opacity */
+.gm-grid-bg {
+  background-image:
+    linear-gradient(to right,  rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Theta gradient — violet → indigo → emerald */
+.gm-theta-gradient {
+  background: linear-gradient(90deg, #18202f 0%, #a078ff 60%, #4edea3 100%);
+}
