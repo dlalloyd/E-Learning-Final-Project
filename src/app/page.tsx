@@ -505,7 +505,7 @@ export default function QuizPage() {
 
   if (appState === 'start') {
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6 pb-20">
         <FirstVisitTour />
         <div className="w-full max-w-md">
           <div className="mb-10 text-center">
@@ -653,33 +653,6 @@ export default function QuizPage() {
                   </p>
                 </div>
 
-                {/* Action buttons row */}
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => setShowMap(true)}
-                    className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1"
-                  >
-                    <MapPin className="w-4 h-4 text-emerald-400" />
-                    Explore Map
-                  </button>
-                  <button
-                    onClick={() => setShowProfile(true)}
-                    className={`py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1 ${
-                      profileShake ? 'animate-bounce' : ''
-                    }`}
-                  >
-                    <UserIcon className="w-4 h-4 text-violet-400" />
-                    My Profile
-                  </button>
-                  <button
-                    onClick={() => setShowProgressDashboard(!showProgressDashboard)}
-                    className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg transition-all text-xs flex flex-col items-center gap-1"
-                  >
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    Progress
-                  </button>
-                </div>
-
                 <button
                   onClick={handleLogout}
                   className="w-full py-2 text-slate-500 hover:text-slate-300 text-xs transition-colors"
@@ -690,9 +663,48 @@ export default function QuizPage() {
             )}
           </div>
 
-          {/* Progress Dashboard (expandable) */}
-          {isLoggedIn && showProgressDashboard && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-4">
+          <p className="mt-6 text-center text-slate-600 text-xs">
+            University of Hull · CS Final Year Project · Dylan Bengi
+          </p>
+        </div>
+
+        {/* --- Persistent bottom nav (logged-in only) --- */}
+        {isLoggedIn && (
+          <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800">
+            <div className="max-w-md mx-auto flex items-center justify-around px-4 py-2">
+              <button
+                onClick={() => setShowMap(true)}
+                className="flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-all"
+              >
+                <MapPin className="w-5 h-5 text-emerald-400" />
+                <span className="text-[10px] font-medium">Map</span>
+              </button>
+              <button
+                onClick={() => setShowProgressDashboard(true)}
+                className="flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-all"
+              >
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <span className="text-[10px] font-medium">Progress</span>
+              </button>
+              <button
+                onClick={() => setShowProfile(true)}
+                className={`flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-violet-400 hover:bg-slate-800 transition-all ${profileShake ? 'animate-bounce' : ''}`}
+              >
+                <UserIcon className="w-5 h-5 text-violet-400" />
+                <span className="text-[10px] font-medium">Profile</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* --- Modal overlays --- */}
+        {showProgressDashboard && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-lg mx-auto mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-white font-bold text-lg">Progress</h2>
+                <button onClick={() => setShowProgressDashboard(false)} className="text-slate-500 hover:text-white transition-colors text-sm">Close</button>
+              </div>
               <ProgressDashboard
                 onStartSession={() => { setShowProgressDashboard(false); startSession(); }}
                 onStartReview={(kcId) => {
@@ -704,29 +716,25 @@ export default function QuizPage() {
                 }}
               />
             </div>
-          )}
-
-          {/* Interactive Map Modal */}
-          {showMap && (
-            <div className="mt-4">
+          </div>
+        )}
+        {showMap && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-2xl mx-auto mt-4">
               <InteractiveMap
                 onClose={() => setShowMap(false)}
                 onFactUnlocked={() => awardXP('map_fact_unlocked')}
               />
             </div>
-          )}
-
-          {/* Learner Profile Modal */}
-          {showProfile && (
-            <div className="mt-4">
+          </div>
+        )}
+        {showProfile && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-lg mx-auto mt-4">
               <LearnerProfile onClose={() => { setShowProfile(false); setProfileShake(false); }} />
             </div>
-          )}
-
-          <p className="mt-6 text-center text-slate-600 text-xs">
-            University of Hull · CS Final Year Project · Dylan Bengi
-          </p>
-        </div>
+          </div>
+        )}
       </main>
     );
   }
@@ -870,7 +878,7 @@ export default function QuizPage() {
     };
 
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6">
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 pb-20 sm:p-6 sm:pb-20">
         <div className="w-full max-w-md space-y-4">
           {showSUS ? (
             <SUSQuestionnaire onComplete={() => setShowSUS(false)} onSkip={() => setShowSUS(false)} />
@@ -899,37 +907,78 @@ export default function QuizPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setShowMap(true)}
-                  className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
-                >
-                  <MapPin className="w-4 h-4 text-emerald-400" /> Explore Map
-                </button>
-                <button
-                  onClick={() => setShowProfile(true)}
-                  className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
-                >
-                  <UserIcon className="w-4 h-4 text-violet-400" /> My Profile
-                </button>
-              </div>
-
-              {showMap && (
-                <InteractiveMap
-                  onClose={() => setShowMap(false)}
-                  onFactUnlocked={() => awardXP('map_fact_unlocked')}
-                />
-              )}
-              {showProfile && (
-                <LearnerProfile onClose={() => setShowProfile(false)} />
-              )}
-
               <p className="text-slate-500 text-xs text-center">
                 Come back tomorrow to keep your streak going.
               </p>
             </>
           )}
         </div>
+
+        {/* Persistent bottom nav */}
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800">
+          <div className="max-w-md mx-auto flex items-center justify-around px-4 py-2">
+            <button
+              onClick={() => setShowMap(true)}
+              className="flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-all"
+            >
+              <MapPin className="w-5 h-5 text-emerald-400" />
+              <span className="text-[10px] font-medium">Map</span>
+            </button>
+            <button
+              onClick={() => setShowProgressDashboard(true)}
+              className="flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-all"
+            >
+              <Trophy className="w-5 h-5 text-amber-400" />
+              <span className="text-[10px] font-medium">Progress</span>
+            </button>
+            <button
+              onClick={() => setShowProfile(true)}
+              className="flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl text-slate-400 hover:text-violet-400 hover:bg-slate-800 transition-all"
+            >
+              <UserIcon className="w-5 h-5 text-violet-400" />
+              <span className="text-[10px] font-medium">Profile</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Modal overlays */}
+        {showProgressDashboard && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-lg mx-auto mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-white font-bold text-lg">Progress</h2>
+                <button onClick={() => setShowProgressDashboard(false)} className="text-slate-500 hover:text-white transition-colors text-sm">Close</button>
+              </div>
+              <ProgressDashboard
+                onStartSession={() => { setShowProgressDashboard(false); startSession(); }}
+                onStartReview={(kcId) => {
+                  setShowProgressDashboard(false);
+                  const queue = [kcId];
+                  setLearnQueue(queue);
+                  learnQueueRef.current = queue;
+                  startSession();
+                }}
+              />
+            </div>
+          </div>
+        )}
+        {showMap && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-2xl mx-auto mt-4">
+              <InteractiveMap
+                onClose={() => setShowMap(false)}
+                onFactUnlocked={() => awardXP('map_fact_unlocked')}
+              />
+            </div>
+          </div>
+        )}
+        {showProfile && (
+          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="max-w-lg mx-auto mt-4">
+              <LearnerProfile onClose={() => { setShowProfile(false); }} />
+            </div>
+          </div>
+        )}
       </main>
     );
   }
