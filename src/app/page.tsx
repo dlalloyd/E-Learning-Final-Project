@@ -17,8 +17,10 @@ import ElaborationPrompt from '@/components/ElaborationPrompt';
 import SUSQuestionnaire from '@/components/SUSQuestionnaire';
 import InteractiveMap from '@/components/InteractiveMap';
 import LearnerProfile from '@/components/LearnerProfile';
+import ConditionExplainer from '@/components/ConditionExplainer';
 import { useSfx } from '@/lib/hooks/useSfx';
 import { xpProgress } from '@/lib/achievements';
+import { shouldShowConditionExplainer, shouldShowSUS } from '@/lib/sessionFlow';
 
 // --- Types ------------------------------------------------------------
 
@@ -96,10 +98,13 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
         </span>
         <span>Expert</span>
       </div>
-      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-500 rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${clamped}%` }}
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${clamped}%`,
+            background: `linear-gradient(to right, #8b5cf6, #6366f1 ${Math.max(0, clamped - 20)}%, #10b981)`,
+          }}
         />
       </div>
     </div>
@@ -114,6 +119,7 @@ export default function QuizPage() {
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [condition, setCondition] = useState<'adaptive' | 'static'>('adaptive');
+  const [showConditionExplainer, setShowConditionExplainer] = useState(false);
 
   // --- Auth State ---
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -473,6 +479,8 @@ export default function QuizPage() {
       if (data.incompleteSession) {
         setResumableSessionId(data.incompleteSession.id);
         setCondition(data.incompleteSession.condition);
+      } else {
+        checkConditionExplainer();
       }
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Authentication failed');
@@ -498,6 +506,22 @@ export default function QuizPage() {
     fetchNextQuestion(resumableSessionId);
   };
 
+  // --- Condition explainer gate ----------------------------------------
+
+  const checkConditionExplainer = () => {
+    try {
+      const seen = localStorage.getItem('gm_condition_explainer_seen') === 'true';
+      if (shouldShowConditionExplainer({ hasSeenExplainer: seen })) {
+        setShowConditionExplainer(true);
+      }
+    } catch { /* localStorage unavailable */ }
+  };
+
+  const handleConditionChosen = (chosen: 'adaptive' | 'static') => {
+    setCondition(chosen);
+    setShowConditionExplainer(false);
+  };
+
   // Assessment flow is removed - the adaptive session now handles
   // mixed difficulty and bloom levels directly. No separate pre/post tests.
 
@@ -512,7 +536,7 @@ export default function QuizPage() {
             <div className="inline-block mb-4 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono tracking-widest uppercase">
               Intelligent Tutoring System
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-4xl font-black text-white tracking-tighter">
               GeoMentor
             </h1>
             <p className="mt-2 text-slate-400 text-sm">
@@ -520,7 +544,7 @@ export default function QuizPage() {
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6">
+          <div className="bg-slate-900/80 ring-1 ring-white/[0.06] rounded-2xl p-8 space-y-6 backdrop-blur-sm">
             {/* Auth form when not logged in */}
             {!isLoggedIn ? (
               <>
@@ -630,28 +654,42 @@ export default function QuizPage() {
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      const queue = [...FOUNDATION_KCS];
-                      setLearnQueue(queue);
-                      learnQueueRef.current = queue;
-                      startSession();
-                    }}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all"
-                  >
-                    Learn First, Then Quiz
-                  </button>
-                  <button
-                    onClick={() => startSession()}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all text-sm"
-                  >
-                    Jump Into Questions
-                  </button>
-                  <p className="text-slate-600 text-xs text-center">
-                    New? Choose &quot;Learn First&quot; for guided instruction. Ready to test? Jump straight in.
-                  </p>
-                </div>
+                {showConditionExplainer ? (
+                  <ConditionExplainer onChoose={handleConditionChosen} />
+                ) : (
+                  <div className="space-y-3">
+                    {/* Active condition badge */}
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-slate-500 text-xs">Mode</span>
+                      <button
+                        onClick={() => setShowConditionExplainer(true)}
+                        className="text-xs font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 transition-colors"
+                      >
+                        {condition === 'adaptive' ? 'Adaptive (IRT+BKT)' : 'Static (fixed)'} — change
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const queue = [...FOUNDATION_KCS];
+                        setLearnQueue(queue);
+                        learnQueueRef.current = queue;
+                        startSession();
+                      }}
+                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl shadow-lg shadow-emerald-900/30 transition-all"
+                    >
+                      Learn First, Then Quiz
+                    </button>
+                    <button
+                      onClick={() => startSession()}
+                      className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-medium rounded-xl shadow-lg shadow-indigo-900/30 transition-all text-sm"
+                    >
+                      Jump Into Questions
+                    </button>
+                    <p className="text-slate-600 text-xs text-center">
+                      New? Choose &quot;Learn First&quot; for guided instruction. Ready to test? Jump straight in.
+                    </p>
+                  </div>
+                )}
 
                 {/* Action buttons row */}
                 <div className="grid grid-cols-3 gap-2">
@@ -692,7 +730,7 @@ export default function QuizPage() {
 
           {/* Progress Dashboard (expandable) */}
           {isLoggedIn && showProgressDashboard && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-4">
+            <div className="bg-slate-900/80 ring-1 ring-white/[0.06] rounded-2xl p-6 mt-4">
               <ProgressDashboard
                 onStartSession={() => { setShowProgressDashboard(false); startSession(); }}
                 onStartReview={(kcId) => {
@@ -858,9 +896,14 @@ export default function QuizPage() {
     // Award session completion XP
     useEffect(() => {
       awardXP('session_complete');
-      // Show SUS after first session to get initial thoughts
+      // Show SUS after first completed session of either condition
       fetch('/api/progress').then(r => r.json()).then(d => {
-        if (d.stats?.totalSessions === 1) setShowSUS(true);
+        const completedSessions: number = d.stats?.totalSessions ?? 0;
+        // Check if user already submitted SUS (stored in localStorage)
+        const hasCompletedSUS = localStorage.getItem('gm_sus_completed') === 'true';
+        if (shouldShowSUS({ completedSessions, hasCompletedSUS, condition })) {
+          setShowSUS(true);
+        }
       }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -873,7 +916,13 @@ export default function QuizPage() {
       <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-4">
           {showSUS ? (
-            <SUSQuestionnaire onComplete={() => setShowSUS(false)} onSkip={() => setShowSUS(false)} />
+            <SUSQuestionnaire
+              onComplete={() => {
+                try { localStorage.setItem('gm_sus_completed', 'true'); } catch { /* ignore */ }
+                setShowSUS(false);
+              }}
+              onSkip={() => setShowSUS(false)}
+            />
           ) : (
             <>
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
