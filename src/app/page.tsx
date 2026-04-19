@@ -141,6 +141,11 @@ export default function QuizPage() {
         if (data.incompleteSession) {
           setResumableSessionId(data.incompleteSession.id);
           setCondition(data.incompleteSession.condition);
+        } else {
+          try {
+            const seen = localStorage.getItem('gm_condition_explainer_seen') === 'true';
+            if (!seen) setShowConditionExplainer(true);
+          } catch { /* localStorage unavailable */ }
         }
         // Fetch XP data for replayability UI
         fetch('/api/xp').then(r => r.json()).then(xp => {
