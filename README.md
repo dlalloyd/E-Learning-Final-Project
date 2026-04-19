@@ -1,6 +1,6 @@
 # E-Learning Adaptive System
 
-Personalised E-Learning System with Adaptive Assessments that dynamically adapts to individual learning patterns through intelligent assessment algorithms.
+Personalised E-Learning Intelligent Tutoring System with Adaptive Assessments that dynamically adapts to individual learning patterns through intelligent assessment algorithms.
 
 ## Project Overview
 
