@@ -153,6 +153,17 @@ export default function QuizPage() {
       }
     }).catch(() => {});
   }, []);
+
+  // Award XP on session completion — hoisted to top level (hooks cannot be called conditionally)
+  useEffect(() => {
+    if (appState !== 'complete') return;
+    awardXP('session_complete');
+    fetch('/api/progress').then(r => r.json()).then(d => {
+      if (d.stats?.totalSessions === 1) setShowSUS(true);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appState]);
+
   const [sessionId, setSessionId] = useState('');
   const [theta, setTheta] = useState(-0.780);
   const [thetaSd, setThetaSd] = useState(0.543);
@@ -854,16 +865,6 @@ export default function QuizPage() {
       setThetaSd(0.543);
       setConsecutiveFailures(0);
     };
-
-    // Award session completion XP
-    useEffect(() => {
-      awardXP('session_complete');
-      // Show SUS after first session to get initial thoughts
-      fetch('/api/progress').then(r => r.json()).then(d => {
-        if (d.stats?.totalSessions === 1) setShowSUS(true);
-      }).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const handlePostSessionDone = () => {
       setShowPostSessionFlow(false);

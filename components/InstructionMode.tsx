@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -316,6 +316,18 @@ function BloomBadge({ level }: { level: number }) {
 }
 
 // ---------------------------------------------------------------------------
+// Flat card type
+// ---------------------------------------------------------------------------
+
+interface FlatCard {
+  type: 'section' | 'refmap';
+  loIndex: number;
+  loTitle: string;
+  section?: ContentSection;
+  hasEli5?: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -327,7 +339,7 @@ export default function InstructionMode({
   triggerReason,
 }: InstructionModeProps) {
   const [learningObjects, setLearningObjects] = useState<LearningObject[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [cardIndex, setCardIndex] = useState(0);
   const [knowledgeComponent, setKnowledgeComponent] = useState<KnowledgeComponent | null>(null);
   const [prerequisiteStatus, setPrerequisiteStatus] = useState<PrerequisiteStatus[]>([]);
   const [showEli5, setShowEli5] = useState(false);
@@ -335,9 +347,13 @@ export default function InstructionMode({
   const [error, setError] = useState<string | null>(null);
   const [selfAssessment, setSelfAssessment] = useState<number | null>(null);
 
+  // Touch tracking for swipe gestures
+  const touchStartX = useRef<number | null>(null);
+
   useEffect(() => {
-    setCurrentIndex(0);
+    setCardIndex(0);
     setSelfAssessment(null);
+    setShowEli5(false);
     fetchLearningContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kcId, sessionId]);
@@ -362,23 +378,67 @@ export default function InstructionMode({
     }
   };
 
-  const currentContent = learningObjects[currentIndex];
-  const unmasteredPrereqs = prerequisiteStatus.filter((p) => !p.mastered);
+  // Build flat cards: one card per section, plus reference map card if available
+  const allCards = useMemo((): FlatCard[] => {
+    const cards: FlatCard[] = [];
 
-  const handleNext = () => {
-    if (currentIndex < learningObjects.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelfAssessment(null);
+    // Reference map first if available for this KC
+    if (KC_MAP_ASSETS[kcId]) {
+      cards.push({ type: 'refmap', loIndex: 0, loTitle: 'Reference Map' });
+    }
+
+    for (let li = 0; li < learningObjects.length; li++) {
+      const lo = learningObjects[li];
+      const raw = showEli5 && lo.eli5Content ? lo.eli5Content : lo.content;
+      const sections = parseSections(raw);
+      for (const section of sections) {
+        cards.push({
+          type: 'section',
+          loIndex: li,
+          loTitle: lo.title,
+          section,
+          hasEli5: !!lo.eli5Content,
+        });
+      }
+    }
+
+    return cards;
+  }, [learningObjects, showEli5, kcId]);
+
+  const unmasteredPrereqs = prerequisiteStatus.filter((p) => !p.mastered);
+  const currentCard = allCards[cardIndex];
+  const isFirstCard = cardIndex === 0;
+  const isLastCard = cardIndex === allCards.length - 1;
+  const progressPct = allCards.length > 0 ? ((cardIndex + 1) / allCards.length) * 100 : 0;
+
+  // Current LO for eli5 toggle context
+  const currentLo = currentCard ? learningObjects[currentCard.loIndex] : null;
+  const canToggleEli5 = !!(currentLo?.eli5Content);
+
+  const goNext = () => {
+    if (!isLastCard) {
+      setCardIndex(i => i + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setSelfAssessment(null);
+  const goPrev = () => {
+    if (!isFirstCard) {
+      setCardIndex(i => i - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (delta < -50) goNext();
+    else if (delta > 50) goPrev();
   };
 
   const handleComplete = () => {
@@ -391,8 +451,8 @@ export default function InstructionMode({
         payload: {
           kcId,
           triggerReason,
-          chunksViewed: currentIndex + 1,
-          totalChunks: learningObjects.length,
+          cardsViewed: cardIndex + 1,
+          totalCards: allCards.length,
           usedEli5: showEli5,
           selfAssessment,
         },
@@ -404,7 +464,7 @@ export default function InstructionMode({
   const getTriggerLabel = () => {
     switch (triggerReason) {
       case 'low_mastery': return 'Building your foundation';
-      case 'consecutive_failures': return 'Let\'s revisit this together';
+      case 'consecutive_failures': return "Let's revisit this together";
       case 'user_request': return 'Study material';
       default: return 'Learning content';
     }
@@ -457,39 +517,31 @@ export default function InstructionMode({
     );
   }
 
-  // --- Parse content sections ----------------------------------------------
-
-  const rawContent = showEli5 && currentContent.eli5Content
-    ? currentContent.eli5Content
-    : currentContent.content;
-
-  const sections = parseSections(rawContent);
-
-  const progressPct = ((currentIndex + 1) / learningObjects.length) * 100;
-  const isLastPage = currentIndex === learningObjects.length - 1;
-
   // --- Main render --------------------------------------------------------
 
   return (
-    <div className="max-w-3xl mx-auto">
-
-      {/* --- Header card --- */}
+    <div
+      className="max-w-3xl mx-auto pb-28"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* --- Header --- */}
       <div className="bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden mb-4">
-        <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border-b border-slate-700/50 px-6 pt-5 pb-4">
+        <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border-b border-slate-700/50 px-5 pt-4 pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1">
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-0.5">
                 {getTriggerLabel()}
               </p>
-              <h2 className="text-xl font-bold text-white leading-snug">
-                {knowledgeComponent?.name || currentContent.title}
+              <h2 className="text-lg font-bold text-white leading-snug">
+                {knowledgeComponent?.name ?? currentCard?.loTitle ?? ''}
               </h2>
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0">
               {knowledgeComponent && (
                 <BloomBadge level={knowledgeComponent.bloomLevel} />
               )}
-              {currentContent.eli5Content && (
+              {canToggleEli5 && (
                 <button
                   onClick={() => setShowEli5(!showEli5)}
                   className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
@@ -505,11 +557,7 @@ export default function InstructionMode({
           </div>
 
           {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex justify-between items-center text-xs text-slate-500 mb-1.5">
-              <span>{currentContent.title}</span>
-              <span>{currentIndex + 1} / {learningObjects.length}</span>
-            </div>
+          <div className="mt-3">
             <div className="h-1 bg-slate-700/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all duration-500"
@@ -519,20 +567,19 @@ export default function InstructionMode({
           </div>
         </div>
 
-        {/* Topic progress dots */}
-        {learningObjects.length > 1 && (
-          <div className="px-6 py-3 flex gap-1.5 border-b border-slate-800">
-            {learningObjects.map((lo, idx) => (
+        {/* Dot indicators */}
+        {allCards.length > 1 && (
+          <div className="px-5 py-2.5 flex gap-1 overflow-x-auto scrollbar-none">
+            {allCards.map((_, idx) => (
               <button
-                key={lo.id}
-                title={lo.title}
-                onClick={() => { setCurrentIndex(idx); setSelfAssessment(null); }}
-                className={`flex-1 h-1 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? 'bg-indigo-500'
-                    : idx < currentIndex
-                    ? 'bg-indigo-800/70'
-                    : 'bg-slate-700'
+                key={idx}
+                onClick={() => setCardIndex(idx)}
+                className={`shrink-0 rounded-full transition-all duration-300 ${
+                  idx === cardIndex
+                    ? 'w-4 h-1.5 bg-indigo-500'
+                    : idx < cardIndex
+                    ? 'w-1.5 h-1.5 bg-indigo-800/70'
+                    : 'w-1.5 h-1.5 bg-slate-700'
                 }`}
               />
             ))}
@@ -541,7 +588,7 @@ export default function InstructionMode({
       </div>
 
       {/* --- Prerequisite warning --- */}
-      {unmasteredPrereqs.length > 0 && (
+      {unmasteredPrereqs.length > 0 && cardIndex === 0 && (
         <div className="bg-amber-950/30 border border-amber-700/40 rounded-xl px-5 py-4 mb-4 flex items-start gap-3">
           <TriangleAlert size={16} className="text-amber-400 shrink-0 mt-0.5" />
           <div className="min-w-0">
@@ -561,27 +608,26 @@ export default function InstructionMode({
         </div>
       )}
 
-      {/* --- Reference map (if available for this KC) --- */}
-      <ReferenceMap kcId={kcId} />
-
-      {/* --- Section cards --- */}
-      <div>
-        {sections.map((section, idx) => (
-          <SectionCard key={idx} section={section} />
-        ))}
+      {/* --- Active card --- */}
+      <div key={cardIndex} className="animate-fade-in">
+        {currentCard?.type === 'refmap' ? (
+          <ReferenceMap kcId={kcId} />
+        ) : currentCard?.type === 'section' && currentCard.section ? (
+          <SectionCard section={currentCard.section} />
+        ) : null}
       </div>
 
-      {/* --- Self-assessment (last page only) --- */}
-      {isLastPage && (
-        <div className="bg-slate-900 border border-slate-700/50 rounded-xl px-6 py-5 mb-4">
-          <p className="text-slate-300 text-sm font-medium mb-3">
-            How well do you understand this topic now?
+      {/* --- Self-assessment (last card only, optional) --- */}
+      {isLastCard && (
+        <div className="bg-slate-900 border border-slate-700/50 rounded-xl px-5 py-4 mt-3">
+          <p className="text-slate-300 text-sm font-medium mb-2.5">
+            How confident are you on this topic? <span className="text-slate-600 font-normal">(optional)</span>
           </p>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((level) => (
               <button
                 key={level}
-                onClick={() => setSelfAssessment(level)}
+                onClick={() => setSelfAssessment(selfAssessment === level ? null : level)}
                 className={`w-11 h-11 rounded-lg text-sm font-bold transition-all ${
                   selfAssessment === level
                     ? 'bg-indigo-600 text-white scale-105 shadow-lg shadow-indigo-500/20'
@@ -592,51 +638,59 @@ export default function InstructionMode({
               </button>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-slate-600 mt-1.5 px-0.5">
+          <div className="flex justify-between text-xs text-slate-600 mt-1.5">
             <span>Still unsure</span>
             <span>Got it</span>
           </div>
         </div>
       )}
 
-      {/* --- Navigation footer --- */}
-      <div className="bg-slate-900 border border-slate-700/50 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
-        <button
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            currentIndex === 0
-              ? 'text-slate-600 cursor-not-allowed'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-        >
-          <ChevronLeft size={16} />
-          Previous
-        </button>
-
-        <p className="text-xs text-slate-600 font-mono tabular-nums">
-          {currentIndex + 1}/{learningObjects.length}
+      {/* Swipe hint on first card (mobile only) */}
+      {cardIndex === 0 && allCards.length > 1 && (
+        <p className="text-center text-xs text-slate-600 mt-3 sm:hidden">
+          Swipe left to advance
         </p>
+      )}
 
-        {!isLastPage ? (
+      {/* --- Fixed navigation footer --- */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <button
-            onClick={handleNext}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-all"
+            onClick={goPrev}
+            disabled={isFirstCard}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              isFirstCard
+                ? 'text-slate-700 cursor-not-allowed'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
           >
-            Next
-            <ChevronRight size={16} />
+            <ChevronLeft size={16} />
+            Back
           </button>
-        ) : (
-          <button
-            onClick={handleComplete}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all"
-          >
-            Start questions
-            <ArrowRight size={16} />
-          </button>
-        )}
+
+          <p className="text-xs text-slate-600 font-mono tabular-nums">
+            {cardIndex + 1} / {allCards.length}
+          </p>
+
+          {!isLastCard ? (
+            <button
+              onClick={goNext}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-all"
+            >
+              Next
+              <ChevronRight size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={handleComplete}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all"
+            >
+              Start questions
+              <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
       </div>
-
     </div>
   );
 }
