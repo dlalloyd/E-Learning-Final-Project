@@ -14,7 +14,15 @@ const INITIAL_THETA = -0.780;
 export async function GET() {
   try {
     const auth = getAuthFromCookie();
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    // Re-read role from DB — JWT may be stale if role was updated after login
+    const caller = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { role: true },
+    });
+    if (!caller || caller.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

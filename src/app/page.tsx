@@ -20,6 +20,8 @@ import LearnerProfile from '@/components/LearnerProfile';
 import ConditionExplainer from '@/components/ConditionExplainer';
 import PauseMenu from '@/components/PauseMenu';
 import OnboardingModal from '@/components/OnboardingModal';
+import Leaderboard from '@/components/Leaderboard';
+import ShareCard from '@/components/ShareCard';
 import { useSfx } from '@/lib/hooks/useSfx';
 import { xpProgress } from '@/lib/achievements';
 import { shouldShowConditionExplainer, shouldShowSUS } from '@/lib/sessionFlow';
@@ -942,6 +944,11 @@ export default function QuizPage() {
                   </div>
                 </div>
 
+                {/* Leaderboard on start screen */}
+                <div className="bg-slate-900/50 rounded-xl p-4">
+                  <Leaderboard />
+                </div>
+
                 <button
                   onClick={handleLogout}
                   className="w-full py-2 text-slate-600 hover:text-slate-400 text-xs transition-colors"
@@ -1179,11 +1186,18 @@ export default function QuizPage() {
                   sessionId={sessionId}
                   onNewSession={handleNewSession}
                   onStartReview={(kcId) => {
+                    // Reset completion state, then immediately start a new session
+                    // focused on the selected KC via the learn queue
+                    setShowPostSessionFlow(false);
+                    setShowSUS(false);
+                    setSessionId('');
+                    setTotalAnswered(0);
+                    setTotalCorrect(0);
+                    setConsecutiveFailures(0);
                     const queue = [kcId];
                     setLearnQueue(queue);
                     learnQueueRef.current = queue;
-                    handleNewSession();
-                    // session starts automatically via startSession after appState resets
+                    startSession();
                   }}
                 />
               </div>
@@ -1237,6 +1251,18 @@ export default function QuizPage() {
               <p className="text-slate-600 text-xs text-center">
                 Your ability level carries over to the next session.
               </p>
+
+              {/* Share result card */}
+              <ShareCard
+                thetaGain={thetaGain}
+                accuracy={totalAnswered > 0 ? totalCorrect / totalAnswered : 0}
+                sessionCount={1}
+              />
+
+              {/* Leaderboard */}
+              <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-xl p-4">
+                <Leaderboard />
+              </div>
             </>
           )}
         </div>

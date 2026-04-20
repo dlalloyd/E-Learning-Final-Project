@@ -90,7 +90,7 @@ export default function PauseMenu({
                   onClick={() => onSwitchMode(otherMode)}
                   className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 ring-1 ring-white/[0.06] text-slate-400 hover:text-white hover:ring-indigo-500/40 transition-all"
                 >
-                  Switch to {otherMode}
+                  Next session: {otherMode}
                 </button>
               </div>
 

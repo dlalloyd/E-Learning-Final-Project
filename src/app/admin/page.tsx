@@ -62,7 +62,8 @@ export default function AdminPage() {
     fetch('/api/admin/stats')
       .then((r) => {
         if (r.status === 403) {
-          router.replace('/');
+          setError('Access denied. Make sure you are logged in with your admin account.');
+          setLoading(false);
           return null;
         }
         return r.json();
