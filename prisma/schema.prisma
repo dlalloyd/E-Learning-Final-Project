@@ -33,6 +33,14 @@ model User {
   // Leaderboard opt-in (consent required before appearing publicly)
   leaderboardOptIn Boolean @default(false)
 
+  // Competence tracking — count of distinct KCs with p(Know) >= 0.95 AND >= 5 presentations
+  // Updated by answer route when a new KC is freshly mastered
+  kcsMastered Int @default(0)
+
+  // Study randomisation — assigned at signup, locks first session condition
+  // Prevents self-selection bias (Campbell & Stanley, 1963)
+  studyCondition String @default("adaptive")
+
   // Password reset
   passwordResetToken  String?   @unique
   passwordResetExpiry DateTime?
