@@ -2,104 +2,151 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
 import { getAuthFromCookie } from '@/lib/auth/jwt';
 
+const TEST_EMAILS = [
+  'test@elearning.dev',
+  'asds@email.com',
+  '123@email.com',
+  '1223@email.com',
+];
+
+const INITIAL_THETA = -0.780;
+
 export async function GET() {
-  const auth = getAuthFromCookie();
-  if (!auth || auth.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    const auth = getAuthFromCookie();
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Fetch users, sessions, SUS separately to avoid schema relation gaps
+    const [users, sessions, allSUS] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          email: {
+            notIn: [...TEST_EMAILS],
+            not: { endsWith: '@example.com' },
+          },
+        },
+        select: { id: true, name: true, email: true, createdAt: true },
+      }),
+
+      prisma.session.findMany({
+        where: {
+          user: {
+            email: {
+              notIn: [...TEST_EMAILS],
+              not: { endsWith: '@example.com' },
+            },
+          },
+        },
+        include: {
+          interactions: { select: { isCorrect: true, responseTimeMs: true } },
+          kcMasteries: { select: { kcId: true, pLearned: true, masteredAt: true } },
+        },
+        orderBy: { startedAt: 'desc' },
+      }),
+
+      prisma.sUSResponse.findMany({
+        where: { susScore: { not: null } },
+        select: { userId: true, susScore: true },
+      }),
+    ]);
+
+    // Map userId -> SUS score (latest)
+    const susMap = new Map<string, number>();
+    allSUS.forEach((r) => {
+      if (r.susScore !== null && !susMap.has(r.userId)) {
+        susMap.set(r.userId, r.susScore);
+      }
+    });
+
+    // Map userId -> user info
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const participants = sessions.map((s) => {
+      const user = userMap.get(s.userId);
+      const total = s.interactions.length;
+      const correct = s.interactions.filter((i) => i.isCorrect).length;
+      const avgResponseMs =
+        total > 0
+          ? s.interactions.reduce((sum, i) => sum + i.responseTimeMs, 0) / total
+          : 0;
+      const durationMins =
+        s.completedAt && s.startedAt
+          ? Math.round(((s.completedAt.getTime() - s.startedAt.getTime()) / 60000) * 10) / 10
+          : null;
+
+      return {
+        name: user?.name ?? 'Unknown',
+        email: user?.email ?? '',
+        joined: user?.createdAt.toISOString().split('T')[0] ?? '',
+        session_id: s.id,
+        condition: s.condition,
+        started: s.startedAt.toISOString(),
+        completed: s.completedAt?.toISOString() ?? null,
+        duration_mins: durationMins,
+        initial_theta: INITIAL_THETA,
+        final_theta: Math.round(s.theta * 1000) / 1000,
+        total_questions: total,
+        correct,
+        accuracy_pct: total > 0 ? Math.round((correct / total) * 1000) / 10 : null,
+        avg_response_secs: total > 0 ? Math.round(avgResponseMs / 100) / 10 : null,
+        sus_score: susMap.get(s.userId) ?? null,
+      };
+    });
+
+    const completedSessions = participants.filter((p) => p.completed !== null);
+    const thetaGains = completedSessions.map((p) => p.final_theta - INITIAL_THETA);
+    const avgThetaGain =
+      thetaGains.length > 0
+        ? thetaGains.reduce((a, b) => a + b, 0) / thetaGains.length
+        : 0;
+
+    const susScores = allSUS.map((r) => r.susScore as number);
+    const susSummary =
+      susScores.length > 0
+        ? {
+            count: susScores.length,
+            avg_score: Math.round((susScores.reduce((a, b) => a + b, 0) / susScores.length) * 10) / 10,
+            min_score: Math.min(...susScores),
+            max_score: Math.max(...susScores),
+          }
+        : { count: 0, avg_score: 0, min_score: 0, max_score: 0 };
+
+    // KC mastery aggregated across all real participants
+    const kcMap = new Map<string, { total: number; sumLearned: number; mastered: number }>();
+    sessions.forEach((s) => {
+      s.kcMasteries.forEach((m) => {
+        const existing = kcMap.get(m.kcId) ?? { total: 0, sumLearned: 0, mastered: 0 };
+        kcMap.set(m.kcId, {
+          total: existing.total + 1,
+          sumLearned: existing.sumLearned + m.pLearned,
+          mastered: existing.mastered + (m.masteredAt ? 1 : 0),
+        });
+      });
+    });
+
+    const kcMasteries = Array.from(kcMap.entries())
+      .map(([kc_id, v]) => ({
+        kc_id,
+        avg_p_learned: Math.round((v.sumLearned / v.total) * 1000) / 1000,
+        mastered_count: v.mastered,
+        total_count: v.total,
+      }))
+      .sort((a, b) => b.avg_p_learned - a.avg_p_learned);
+
+    return NextResponse.json({
+      participants,
+      summary: {
+        total_signups: users.length,
+        completed_sessions: completedSessions.length,
+        avg_theta_gain: Math.round(avgThetaGain * 1000) / 1000,
+        sus: susSummary,
+      },
+      kc_masteries: kcMasteries,
+    });
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const [participants, susSummary, kcMasteries] = await Promise.all([
-    prisma.$queryRaw<Array<{
-      name: string;
-      email: string;
-      joined: Date;
-      session_id: string;
-      condition: string;
-      started: Date;
-      completed: Date | null;
-      duration_mins: number | null;
-      initial_theta: number;
-      final_theta: number;
-      total_questions: number;
-      correct: number;
-      accuracy_pct: number | null;
-      avg_response_secs: number | null;
-      sus_score: number | null;
-    }>>`
-      SELECT
-        u.name,
-        u.email,
-        u."createdAt" AS joined,
-        s.id AS session_id,
-        s.condition,
-        s."startedAt" AS started,
-        s."completedAt" AS completed,
-        ROUND(EXTRACT(EPOCH FROM (s."completedAt" - s."startedAt")) / 60, 1) AS duration_mins,
-        -0.780 AS initial_theta,
-        s.theta AS final_theta,
-        COUNT(i.id)::int AS total_questions,
-        SUM(CASE WHEN i."isCorrect" THEN 1 ELSE 0 END)::int AS correct,
-        ROUND(100.0 * SUM(CASE WHEN i."isCorrect" THEN 1 ELSE 0 END) / NULLIF(COUNT(i.id), 0), 1) AS accuracy_pct,
-        ROUND(AVG(i."responseTimeMs") / 1000.0, 1) AS avg_response_secs,
-        sus."susScore" AS sus_score
-      FROM "User" u
-      JOIN "Session" s ON s."userId" = u.id
-      LEFT JOIN "Interaction" i ON i."sessionId" = s.id
-      LEFT JOIN "SUSResponse" sus ON sus."userId" = u.id
-      WHERE u.email NOT LIKE '%example.com'
-        AND u.email NOT LIKE '%study.local'
-        AND u.email NOT IN ('test@elearning.dev', 'asds@email.com', '123@email.com', '1223@email.com')
-      GROUP BY u.id, u.name, u.email, u."createdAt", s.id, s.condition, s."startedAt", s."completedAt", s.theta, sus."susScore"
-      ORDER BY s."startedAt" DESC
-    `,
-
-    prisma.$queryRaw<Array<{ count: number; avg_score: number; min_score: number; max_score: number }>>`
-      SELECT
-        COUNT(*)::int AS count,
-        ROUND(AVG("susScore"), 1) AS avg_score,
-        MIN("susScore") AS min_score,
-        MAX("susScore") AS max_score
-      FROM "SUSResponse"
-    `,
-
-    prisma.$queryRaw<Array<{ kc_id: string; avg_p_learned: number; mastered_count: number; total_count: number }>>`
-      SELECT
-        km."kcId" AS kc_id,
-        ROUND(AVG(km."pLearned"), 3) AS avg_p_learned,
-        SUM(CASE WHEN km."masteredAt" IS NOT NULL THEN 1 ELSE 0 END)::int AS mastered_count,
-        COUNT(*)::int AS total_count
-      FROM "KCMastery" km
-      JOIN "Session" s ON s.id = km."sessionId"
-      JOIN "User" u ON u.id = s."userId"
-      WHERE u.email NOT LIKE '%example.com'
-        AND u.email NOT LIKE '%study.local'
-        AND u.email NOT IN ('test@elearning.dev', 'asds@email.com', '123@email.com', '1223@email.com')
-      GROUP BY km."kcId"
-      ORDER BY avg_p_learned DESC
-    `,
-  ]);
-
-  const completedSessions = participants.filter((p) => p.completed !== null);
-  const thetaGains = completedSessions.map((p) => Number(p.final_theta) - (-0.780));
-  const avgThetaGain = thetaGains.length > 0
-    ? thetaGains.reduce((a, b) => a + b, 0) / thetaGains.length
-    : 0;
-
-  const payload = {
-    participants,
-    summary: {
-      total_signups: participants.length,
-      completed_sessions: completedSessions.length,
-      avg_theta_gain: Math.round(avgThetaGain * 1000) / 1000,
-      sus: susSummary[0] || { count: 0, avg_score: 0, min_score: 0, max_score: 0 },
-    },
-    kc_masteries: kcMasteries,
-  };
-
-  // Prisma raw queries can return BigInt — serialize safely
-  const safe = JSON.parse(JSON.stringify(payload, (_, v) =>
-    typeof v === 'bigint' ? Number(v) : v
-  ));
-
-  return NextResponse.json(safe);
 }
