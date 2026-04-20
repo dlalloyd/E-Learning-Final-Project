@@ -163,6 +163,10 @@ export default function QuizPage() {
             if (xp.totalXp > 50) setProfileShake(true);
           }
         }).catch(() => {});
+        // Fetch leaderboard opt-in status
+        fetch('/api/user/leaderboard-consent').then(r => r.json()).then(d => {
+          if (typeof d.leaderboardOptIn === 'boolean') setLeaderboardOptIn(d.leaderboardOptIn);
+        }).catch(() => {});
         // Check for decayed KCs to show reminder on start screen
         fetch('/api/progress').then(r => r.json()).then(d => {
           if (d.kcProgress) {
@@ -242,6 +246,7 @@ export default function QuizPage() {
   const [decayedKCs, setDecayedKCs] = useState<Array<{ kcName: string; daysSince: number }>>([]); // 20% chance after correct answer
   const [xpData, setXpData] = useState<{ totalXp: number; level: number; currentStreak: number; levelProgress: number } | null>(null);
   const [xpToast, setXpToast] = useState<{ amount: number; reason: string } | null>(null);
+  const [leaderboardOptIn, setLeaderboardOptIn] = useState<boolean | null>(null); // null = unknown
 
   // --- Learning-First Onboarding ---
   const FOUNDATION_KCS = [
@@ -1258,6 +1263,49 @@ export default function QuizPage() {
                 accuracy={totalAnswered > 0 ? totalCorrect / totalAnswered : 0}
                 sessionCount={1}
               />
+
+              {/* Leaderboard consent banner (shown until user decides) */}
+              {leaderboardOptIn === false && (
+                <div className="bg-[#0d1527] ring-1 ring-amber-500/20 rounded-xl p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Trophy className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">Join the leaderboard?</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Your first name + initial only. You can opt out any time. Only XP-ranked — no raw scores shown.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        fetch('/api/user/leaderboard-consent', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ optIn: true }),
+                        }).catch(() => {});
+                        setLeaderboardOptIn(true);
+                      }}
+                      className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all"
+                    >
+                      Yes, show me
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetch('/api/user/leaderboard-consent', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ optIn: false }),
+                        }).catch(() => {});
+                        setLeaderboardOptIn(null); // hide banner, don't ask again this session
+                      }}
+                      className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-all ring-1 ring-white/[0.06]"
+                    >
+                      No thanks
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Leaderboard */}
               <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-xl p-4">

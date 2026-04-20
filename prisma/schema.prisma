@@ -30,6 +30,9 @@ model User {
   totalXp          Int      @default(0)
   level            Int      @default(1)
 
+  // Leaderboard opt-in (consent required before appearing publicly)
+  leaderboardOptIn Boolean @default(false)
+
   // Password reset
   passwordResetToken  String?   @unique
   passwordResetExpiry DateTime?
