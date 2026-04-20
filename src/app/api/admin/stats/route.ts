@@ -85,7 +85,7 @@ export async function GET() {
     ? thetaGains.reduce((a, b) => a + b, 0) / thetaGains.length
     : 0;
 
-  return NextResponse.json({
+  const payload = {
     participants,
     summary: {
       total_signups: participants.length,
@@ -94,5 +94,12 @@ export async function GET() {
       sus: susSummary[0] || { count: 0, avg_score: 0, min_score: 0, max_score: 0 },
     },
     kc_masteries: kcMasteries,
-  });
+  };
+
+  // Prisma raw queries can return BigInt — serialize safely
+  const safe = JSON.parse(JSON.stringify(payload, (_, v) =>
+    typeof v === 'bigint' ? Number(v) : v
+  ));
+
+  return NextResponse.json(safe);
 }
