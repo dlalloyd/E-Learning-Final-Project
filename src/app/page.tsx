@@ -125,6 +125,14 @@ export default function QuizPage() {
   const [authName, setAuthName] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetMsg, setResetMsg] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [resumableSessionId, setResumableSessionId] = useState<string | null>(null);
 
@@ -160,6 +168,17 @@ export default function QuizPage() {
         }).catch(() => {});
       }
     }).catch(() => {});
+  }, []);
+
+  // Detect password reset token in URL (?reset=TOKEN)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset');
+    if (token) {
+      setResetToken(token);
+      setAuthView('reset');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   // Award XP on session completion — hoisted to top level (hooks cannot be called conditionally)
@@ -513,6 +532,44 @@ export default function QuizPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setForgotMsg('');
+    setForgotLoading(true);
+    try {
+      await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      setForgotMsg('If that email is registered, a reset link is on its way.');
+    } catch {
+      setForgotMsg('Something went wrong. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setResetMsg('');
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, password: resetNewPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Reset failed');
+      setResetMsg('Password updated. You can now log in.');
+      setResetNewPassword('');
+      setTimeout(() => setAuthView('login'), 2000);
+    } catch (err) {
+      setResetMsg(err instanceof Error ? err.message : 'Reset failed');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setIsLoggedIn(false);
@@ -584,77 +641,157 @@ export default function QuizPage() {
             {/* Auth form when not logged in */}
             {!isLoggedIn ? (
               <>
-                <div className="flex rounded-lg bg-slate-800 p-1">
-                  {(['login', 'signup'] as const).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => { setAuthMode(m); setAuthError(''); }}
-                      className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-                        authMode === m
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-400 hover:text-slate-300'
-                      }`}
-                    >
-                      {m === 'login' ? 'Log In' : 'Sign Up'}
-                    </button>
-                  ))}
-                </div>
-
-                {authMode === 'signup' && (
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Name</label>
-                    <input
-                      type="text"
-                      value={authName}
-                      onChange={(e) => setAuthName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
-                  <input
-                    type="email"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Security Key</label>
-                  <input
-                    type="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-                    placeholder="Min. 8 characters"
-                    className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
-                  />
-                </div>
-
-                {authError && (
-                  <p className="text-red-400 text-sm text-center">{authError}</p>
-                )}
-
-                <button
-                  onClick={handleAuth}
-                  disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && !authName)}
-                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                  {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Initialize Session →' : 'Create Account →'}
-                </button>
-                {authMode === 'login' && (
-                  <div className="flex items-center justify-between text-[10px] text-slate-600 px-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                      <span>Secure Connection</span>
+                {authView === 'forgot' ? (
+                  /* Forgot password form */
+                  <>
+                    <div className="text-center space-y-1">
+                      <p className="text-white font-bold text-base">Recover Credentials</p>
+                      <p className="text-slate-500 text-xs">Enter your email and we&apos;ll send a reset link.</p>
                     </div>
-                    <span className="text-slate-600 hover:text-slate-400 cursor-pointer transition-colors">Recover Credentials</span>
-                  </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
+                        placeholder="you@example.com"
+                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                      />
+                    </div>
+                    {forgotMsg && (
+                      <p className="text-emerald-400 text-sm text-center">{forgotMsg}</p>
+                    )}
+                    <button
+                      onClick={handleForgotPassword}
+                      disabled={forgotLoading || !forgotEmail}
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98]"
+                    >
+                      {forgotLoading ? 'Sending...' : 'Send Reset Link →'}
+                    </button>
+                    <button
+                      onClick={() => { setAuthView('login'); setForgotMsg(''); }}
+                      className="w-full text-slate-500 hover:text-slate-300 text-xs transition-colors py-1"
+                    >
+                      ← Back to login
+                    </button>
+                  </>
+                ) : authView === 'reset' ? (
+                  /* Reset password form */
+                  <>
+                    <div className="text-center space-y-1">
+                      <p className="text-white font-bold text-base">Set New Password</p>
+                      <p className="text-slate-500 text-xs">Choose a new security key for your account.</p>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">New Security Key</label>
+                      <input
+                        type="password"
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+                        placeholder="Min. 8 characters"
+                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                      />
+                    </div>
+                    {resetMsg && (
+                      <p className={`text-sm text-center ${resetMsg.includes('updated') ? 'text-emerald-400' : 'text-red-400'}`}>{resetMsg}</p>
+                    )}
+                    <button
+                      onClick={handleResetPassword}
+                      disabled={resetLoading || resetNewPassword.length < 8}
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98]"
+                    >
+                      {resetLoading ? 'Updating...' : 'Update Password →'}
+                    </button>
+                    <button
+                      onClick={() => setAuthView('login')}
+                      className="w-full text-slate-500 hover:text-slate-300 text-xs transition-colors py-1"
+                    >
+                      ← Back to login
+                    </button>
+                  </>
+                ) : (
+                  /* Standard login / signup form */
+                  <>
+                    <div className="flex rounded-lg bg-slate-800 p-1">
+                      {(['login', 'signup'] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => { setAuthMode(m); setAuthError(''); }}
+                          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+                            authMode === m
+                              ? 'bg-indigo-600 text-white'
+                              : 'text-slate-400 hover:text-slate-300'
+                          }`}
+                        >
+                          {m === 'login' ? 'Log In' : 'Sign Up'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {authMode === 'signup' && (
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Name</label>
+                        <input
+                          type="text"
+                          value={authName}
+                          onChange={(e) => setAuthName(e.target.value)}
+                          placeholder="Your full name"
+                          className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <input
+                        type="email"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Security Key</label>
+                      <input
+                        type="password"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                        placeholder="Min. 8 characters"
+                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    {authError && (
+                      <p className="text-red-400 text-sm text-center">{authError}</p>
+                    )}
+
+                    <button
+                      onClick={handleAuth}
+                      disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && !authName)}
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                      {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Initialize Session →' : 'Create Account →'}
+                    </button>
+                    {authMode === 'login' && (
+                      <div className="flex items-center justify-between text-[10px] text-slate-600 px-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                          <span>Secure Connection</span>
+                        </div>
+                        <span
+                          onClick={() => { setAuthView('forgot'); setForgotMsg(''); setForgotEmail(authEmail); }}
+                          className="text-slate-600 hover:text-slate-400 cursor-pointer transition-colors"
+                        >
+                          Recover Credentials
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : (
