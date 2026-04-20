@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const resetUrl = `${appUrl}?reset=${token}`;
 
     await resend.emails.send({
-      from: 'GeoMentor <noreply@geomentor.app>',
+      from: 'GeoMentor <onboarding@resend.dev>',
       to: user.email,
       subject: 'Reset your GeoMentor password',
       html: `
