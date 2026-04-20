@@ -7,6 +7,15 @@ import { checkRateLimit, getClientIp } from '@/lib/auth/rate-limit';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PASSWORD_MIN_LENGTH = 8;
 
+const BLOCKED_DOMAINS = new Set([
+  'example.com', 'example.org', 'example.net',
+  'test.com', 'fake.com', 'fake.org',
+  'mailinator.com', 'guerrillamail.com', 'throwam.com',
+  'trashmail.com', 'yopmail.com', 'tempmail.com',
+  'sharklasers.com', 'guerrillamailblock.com', 'grr.la',
+  'study.local', 'email.com',
+]);
+
 export async function POST(req: NextRequest) {
   try {
     // Rate limiting
@@ -32,6 +41,13 @@ export async function POST(req: NextRequest) {
     if (!EMAIL_REGEX.test(email)) {
       return NextResponse.json(
         { error: 'Please enter a valid email address' },
+        { status: 400 }
+      );
+    }
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain || BLOCKED_DOMAINS.has(domain)) {
+      return NextResponse.json(
+        { error: 'Please use a real email address' },
         { status: 400 }
       );
     }

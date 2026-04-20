@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight, Volume2, VolumeX,
-  Flame, Gem, MapPin, User as UserIcon, Trophy,
+  Flame, Gem, MapPin, User as UserIcon, Trophy, Pause, TrendingUp, RotateCcw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import InstructionMode from '@/components/InstructionMode';
@@ -18,6 +18,8 @@ import SUSQuestionnaire from '@/components/SUSQuestionnaire';
 import InteractiveMap from '@/components/InteractiveMap';
 import LearnerProfile from '@/components/LearnerProfile';
 import ConditionExplainer from '@/components/ConditionExplainer';
+import PauseMenu from '@/components/PauseMenu';
+import OnboardingModal from '@/components/OnboardingModal';
 import { useSfx } from '@/lib/hooks/useSfx';
 import { xpProgress } from '@/lib/achievements';
 import { shouldShowConditionExplainer, shouldShowSUS } from '@/lib/sessionFlow';
@@ -185,8 +187,9 @@ export default function QuizPage() {
   useEffect(() => {
     if (appState !== 'complete') return;
     awardXP('session_complete');
-    fetch('/api/progress').then(r => r.json()).then(d => {
-      if (d.stats?.totalSessions === 1) setShowSUS(true);
+    // Show SUS only after first completed session, and only if not already submitted
+    fetch('/api/sus').then(r => r.json()).then(d => {
+      if (d.totalResponses === 0) setShowSUS(true);
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appState]);
@@ -222,7 +225,9 @@ export default function QuizPage() {
   const [showMap, setShowMap] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [profileShake, setProfileShake] = useState(false);
-  const [elaborationChance] = useState(0.2); // 20% chance after correct answer
+  const [elaborationChance] = useState(0.2);
+  const [showPauseMenu, setShowPauseMenu] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false); // 20% chance after correct answer
   const [xpData, setXpData] = useState<{ totalXp: number; level: number; currentStreak: number; levelProgress: number } | null>(null);
   const [xpToast, setXpToast] = useState<{ amount: number; reason: string } | null>(null);
 
@@ -519,6 +524,10 @@ export default function QuizPage() {
       setUserId(data.user.id);
       setUserName(data.user.name);
       setIsLoggedIn(true);
+      // Show onboarding on first ever login
+      try {
+        if (!localStorage.getItem('gm_onboarding_seen')) setShowOnboarding(true);
+      } catch { /* ignore */ }
       if (data.incompleteSession) {
         setResumableSessionId(data.incompleteSession.id);
         setCondition(data.incompleteSession.condition);
@@ -568,6 +577,26 @@ export default function QuizPage() {
     } finally {
       setResetLoading(false);
     }
+  };
+
+  const handleExitSession = () => {
+    // Session progress is persisted server-side — safe to exit at any time.
+    // The incomplete session will be offered for resumption on next login.
+    setShowPauseMenu(false);
+    setAppState('start');
+    setSessionId('');
+    setQuestion(null);
+    setSelected(null);
+    setResult(null);
+    setTotalAnswered(0);
+    setTotalCorrect(0);
+    setConsecutiveFailures(0);
+  };
+
+  const handlePauseModeSwitch = (mode: 'adaptive' | 'static') => {
+    setCondition(mode);
+    setShowPauseMenu(false);
+    // Mode change applies to current session going forward
   };
 
   const handleLogout = async () => {
@@ -1091,6 +1120,7 @@ export default function QuizPage() {
   // --- Render: Complete -----------------------------------------------
 
   if (appState === 'complete') {
+    const thetaGain = theta - (-0.780);
     const handleNewSession = () => {
       setShowPostSessionFlow(false);
       setShowSUS(false);
@@ -1098,9 +1128,8 @@ export default function QuizPage() {
       setSessionId('');
       setTotalAnswered(0);
       setTotalCorrect(0);
-      setTheta(-0.780);
-      setThetaSd(0.543);
       setConsecutiveFailures(0);
+      // theta carries over server-side — don't reset it on client
     };
 
     const handlePostSessionDone = () => {
@@ -1125,6 +1154,33 @@ export default function QuizPage() {
               </div>
               <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
 
+              {/* Theta gain + go again */}
+              <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs text-slate-400 uppercase tracking-widest">Ability gain this session</span>
+                  </div>
+                  <span className={`text-lg font-bold ${thetaGain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {thetaGain >= 0 ? '+' : ''}{thetaGain.toFixed(3)} θ
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span>Start: -0.780</span>
+                  <span>→</span>
+                  <span className="text-slate-400">End: {theta.toFixed(3)}</span>
+                </div>
+              </div>
+
+              {/* Go again CTA */}
+              <button
+                onClick={handleNewSession}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-500/20"
+              >
+                <RotateCcw className="w-5 h-5" />
+                Go again — build on your progress
+              </button>
+
               {/* XP summary */}
               {xpData && (
                 <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-xl p-4 flex items-center justify-between">
@@ -1143,8 +1199,8 @@ export default function QuizPage() {
                 </div>
               )}
 
-              <p className="text-slate-500 text-xs text-center">
-                Come back tomorrow to keep your streak going.
+              <p className="text-slate-600 text-xs text-center">
+                Your ability level carries over to the next session.
               </p>
             </>
           )}
@@ -1238,15 +1294,34 @@ export default function QuizPage() {
       <header className="fixed top-0 w-full z-50 bg-[#0b1323]/80 backdrop-blur-md border-b border-white/[0.06]">
         <div className="flex justify-between items-center px-5 py-3 max-w-4xl mx-auto">
           <span className="text-sm font-black tracking-tighter text-white uppercase">GeoMentor</span>
-          <div className="flex items-center gap-4 text-xs text-slate-500 font-mono">
-            <span className="hidden sm:inline">{condition} · {question?.meta.questionsAnswered ?? 0}/{questionsTotal} answered</span>
-            <span className="text-slate-600">{totalCorrect} correct</span>
+          <div className="flex items-center gap-3">
+            {/* Mode pill — clickable to open pause menu */}
+            <button
+              onClick={() => setShowPauseMenu(true)}
+              className={`hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ring-1 transition-all ${
+                condition === 'adaptive'
+                  ? 'bg-indigo-500/10 ring-indigo-500/30 text-indigo-300 hover:ring-indigo-500/60'
+                  : 'bg-slate-800 ring-white/10 text-slate-400 hover:ring-white/20'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${condition === 'adaptive' ? 'bg-indigo-400 animate-pulse' : 'bg-slate-500'}`} />
+              {condition}
+            </button>
+            <span className="text-xs text-slate-600 font-mono hidden sm:inline">{totalCorrect}/{question?.meta.questionsAnswered ?? 0}</span>
             <button
               onClick={toggleSfx}
-              className="p-1.5 rounded-md hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-md hover:bg-white/5 text-slate-500 transition-colors"
               title={sfxMuted ? 'Unmute sounds' : 'Mute sounds'}
             >
               {sfxMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+            {/* Pause / exit */}
+            <button
+              onClick={() => setShowPauseMenu(true)}
+              className="p-1.5 rounded-md hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
+              title="Pause session"
+            >
+              <Pause className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -1271,16 +1346,16 @@ export default function QuizPage() {
 
         {/* Question card */}
         {question && (
-          <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-2xl p-6 space-y-5">
+          <div className="bg-[#0d1527] ring-1 ring-white/[0.08] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl shadow-black/30">
 
             {/* Topic eyebrow + bloom badge + review button */}
             <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <span className="text-[10px] font-bold tracking-[0.15em] text-slate-500 uppercase block">
-                  Current Topic
+                  {question.kc.replace(/_/g, ' ')}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${BLOOM_COLOURS[question.bloom]}`}>
+                  <span className={`text-xs px-2.5 py-1 rounded-md font-semibold ${BLOOM_COLOURS[question.bloom]}`}>
                     {BLOOM_LABELS[question.bloom]}
                   </span>
                   <span className="text-xs text-slate-700 font-mono">
@@ -1289,8 +1364,8 @@ export default function QuizPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest hidden sm:inline">
-                  Progress {question.meta.questionsAnswered}/{questionsTotal}
+                <span className="text-xs text-slate-600 font-mono hidden sm:inline">
+                  {question.meta.questionsAnswered}/{questionsTotal}
                 </span>
                 {condition === 'adaptive' && appState === 'question' && (
                   <button
@@ -1303,8 +1378,8 @@ export default function QuizPage() {
               </div>
             </div>
 
-            {/* Question text */}
-            <h2 className="text-white text-lg font-semibold leading-relaxed">
+            {/* Question text — larger and heavier */}
+            <h2 className="text-white text-xl sm:text-2xl font-bold leading-snug tracking-tight">
               {question.text}
             </h2>
 
@@ -1323,12 +1398,12 @@ export default function QuizPage() {
                     }
                   }}
                   disabled={appState === 'feedback' || !!selected}
-                  className={`group w-full text-left p-3.5 rounded-xl transition-all duration-200 flex items-center gap-4 ${optionStyle(label)}`}
+                  className={`group w-full text-left p-4 sm:p-5 rounded-xl transition-all duration-200 flex items-center gap-4 ${optionStyle(label)}`}
                 >
-                  <span className={`w-7 h-7 flex items-center justify-center rounded-md text-[11px] font-black shrink-0 transition-colors ${badgeStyle(label)}`}>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black shrink-0 transition-colors ${badgeStyle(label)}`}>
                     {label}
                   </span>
-                  <span className="text-sm leading-snug">{text}</span>
+                  <span className="text-sm sm:text-base leading-snug font-medium">{text}</span>
                 </motion.button>
               ))}
             </div>
@@ -1469,6 +1544,23 @@ export default function QuizPage() {
         )}
       </div>
     </main>
+
+    {/* Pause menu — available during question and feedback states */}
+    <PauseMenu
+      open={showPauseMenu}
+      condition={condition}
+      questionsAnswered={question?.meta.questionsAnswered ?? 0}
+      questionsTotal={questionsTotal}
+      theta={theta}
+      onResume={() => setShowPauseMenu(false)}
+      onExit={handleExitSession}
+      onSwitchMode={handlePauseModeSwitch}
+    />
+
+    {/* First-time onboarding */}
+    {showOnboarding && (
+      <OnboardingModal onDone={() => setShowOnboarding(false)} />
+    )}
     </>
   );
 }
