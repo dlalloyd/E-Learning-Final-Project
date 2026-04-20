@@ -91,6 +91,7 @@ interface SummaryData {
 interface Props {
   sessionId: string;
   onNewSession: () => void;
+  onStartReview?: (kcId: string) => void;
 }
 
 type TabId = 'journey' | 'trajectory' | 'skills' | 'misconceptions' | 'next-steps';
@@ -222,7 +223,7 @@ function LongitudinalBlock({ longitudinal, currentTheta }: { longitudinal: Longi
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function SessionSummaryDashboard({ sessionId, onNewSession }: Props) {
+export default function SessionSummaryDashboard({ sessionId, onNewSession, onStartReview }: Props) {
   const [data, setData] = useState<SummaryData | null>(null);
   const [errorProfile, setErrorProfile] = useState<ErrorFingerprint | null>(null);
   const [loading, setLoading] = useState(true);
@@ -567,22 +568,30 @@ export default function SessionSummaryDashboard({ sessionId, onNewSession }: Pro
             </div>
           )}
 
-          {/* Priority Review Areas */}
+          {/* Priority Review Areas — with drill CTA */}
           {data.areasForReview.length > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
-                <ClipboardList className="w-4 h-4" /> Priority Review Areas
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" /> Focus on these next
               </h3>
-              <div className="space-y-2">
-                {data.areasForReview.slice(0, 5).map((kc) => (
-                  <div key={kc.kcId} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300">{kc.kcName}</span>
-                    <span className={`font-mono ${kc.currentMastery < 0.3 ? 'text-red-400' : 'text-amber-400'}`}>
+              {data.areasForReview.slice(0, 3).map((kc) => (
+                <div key={kc.kcId} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-200 font-medium truncate">{kc.kcName}</p>
+                    <p className={`text-xs font-mono mt-0.5 ${kc.currentMastery < 0.3 ? 'text-red-400' : 'text-amber-400'}`}>
                       {Math.round(kc.currentMastery * 100)}% mastery
-                    </span>
+                    </p>
                   </div>
-                ))}
-              </div>
+                  {onStartReview && (
+                    <button
+                      onClick={() => onStartReview(kc.kcId)}
+                      className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 font-semibold transition-all whitespace-nowrap"
+                    >
+                      Drill this
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 

@@ -158,8 +158,17 @@ export default function QuizPage() {
         fetch('/api/xp').then(r => r.json()).then(xp => {
           if (!xp.error) {
             setXpData({ totalXp: xp.totalXp, level: xp.level, currentStreak: xp.currentStreak, levelProgress: xp.levelProgress });
-            // Shake the profile icon to catch attention after 2 sessions
             if (xp.totalXp > 50) setProfileShake(true);
+          }
+        }).catch(() => {});
+        // Check for decayed KCs to show reminder on start screen
+        fetch('/api/progress').then(r => r.json()).then(d => {
+          if (d.kcProgress) {
+            const decayed = d.kcProgress
+              .filter((k: { needsReview: boolean; daysSinceLastPractice: number }) => k.needsReview && k.daysSinceLastPractice >= 1)
+              .slice(0, 2)
+              .map((k: { kcName: string; daysSinceLastPractice: number }) => ({ kcName: k.kcName, daysSince: Math.floor(k.daysSinceLastPractice) }));
+            setDecayedKCs(decayed);
           }
         }).catch(() => {});
         // Award daily login XP
@@ -227,7 +236,8 @@ export default function QuizPage() {
   const [profileShake, setProfileShake] = useState(false);
   const [elaborationChance] = useState(0.2);
   const [showPauseMenu, setShowPauseMenu] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false); // 20% chance after correct answer
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [decayedKCs, setDecayedKCs] = useState<Array<{ kcName: string; daysSince: number }>>([]); // 20% chance after correct answer
   const [xpData, setXpData] = useState<{ totalXp: number; level: number; currentStreak: number; levelProgress: number } | null>(null);
   const [xpToast, setXpToast] = useState<{ amount: number; reason: string } | null>(null);
 
@@ -841,7 +851,22 @@ export default function QuizPage() {
                   </button>
                 )}
 
-{/* XP / Streak / Level bar */}
+{/* Decay notification */}
+                {decayedKCs.length > 0 && (
+                  <div className="bg-amber-500/10 ring-1 ring-amber-500/20 rounded-xl p-3 space-y-1">
+                    <p className="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      Knowledge fading — worth a refresh
+                    </p>
+                    {decayedKCs.map((k) => (
+                      <p key={k.kcName} className="text-xs text-slate-400 pl-3">
+                        {k.kcName} <span className="text-slate-600">· {k.daysSince}d since last practice</span>
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* XP / Streak / Level bar */}
                 {xpData && (
                   <div className="bg-slate-800/50 rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
@@ -1150,7 +1175,17 @@ export default function QuizPage() {
           ) : (
             <>
               <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-2xl p-6 sm:p-8">
-                <SessionSummaryDashboard sessionId={sessionId} onNewSession={handleNewSession} />
+                <SessionSummaryDashboard
+                  sessionId={sessionId}
+                  onNewSession={handleNewSession}
+                  onStartReview={(kcId) => {
+                    const queue = [kcId];
+                    setLearnQueue(queue);
+                    learnQueueRef.current = queue;
+                    handleNewSession();
+                    // session starts automatically via startSession after appState resets
+                  }}
+                />
               </div>
               <PostSessionFlow sessionId={sessionId} onDismiss={handlePostSessionDone} />
 
