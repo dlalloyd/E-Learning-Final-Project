@@ -30,6 +30,10 @@ model User {
   totalXp          Int      @default(0)
   level            Int      @default(1)
 
+  // Password reset
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
+
   sessions        Session[]
   assessments     Assessment[]
   progress        UserProgress[]
