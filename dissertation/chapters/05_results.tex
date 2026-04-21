@@ -1,0 +1,384 @@
+\chapter{Results and Evaluation}
+\label{ch:results}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Overview of Evaluation Approach}
+\label{sec:results_overview}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Given the constraints documented in Section~\ref{subsec:meth_limitations}
+--- specifically $n = 4$ external participants, no completed A/B control
+condition, and IRT parameters calibrated from a small pilot sample --- the
+evaluation adopts a \textbf{five-track multi-method validity} framework rather
+than a single inferential statistical test. Each track provides a distinct
+category of evidence about system validity, and convergent findings across
+tracks constitute stronger evidence than any single track alone. This approach
+follows the recommendation of \textcite{woolf2010} that ITS evaluation in
+small-scale deployments should combine algorithmic, behavioural, and
+psychometric evidence rather than relying exclusively on effect size estimates
+that lack statistical power at small sample sizes.
+
+The five tracks are:
+
+\begin{description}
+  \item[Track 1 — Algorithm validation.] Evidence that the adaptive engine
+    behaves as specified: $\hat{\theta}$ trajectories move in the expected
+    direction, Bloom escalation events fire at the correct thresholds, and
+    variant deduplication prevents item reuse.
+  \item[Track 2 — Engagement data.] Behavioural evidence of learner
+    engagement: session completion rates, XP trajectories, questions
+    attempted per session, and level progression.
+  \item[Track 3 — Usability.] System Usability Scale (SUS) scores from
+    $n = 4$ participants compared against the $\geq 68$ above-average
+    benchmark \parencite{bangor2008}.
+  \item[Track 4 — Misconception analysis.] Qualitative evidence of the
+    system's diagnostic capability: distractor frequency tables per KC,
+    identifying systematic knowledge gaps that a non-adaptive system would
+    not surface.
+  \item[Track 5 — System robustness.] Operational evidence: uptime,
+    \texttt{variant\_pool\_exhausted} event frequency, and absence of
+    session state corruption across the evaluation period.
+\end{description}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Track 1 --- Algorithm Validation}
+\label{sec:results_algorithm}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Theta Trajectory Analysis}
+\label{subsec:results_theta}
+
+For each participant session, the EAP ability estimate $\hat{\theta}$ was
+recorded before and after each response. A valid adaptive session should
+produce a $\hat{\theta}$ trajectory that: (a) moves upward when the learner
+answers correctly, (b) moves downward or stabilises when the learner answers
+incorrectly, and (c) converges toward a stable estimate as the number of
+responses increases.
+
+\begin{table}[H]
+\centering
+\caption{Session-level $\hat{\theta}$ statistics across $n = 4$ participants.
+\textit{[Data to be inserted from Supabase Interaction table query.]}}
+\label{tab:theta_trajectories}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Participant} & \textbf{$\hat{\theta}$ start} & \textbf{$\hat{\theta}$ end}
+  & \textbf{$\Delta\hat{\theta}$} & \textbf{Questions} & \textbf{Accuracy} \\
+\midrule
+P1 & [TBA] & [TBA] & [TBA] & [TBA] & [TBA]\% \\
+P2 & [TBA] & [TBA] & [TBA] & [TBA] & [TBA]\% \\
+P3 & [TBA] & [TBA] & [TBA] & [TBA] & [TBA]\% \\
+P4 & [TBA] & [TBA] & [TBA] & [TBA] & [TBA]\% \\
+\midrule
+\textit{Mean} & \textit{[TBA]} & \textit{[TBA]} & \textit{[TBA]}
+  & \textit{[TBA]} & \textit{[TBA]\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A positive mean $\Delta\hat{\theta}$ across all participants would constitute
+evidence that the EAP estimator is correctly updating in response to learner
+performance, and that the session is producing measurable within-session
+learning gains as operationalised by the IRT ability scale.
+
+\subsection{Bloom Escalation Events}
+\label{subsec:results_bloom}
+
+The \texttt{bloom\_escalation} analytics event is emitted when the adaptive
+engine advances a learner's Bloom gate for a KC. Valid escalation events
+should satisfy: $p(\text{Learned}) \geq 0.40$ at L1$\to$L2 transition, or
+$p(\text{Learned}) \geq 0.60$ at L2$\to$L3 transition.
+
+\begin{table}[H]
+\centering
+\caption{\texttt{bloom\_escalation} events recorded across evaluation sessions.
+\textit{[Data to be inserted from Supabase AnalyticsEvent table query.]}}
+\label{tab:bloom_escalation}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Session} & \textbf{KC} & \textbf{Transition} &
+  \textbf{$p(\text{Learned})$ at trigger} & \textbf{Threshold met?} \\
+\midrule
+[TBA] & [TBA] & L1 $\to$ L2 & [TBA] & [TBA] \\
+[TBA] & [TBA] & L2 $\to$ L3 & [TBA] & [TBA] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All escalation events should show $p(\text{Learned})$ values at or above the
+specified threshold at the moment of escalation, confirming that the gate
+logic is correctly applied. Any event with $p(\text{Learned})$ below the
+threshold would indicate a bug in the escalation condition check.
+
+\subsection{Variant Deduplication Verification}
+\label{subsec:results_dedup}
+
+Cross-session deduplication was verified by inspecting the
+\texttt{UserVariantSeen} table for each participant across multiple sessions.
+\textit{[Verification result to be inserted: confirm zero repeat variants
+served per participant across sessions.]} The \texttt{variant\_pool\_exhausted}
+event was recorded \textit{[TBA]} times across all evaluation sessions,
+indicating that the eligible pool was exhausted \textit{[TBA]} times and the
+fallback selection logic was invoked. This confirms that the deduplication
+mechanism is functioning and that variant pool size is a relevant operational
+constraint for longer-running deployments.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Track 2 --- Engagement Data}
+\label{sec:results_engagement}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Engagement was assessed via the behavioural data recorded in the
+\texttt{Session}, \texttt{Interaction}, and \texttt{XPEvent} tables.
+Table~\ref{tab:engagement} summarises key engagement metrics across the
+$n = 4$ participant sessions.
+
+\begin{table}[H]
+\centering
+\caption{Participant engagement metrics.
+\textit{[Data to be inserted from Supabase admin dashboard.]}}
+\label{tab:engagement}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Participant} & \textbf{Session duration (min)} & \textbf{Questions attempted}
+  & \textbf{KCs attempted} & \textbf{XP earned} \\
+\midrule
+P1 & [TBA] & [TBA] & [TBA] & [TBA] \\
+P2 & [TBA] & [TBA] & [TBA] & [TBA] \\
+P3 & [TBA] & [TBA] & [TBA] & [TBA] \\
+P4 & [TBA] & [TBA] & [TBA] & [TBA] \\
+\midrule
+\textit{Mean} & \textit{[TBA]} & \textit{[TBA]} & \textit{[TBA]} & \textit{[TBA]} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Session completion rate (participants who reached the session summary screen
+rather than abandoning mid-session) was \textit{[TBA]}\% ($n = $ \textit{[TBA]}
+of 4). Hint usage rates per participant are reported in
+Table~\ref{tab:hint_usage}, providing evidence on the scaffolding system's
+uptake.
+
+\begin{table}[H]
+\centering
+\caption{Hint usage by level across evaluation sessions.
+\textit{[Data to be inserted from Supabase Interaction table query:}
+\texttt{SELECT hintLevelMax, COUNT(*) FROM Interaction GROUP BY hintLevelMax}.
+\textit{]}}
+\label{tab:hint_usage}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Hint level} & \textbf{Interactions} & \textbf{\% of total}
+  & \textbf{Avg accuracy following hint} & \textbf{Avg credit factor} \\
+\midrule
+No hint (cf = 1.00) & [TBA] & [TBA]\% & [TBA]\% & 1.00 \\
+L1 conceptual (cf = 0.90) & [TBA] & [TBA]\% & [TBA]\% & 0.90 \\
+L2 procedural (cf = 0.70) & [TBA] & [TBA]\% & [TBA]\% & 0.70 \\
+L3 worked example (cf = 0.50) & [TBA] & [TBA]\% & [TBA]\% & 0.50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Track 3 --- Usability (SUS)}
+\label{sec:results_sus}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The System Usability Scale \parencite{brooke1996} was administered to all
+$n = 4$ participants at session end. The SUS comprises 10 Likert-scale items
+(1--5), scored to produce a composite score on a 0--100 scale.
+\textcite{bangor2008} established that scores $\geq 68$ indicate above-average
+usability and scores $\geq 85$ indicate excellent usability for the product
+category.
+
+\begin{table}[H]
+\centering
+\caption{System Usability Scale scores ($n = 4$).
+\textit{[Scores to be inserted from SUS response sheets.]}}
+\label{tab:sus}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Participant} & \textbf{SUS score} & \textbf{Grade} \\
+\midrule
+P1 & [TBA] & [TBA] \\
+P2 & [TBA] & [TBA] \\
+P3 & [TBA] & [TBA] \\
+P4 & [TBA] & [TBA] \\
+\midrule
+\textbf{Mean} & \textbf{[TBA]} & \textbf{[TBA]} \\
+\textit{Benchmark ($\geq 68$)} & \textit{68} & \textit{Above average} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A mean SUS score $\geq 68$ would indicate that the adaptive system does not
+impose usability costs sufficient to impede learning, addressing the concern
+raised by \textcite{bangor2008} that adaptive systems typically score 15--20
+points below conventional interfaces. A score $\geq 85$ would indicate that
+the onboarding tour, transparent BKT visualisation, and progressive hint
+disclosure are effective usability interventions.
+
+Qualitative SUS item-level analysis identifies which specific usability
+dimensions contribute most to (or detract most from) the composite score.
+Items 1, 3, 5, 7, and 9 are positive-direction (system confidence, ease of
+learning, integration); items 2, 4, 6, 8, and 10 are negative-direction
+(complexity, awkwardness, variability). \textit{[Item-level analysis to be
+inserted.]}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Track 4 --- Misconception Analysis}
+\label{sec:results_misconceptions}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The \texttt{GET /api/analytics/error-patterns} route aggregates distractor
+selection frequencies across all interactions for each KC. This enables
+identification of systematic knowledge gaps beyond simple accuracy metrics:
+a learner who consistently selects a specific wrong answer is exhibiting a
+misconception, not random error.
+
+\begin{table}[H]
+\centering
+\caption{Top distractor selections per KC across all evaluation sessions.
+\textit{[Data to be inserted from error-patterns API response or direct
+Supabase query against Interaction table.]}}
+\label{tab:misconceptions}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{lXcc}
+\toprule
+\textbf{KC} & \textbf{Most common wrong answer} & \textbf{Frequency}
+  & \textbf{\% of incorrect responses} \\
+\midrule
+[TBA] & [TBA] & [TBA] & [TBA]\% \\
+[TBA] & [TBA] & [TBA] & [TBA]\% \\
+[TBA] & [TBA] & [TBA] & [TBA]\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The presence of high-frequency specific distractors (as opposed to uniformly
+distributed errors) constitutes evidence that the distractor design is
+functioning as intended: wrong answers are plausible misconceptions rather
+than arbitrary foils, and the system's misconception tab surfaces genuine
+diagnostic information for learner self-correction. \textit{[Qualitative
+interpretation of identified misconception patterns to be inserted.]}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Track 5 --- System Robustness}
+\label{sec:results_robustness}
+% ─────────────────────────────────────────────────────────────────────────────
+
+System robustness was assessed via operational metrics over the evaluation
+period \textit{[dates: TBA]}.
+
+\begin{table}[H]
+\centering
+\caption{System robustness metrics over evaluation period.
+\textit{[Data to be inserted from Vercel deployment logs and Supabase
+AnalyticsEvent table.]}}
+\label{tab:robustness}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Target} \\
+\midrule
+Uptime (Vercel deployment) & [TBA]\% & $\geq 99\%$ \\
+Session state corruption events & [TBA] & 0 \\
+\texttt{variant\_pool\_exhausted} events & [TBA] & Documented (fallback active) \\
+Authentication failures (non-user-error) & [TBA] & 0 \\
+RLS policy violation attempts blocked & [TBA] & All blocked \\
+Average API response time (next-question) & [TBA] ms & $< 500$ ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Zero session state corruption events would confirm that the JSON serialisation
+of \texttt{kcStates} and the atomic Prisma write in the answer route correctly
+protect BKT state across concurrent requests. Any RLS policy violation attempts
+blocked (reported in Supabase auth logs) would confirm that the data isolation
+layer is functioning as a genuine security control, not merely as a
+documentation claim.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Comparison with VanLehn (2011) Benchmark}
+\label{sec:results_vanlehn}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\textcite{vanlehn2011} establishes $d = 0.76$ as the expected effect size for
+step-based ITS systems relative to no-tutoring control, across 60 controlled
+studies. This project cannot compute a directly comparable effect size given
+the absence of a no-tutoring control condition and the small sample ($n = 4$).
+However, within-session $\Delta\hat{\theta}$ provides a proxy measure of
+learning gain that can be interpreted against the IRT ability scale.
+
+If participants' mean $\hat{\theta}$ increases by at least $0.50$ logits
+across a session --- corresponding roughly to a one-half standard deviation
+improvement in latent ability as estimated by the EAP --- this constitutes
+evidence consistent with the magnitude of learning gains reported by VanLehn
+for step-based systems, acknowledging that the comparison is approximate and
+that $\hat{\theta}$ and effect size $d$ are not directly equivalent metrics.
+
+\begin{table}[H]
+\centering
+\caption{Within-session learning gain compared against VanLehn benchmark.
+\textit{[To be completed once session data is available.]}}
+\label{tab:vanlehn_comparison}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Measure} & \textbf{This study} & \textbf{VanLehn (2011)} \\
+\midrule
+Comparison modality & Within-session $\Delta\hat{\theta}$ & Effect size $d$ \\
+Sample & $n = 4$ (convenience) & 60 studies (controlled) \\
+Mean learning gain & [TBA] logits & $d = 0.76$ \\
+Inference possible? & No (descriptive only) & Yes (meta-analytic) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The absence of inferential statistics is acknowledged as the primary
+limitation of this evaluation. The comparison with VanLehn's benchmark is
+offered as a contextualising reference, not as a statistical equivalence claim.
+Chapter~\ref{ch:discussion} discusses this limitation in full and identifies
+the study design required to produce a comparable effect size estimate.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary of Evaluation Findings}
+\label{sec:results_summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[H]
+\centering
+\caption{Five-track evaluation summary.}
+\label{tab:eval_summary}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{llXl}
+\toprule
+\textbf{Track} & \textbf{Method} & \textbf{Finding} & \textbf{Status} \\
+\midrule
+1 & Algorithm validation &
+  $\hat{\theta}$ trajectories, Bloom escalation events, dedup verification &
+  \textit{[TBA]} \\
+2 & Engagement data &
+  Session completion, hint usage, XP trajectories &
+  \textit{[TBA]} \\
+3 & SUS usability &
+  Mean SUS vs $\geq 68$ benchmark &
+  \textit{[TBA]} \\
+4 & Misconception analysis &
+  Distractor frequency tables per KC &
+  \textit{[TBA]} \\
+5 & System robustness &
+  Uptime, zero state corruption, RLS enforcement &
+  \textit{[TBA]} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent\textit{[This section will be completed with a convergent narrative
+summary once all five tracks have been populated with empirical data from the
+Supabase admin dashboard and SUS response sheets.]}

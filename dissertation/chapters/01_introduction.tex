@@ -1,0 +1,203 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Background and Motivation}
+\label{sec:intro_background}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The educational technology sector has undergone significant expansion over the
+past decade, yet the dominant paradigm in digital learning platforms remains
+one-size-fits-all content delivery. A learner who already understands tectonic
+plate mechanics receives the same sequence of questions as one who has never
+encountered the concept; a learner who has mastered map reading is presented
+with the same map skills introduction as a complete novice. This homogeneity
+is not a technical constraint but a design choice --- and one that the
+empirical literature consistently identifies as suboptimal.
+
+\textcite{bloom1984} demonstrated that one-to-one human tutoring, which
+adapts to the learner's current ability in real time, produces learning
+outcomes approximately two standard deviations above conventional classroom
+instruction. \textcite{vanlehn2011} subsequently showed that step-based
+Intelligent Tutoring Systems (ITS) can approach this performance at scale,
+achieving effect sizes statistically indistinguishable from human tutoring.
+The implication is clear: the adaptive feedback loop is the critical variable,
+not the delivery medium or the domain.
+
+Despite this evidence, adaptive ITS remain largely confined to mathematics and
+programming domains, where knowledge structures are well-defined and assessment
+is unambiguous. Geography --- a subject that integrates declarative factual
+knowledge, procedural reasoning, and conceptual understanding --- has received
+almost no attention in the adaptive learning literature \parencite{bednarz2013}.
+The UK KS3/GCSE Geography curriculum, with its distinctive structure spanning
+physical geography, human geography, and geographical skills, represents both
+an underserved educational context and a meaningful test case for ITS methods
+applied to non-STEM knowledge domains.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Research Question}
+\label{sec:intro_rq}
+% ─────────────────────────────────────────────────────────────────────────────
+
+This project addresses the following research question:
+
+\begin{quote}
+\textit{Can a hybrid IRT 3PL + BKT adaptive engine, implemented in a
+production web application, deliver personalised question sequencing that
+produces measurable within-session learning gains for learners studying
+UK KS3/GCSE Geography content?}
+\end{quote}
+
+The question has three components: an \textit{algorithmic claim} (the hybrid
+IRT+BKT engine can perform valid adaptive selection), a \textit{technical
+claim} (this can be implemented in a production-deployed web application), and
+an \textit{empirical claim} (the system produces measurable learning gains).
+The evaluation strategy in Chapter~\ref{ch:results} addresses all three,
+with the acknowledgement that the empirical claim is evaluated at
+proof-of-concept scale rather than at statistical significance.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Project Overview}
+\label{sec:intro_overview}
+% ─────────────────────────────────────────────────────────────────────────────
+
+GeoMentor is an adaptive intelligent tutoring system for UK KS3/GCSE
+Geography, accessible at \url{https://e-learning-final-project.vercel.app}.
+The system implements a hybrid IRT 3PL + BKT algorithm that continuously
+estimates learner ability and Knowledge Component mastery, selects questions
+targeting the learner's Zone of Proximal Development, and enforces Bloom's
+taxonomy cognitive prerequisites across a 13-KC curriculum graph.
+
+The system was developed as the artefact for this Honours Stage Project over
+ten two-week sprints from October 2025 to May 2026, following a Design Science
+Research methodology \parencite{hevner2004}. It is production-deployed,
+publicly accessible, and open-source, providing a proof-of-concept
+implementation that can be independently verified, reproduced, and extended.
+
+The scope was deliberately concentrated on a single domain following a Sprint 5
+risk assessment that identified multi-domain calibration as infeasible within
+the available timeline. The system's architecture is domain-agnostic, and
+Cross-Domain Knowledge Transfer is identified as the primary architectural
+stretch goal for future development (Section~\ref{sec:lr_future}).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Contributions}
+\label{sec:intro_contributions}
+% ─────────────────────────────────────────────────────────────────────────────
+
+This project makes the following contributions:
+
+\begin{enumerate}[leftmargin=2em]
+
+  \item \textbf{A production-deployed hybrid IRT 3PL + BKT adaptive engine
+  for UK Geography.} The first publicly accessible ITS targeting the UK
+  KS3/GCSE Geography curriculum, extending the empirical evidence base for
+  adaptive learning beyond traditional STEM domains.
+
+  \item \textbf{A credit-factor modification to the standard BKT update.}
+  A novel modification of the BKT learning transition equation that weights
+  correct responses by a graduated credit factor reflecting the maximum hint
+  level accessed, formalising the evidential relationship between scaffolding
+  usage and mastery evidence.
+
+  \item \textbf{Bloom-gated adaptive progression.} An implementation of
+  Bloom's taxonomy as a computational selection constraint, enforcing that
+  learners consolidate recall-level knowledge before encountering
+  application-level items --- a feature absent from standard IRT-only CAT
+  implementations.
+
+  \item \textbf{A five-track multi-method evaluation framework for small-sample
+  ITS validation.} A structured evaluation approach combining algorithmic
+  validation, engagement data, usability metrics, misconception analysis, and
+  robustness monitoring, designed for contexts where inferential statistics are
+  not viable due to small sample sizes.
+
+  \item \textbf{An open-source domain-agnostic ITS architecture.} The codebase
+  provides a reusable template for researchers and developers building adaptive
+  systems for non-STEM declarative-knowledge domains, with the KC graph,
+  question bank, and IRT parameter store fully parameterised and independent
+  of Geography-specific logic.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Scope and Delimitations}
+\label{sec:intro_scope}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The following boundaries apply to this project:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Domain.} UK KS3/GCSE Geography only (AQA specification). No
+    other subject domain is supported in the current release, though the
+    architecture is designed for extension.
+  \item \textbf{Assessment type.} Multiple-choice questions with four options.
+    Extended writing, diagram annotation, and data interpretation items are
+    outside scope.
+  \item \textbf{Participant population.} University of Hull students
+    (convenience sample). The system targets KS3/GCSE students but was
+    evaluated with adults due to ethical and logistical constraints on
+    secondary school access.
+  \item \textbf{Algorithm.} IRT 3PL + BKT hybrid. Deep Knowledge Tracing,
+    Elo, and 2PL models were evaluated and rejected
+    (Section~\ref{sec:lr_algorithms}).
+  \item \textbf{Evaluation scale.} Proof-of-concept validation at $n = 4$.
+    Inferential statistical claims are not made.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Ethical and Professional Considerations}
+\label{sec:intro_ethics}
+% ─────────────────────────────────────────────────────────────────────────────
+
+All participant data was collected under informed written consent. No
+personally identifiable data beyond email address and name (required for
+authentication) was collected; session performance data is stored under
+a pseudonymous user ID and is accessible only to the authenticated user and
+to the researcher under the study protocol.
+
+Artificial intelligence tools were used in the development and writing of this
+project. Specifically: authentication boilerplate, UI scaffolding, and Vercel
+deployment configuration received AI assistance. The research design, KC
+ontology, IRT calibration strategy, BKT credit-factor modification, and the
+adaptive engine's core algorithm were designed and implemented by the author.
+Full details of AI usage are provided in the AI Declaration appendix, in
+compliance with the University of Hull's Academic Integrity Policy.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Report Structure}
+\label{sec:intro_structure}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The remainder of this report is organised as follows.
+
+Chapter~\ref{ch:literature_review} presents a critical review of the
+theoretical and empirical foundations of adaptive intelligent tutoring systems,
+covering pedagogical theory, adaptive algorithms, Computerised Adaptive Testing
+principles, empirical effectiveness evidence, implementation challenges, and
+ethical considerations. Forty-five sources are reviewed and five research gaps
+are identified.
+
+Chapter~\ref{ch:methodology} describes the research design, KC ontology,
+adaptive algorithm design with full mathematical derivation, IRT calibration
+pipeline, pre-test seeding, scaffolding design, evaluation protocol, agile
+development methodology, project Gantt chart, risk register, and an honest
+account of what was and was not delivered.
+
+Chapter~\ref{ch:implementation} describes the technical implementation: the
+database schema, adaptive engine code, API route design, security
+implementation, frontend components, and challenges encountered. Deviations
+from the methodology specification are documented with justifications.
+
+Chapter~\ref{ch:results} presents the five-track multi-method evaluation:
+algorithm validation, engagement data, SUS usability scores, misconception
+analysis, and system robustness metrics.
+
+Chapter~\ref{ch:discussion} interprets the results, compares the system with
+related work, defends the scope reduction as a research strength, analyses
+limitations and threats to validity, documents what could not be delivered,
+identifies future work, and reflects on CSSE competency demonstration.
+
+Chapter~\ref{ch:conclusion} summarises contributions, revisits the research
+question, situates the project's broader significance, and offers a final
+statement.

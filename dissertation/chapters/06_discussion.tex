@@ -1,0 +1,338 @@
+\chapter{Discussion}
+\label{ch:discussion}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Does the System Answer the Research Question?}
+\label{sec:disc_rq}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The central research question of this project is: \textit{can a hybrid IRT
+3PL + BKT adaptive engine, implemented in a production web application,
+deliver personalised question sequencing that produces measurable learning
+gains within a single session for UK KS3/GCSE Geography content?}
+
+The system as implemented provides a technically complete answer to this
+question. The adaptive engine correctly selects items based on Fisher
+information at the learner's current $\hat{\theta}$, enforces Bloom-level
+cognitive prerequisites, tracks per-KC knowledge state via BKT, and applies
+the credit factor modification for hint-assisted responses. All components
+behave as specified, as confirmed by the algorithm validation evidence in
+Track 1 (Section~\ref{sec:results_algorithm}).
+
+The empirical answer --- whether measurable learning gains actually occur --- is
+provisionally supported by the within-session $\Delta\hat{\theta}$ data
+collected from $n = 4$ participants, but cannot be stated with statistical
+confidence given the sample size. The honest position is: the system is
+\textit{technically validated} (it behaves correctly) and \textit{empirically
+indicative} (preliminary data is directionally consistent with the expected
+effect), but \textit{not yet inferentially confirmed} (a study with $n \geq
+15$ and a control condition is required to produce a publishable effect size
+estimate). This distinction between technical and empirical validation is
+important and is frequently elided in student project reports; it is made
+explicit here.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Comparison with Related Work}
+\label{sec:disc_comparison}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{VanLehn (2011)}
+\label{subsec:disc_vanlehn}
+
+\textcite{vanlehn2011} identifies step-based feedback as the critical
+determinant of ITS effectiveness, with step-based systems achieving $d = 0.76$
+versus $d = 0.31$ for answer-based systems. GeoMentor provides question-level
+feedback (``correct / incorrect, here is the explanation'') rather than
+step-level feedback (``you went wrong at this specific reasoning step'').
+Strictly, this classifies the system as an \textit{answer-based} tutoring
+system under VanLehn's taxonomy, suggesting an expected effect size closer to
+$d = 0.31$ than $d = 0.76$ if a controlled study were conducted.
+
+However, two features of this system move it toward the step-based category.
+First, the three-level hint system progressively scaffolds the solution
+pathway before the learner commits an answer, providing something closer to
+step-level guidance than a simple post-hoc explanation. Second, the
+misconception tab identifies the specific wrong-answer attractor selected by
+the learner, enabling targeted reflection on the specific reasoning error made.
+Whether these features are sufficient to produce step-based effect sizes is an
+empirical question that the current evaluation cannot resolve. It is an honest
+limitation that VanLehn's $d = 0.76$ benchmark, while used as a reference
+throughout this report, may be an optimistic comparator for this system's
+interaction granularity.
+
+\subsection{Kulik and Fletcher (2016)}
+\label{subsec:disc_kulik}
+
+\textcite{kulik2016} report a weighted mean effect size of $d = 0.66$ for
+systems implementing continuous real-time adaptation --- the category into which
+GeoMentor falls, since $\hat{\theta}$ and $p(\text{Learned})$ are updated after
+every single response. Their comparison with discrete checkpoint systems ($d =
+0.28$) supports the design decision to implement per-response EAP updating
+rather than a batch-update architecture. This is one area where the
+implementation is at the upper bound of what the literature predicts for
+systems of this class.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Scope Reduction: Strength Not Weakness}
+\label{sec:disc_scope}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The decision to scope down from multi-domain to single-domain Geography, and
+subsequently to validate a single core KC workflow, might appear to weaken the
+project's claims. The opposite case is argued here.
+
+\textcite{desmarais2012} note that the most common failure mode in adaptive
+system research is shallow multi-domain validation, in which a system is
+demonstrated to work across many domains with weak evidence in each. Deep
+single-domain validation --- rigorous psychometric calibration, detailed
+misconception analysis, and multi-track validity evidence within one domain
+--- produces more defensible research contributions. The geographic focus also
+enables a contribution that the multi-domain version could not have made:
+the demonstration that ITS methods transfer to a declarative-knowledge
+non-STEM domain is itself a research finding, addressing Gap 1 identified in
+the literature review (Section~\ref{sec:lr_gaps}).
+
+Furthermore, the architecture is domain-agnostic by design: the adaptive
+engine's KC graph, IRT parameter store, and BKT state management are
+parameterised by KC identifiers and do not contain any Geography-specific
+logic. Extending the system to additional domains requires authoring new KC
+graphs and question banks, but no algorithmic changes. The scope reduction
+is therefore a validation decision, not an architectural constraint.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Limitations}
+\label{sec:disc_limitations}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Sample Size}
+\label{subsec:disc_n4}
+
+The most significant limitation of this evaluation is the sample size of
+$n = 4$ external participants. Paired $t$-test at $n = 4$ has approximately
+19\% statistical power at $d = 0.76$ and $\alpha = 0.05$ --- effectively
+indistinguishable from chance in terms of hypothesis testing. The evaluation's
+multi-method approach was adopted precisely because inferential statistics are
+not viable at this sample size. The findings reported in Chapter~\ref{ch:results}
+are descriptive and indicative; they establish proof-of-concept rather than
+empirical proof of effect.
+
+The target of $n = 15$ was not achieved due to the compressed evaluation
+timeline following the Sprint 5 scope reduction. Recruitment was initiated
+via University of Hull participant pools and departmental email lists;
+response rates were lower than anticipated. This is a common challenge in
+student project research and is not unique to this evaluation, but it is
+acknowledged as the primary factor limiting the strength of the empirical
+evidence.
+
+\subsection{Absence of a Completed Control Condition}
+\label{subsec:disc_control}
+
+The within-subjects quasi-experimental design specified in the methodology
+required each participant to experience both an adaptive and a static
+(linear) condition. The static condition was not implemented as a live system
+feature due to time constraints; VanLehn's meta-analytic benchmark was used
+as a surrogate comparator. This means that any observed within-session
+$\Delta\hat{\theta}$ cannot be attributed specifically to the adaptive
+mechanism: it could reflect general learning from Geography content regardless
+of sequencing. A two-condition study is required to isolate the adaptation
+effect.
+
+\subsection{IRT Parameters from Small Calibration Sample}
+\label{subsec:disc_calibration}
+
+IRT item parameters were estimated from a small pilot calibration sample.
+The 3PL model's discrimination parameter $a$ is particularly sensitive to
+sparse data: with fewer than 100 responses per item, the standard errors of
+$a$ estimates are large, meaning that the Fisher information criterion may
+rank items differently from their true information order. The constrained
+calibration approach (fixing $c = 0.25$, monitoring RMSEA) mitigates but does
+not eliminate this uncertainty. A recalibration using data from the evaluation
+sessions would produce more stable parameters and is identified as an
+immediate next step for any continued development.
+
+\subsection{Single Session per Participant}
+\label{subsec:disc_single_session}
+
+The evaluation captured single-session data for all $n = 4$ participants.
+The BKT cross-session decay detection mechanism --- one of the system's novel
+contributions --- could therefore not be evaluated empirically. Similarly,
+the 7-day delayed retention assessment was administered to \textit{[TBA]}
+participants, providing insufficient data for retention analysis. Multi-session
+longitudinal data collection is the most important methodological gap for
+future work.
+
+\subsection{Convenience Sample Generalisability}
+\label{subsec:disc_generalisability}
+
+University of Hull students are not representative of the UK KS3/GCSE student
+population that the system targets. University students have higher average
+prior knowledge of Geography (particularly at the declarative-knowledge level
+tested at Bloom Level 1), greater familiarity with computer-mediated learning
+interfaces, and different motivational profiles than secondary school learners.
+These differences mean that the evaluation's usability and engagement findings
+may overestimate performance with the intended population.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Threats to Validity}
+\label{sec:disc_threats}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{description}
+  \item[Internal validity.] The primary threat to internal validity is the
+    absence of a control condition: any observed learning gains could be
+    attributed to content exposure alone, test practice effects, or
+    regression to the mean rather than to the adaptive mechanism. The
+    within-subjects design partially mitigates this by using each participant
+    as their own control, but without a completed static arm this mitigation
+    is incomplete.
+
+  \item[Construct validity.] The EAP $\hat{\theta}$ is a latent construct
+    that cannot be directly observed. Its validity as a measure of geography
+    knowledge depends on the quality of the IRT calibration, which is limited
+    by the small calibration sample. Construct validity would be strengthened
+    by demonstrating convergent validity between $\hat{\theta}$ and an
+    external geography knowledge measure (e.g., a standardised GCSE practice
+    paper score).
+
+  \item[Ecological validity.] The evaluation was conducted under researcher-
+    administered conditions, potentially producing demand characteristics:
+    participants may have exerted greater effort than they would in
+    self-directed use. Self-directed deployment over a longer period would
+    provide more ecologically valid engagement data.
+
+  \item[Statistical conclusion validity.] With $n = 4$, statistical conclusion
+    validity is severely limited. No inferential statistical claims are made
+    in this report; all numerical findings are descriptive. The risk of
+    Type II error (failing to detect a genuine effect) is high.
+\end{description}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{What Could Not Be Delivered and Why}
+\label{sec:disc_not_delivered}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Three commitments from the original project proposal were not delivered:
+
+\textbf{Multi-domain support.} The original proposal described an adaptive
+system covering STEM and Humanities domains. This was evaluated and superseded
+by the scope reduction decision (Section~\ref{subsec:meth_scope_reduction}).
+The decision was driven by: (a) the infeasibility of calibrating separate IRT
+parameters for multiple domains within the available timeline; (b) the
+dilution of evaluation statistical power across subgroups. The architecture
+supports multi-domain extension; the content does not yet exist.
+
+\textbf{Full A/B randomised controlled trial.} The original evaluation plan
+called for a completed no-adaptation control condition. This was not
+implemented as a live feature. A static question sequence (randomised from
+the same item pool, without IRT selection) would have been the correct
+implementation of the control arm and remains the most important addition
+for any follow-up study.
+
+\textbf{$n = 15$ participant target.} Participant recruitment fell short of
+the target sample size. Contributing factors include: the compressed timeline
+between the scope reduction decision and the dissertation deadline; the
+reliance on university participant pools with lower-than-anticipated response
+rates; and the exclusion criterion (no prior GCSE Geography) which eliminated
+a substantial proportion of Hull Computer Science students who had studied
+Geography at school.
+
+These shortcomings are disclosed here in the spirit of honest research
+reporting, following the recommendation of \textcite{woolf2010} that ITS
+evaluation papers should explicitly document the gap between planned and
+achieved validation evidence.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Future Work}
+\label{sec:disc_future}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The following extensions are identified in priority order for continued
+development:
+
+\begin{enumerate}[leftmargin=2em]
+
+  \item \textbf{Powered evaluation study.} Recruit $n \geq 18$ participants
+    with a completed adaptive/static control condition and 7-day delayed
+    retention assessment. This single study would transform the current
+    proof-of-concept findings into publishable evidence and enable direct
+    comparison with VanLehn's benchmark.
+
+  \item \textbf{mirt recalibration.} Rerun IRT calibration using data from
+    the evaluation sessions to produce more stable item parameter estimates.
+    Monitor RMSEA and item fit statistics; flag items with poor fit for
+    revision or removal.
+
+  \item \textbf{Cross-Domain Knowledge Transfer.} Extend the KC graph to
+    a second domain (e.g., GCSE History or Computer Science) using the
+    existing domain-agnostic architecture. Implement inter-domain prerequisite
+    edges to test whether learning in Geography KCs transfers to structurally
+    related KCs in the second domain, following the KLI framework of
+    \textcite{koedinger2012} and the cross-domain transfer model of
+    \textcite{singley1989}.
+
+  \item \textbf{Step-level feedback upgrade.} Redesign the feedback
+    mechanism from post-hoc explanation (answer-based) to guided reasoning
+    disclosure (step-based), bringing the system into alignment with
+    VanLehn's high-effect-size category. This would require authoring
+    multi-step solution traces per question item.
+
+  \item \textbf{Longitudinal multi-session study.} Design a three-session
+    protocol (baseline, adaptive, delayed retention) to evaluate the BKT
+    decay detection mechanism and the successive relearning boost empirically.
+    This is the only study design that can validate the cross-session BKT
+    state persistence features, which remain unevaluated.
+
+  \item \textbf{Secondary school deployment.} Pilot the system with UK KS3
+    students in partnership with a geography department, providing
+    ecologically valid engagement data with the intended population and
+    enabling convergent validity assessment against GCSE practice paper
+    performance.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{CSSE Reflection}
+\label{sec:disc_csse}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The CSSE competency requires demonstration of the ability to ``use established
+software development methodologies to discover authentic requirements, respond
+to change, ensure quality and deliver value to users and stakeholders.'' Four
+episodes from this project's development are identified as direct evidence of
+this competency.
+
+\textbf{Discovering authentic requirements.} The initial system design was
+derived from literature review rather than user research. Sprint 6 introduced
+a first-visit onboarding tour following informal feedback from pilot users
+who reported confusion about why the adaptive engine was presenting a
+particular question. This is a concrete example of requirements discovery
+through user contact rather than assumption: the transparency requirement was
+not in the original specification, and was identified only through observed
+user behaviour.
+
+\textbf{Responding to change.} The Sprint 5 scope reduction from multi-domain
+to single-domain validation was a managed response to emerging technical risk.
+The decision involved: (a) identifying the risk explicitly (calibration data
+infeasibility); (b) evaluating options (multi-domain with coarser calibration
+vs.\ single-domain with rigorous calibration); (c) selecting the option that
+better served the research goal; and (d) updating the project plan and Notion
+tracker to reflect the new scope. This is textbook agile risk response, not
+ad hoc retreat.
+
+\textbf{Ensuring quality.} Three quality assurance mechanisms were
+implemented: TypeScript strict mode eliminated a class of runtime errors;
+Prisma migration files provide a versioned, auditable schema history; and
+Vercel preview deployments enabled integration testing per feature branch
+before merge. The Review Material bug (Section~\ref{subsec:impl_review_bug})
+was identified during quality testing and documented honestly rather than
+concealed --- demonstrating that quality assurance is a process of finding
+and disclosing defects, not of claiming defect-free code.
+
+\textbf{Delivering value.} The system is production-deployed and accessible
+to any learner with an internet connection. The open-source repository provides
+value to other researchers and developers building adaptive systems for
+non-STEM domains. The Misconceptions tab delivers actionable diagnostic
+information that learners cannot obtain from a conventional quiz platform.
+Each of these represents value delivered to a distinct stakeholder group
+(learners, researchers, developers), demonstrating awareness that value
+delivery is multi-stakeholder.

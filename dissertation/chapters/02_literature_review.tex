@@ -1,0 +1,805 @@
+\chapter{Literature Review}
+\label{ch:literature_review}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:lr_intro}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Traditional e-learning platforms predominantly deliver static, one-size-fits-all
+content despite substantial empirical evidence that personalised instruction
+improves knowledge retention, engagement, and long-term learning outcomes
+\parencite{vanlehn2011, matos2025, pane2017}. This chapter critically examines
+the theoretical and empirical foundations of adaptive intelligent tutoring
+systems (ITS), with particular focus on the algorithmic approaches, evaluation
+methodologies, and ethical considerations relevant to the system developed in
+this project.
+
+The review is organised as follows. Section~\ref{sec:lr_theory} examines the
+pedagogical theories underpinning adaptive learning, including Vygotsky's Zone
+of Proximal Development, Bloom's mastery learning framework, cognitive load
+theory, and spaced retrieval practice. Section~\ref{sec:lr_algorithms} provides
+a critical comparative analysis of the primary adaptive algorithms: Elo rating,
+Item Response Theory (IRT), Bayesian Knowledge Tracing (BKT), Deep Knowledge
+Tracing, and the hybrid IRT+BKT approach adopted in this project.
+Section~\ref{sec:lr_cat} examines Computerised Adaptive Testing principles,
+including item selection criteria and ability estimation methods.
+Section~\ref{sec:lr_effectiveness} synthesises empirical evidence of ITS
+effectiveness across domains. Section~\ref{sec:lr_challenges} addresses
+implementation challenges including the cold-start problem, IRT calibration with
+small samples, and usability. Section~\ref{sec:lr_ethics} considers ethical
+dimensions: transparency, data protection, and algorithmic bias.
+Section~\ref{sec:lr_gaps} identifies the research gaps this project addresses,
+and Section~\ref{sec:lr_future} discusses future directions including
+cross-domain knowledge transfer. Section~\ref{sec:lr_conclusion} synthesises
+the review's findings into design implications.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Theoretical Foundations of Adaptive Learning}
+\label{sec:lr_theory}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The 2-Sigma Problem and the Promise of ITS}
+\label{subsec:lr_2sigma}
+
+The empirical case for adaptive personalised instruction originates with
+\textcite{bloom1984}, whose experimental work demonstrated that one-to-one
+human tutoring produces learning outcomes approximately two standard deviations
+above conventional classroom instruction (effect size $d = 2.0$). Bloom termed
+this the ``2-sigma problem'': individual tutoring is categorically more
+effective than group instruction, yet remains economically unfeasible at scale.
+This finding established the central design challenge for educational technology
+research: can scalable automated systems replicate the adaptive feedback
+mechanisms of a skilled human tutor?
+
+\textcite{vanlehn2011}, in a landmark meta-analysis of 60 controlled studies,
+partially resolves this question. His findings demonstrate that human tutoring
+achieves $d = 0.79$ (not $d = 2.0$, reconsidering Bloom's original conditions),
+and that step-based ITS --- those providing feedback on individual solution steps
+rather than only final answers --- achieve $d = 0.76$, statistically
+indistinguishable from human tutoring. This ``interaction plateau hypothesis''
+has profound design implications: the critical determinant of ITS effectiveness
+is not algorithmic sophistication but interaction granularity. Systems providing
+step-level adaptive feedback can approach human tutoring effectiveness regardless
+of whether the underlying algorithm is Bayesian, logistic, or rule-based.
+
+\textcite{chi2008} provide a complementary account: the effectiveness of human
+tutors derives less from domain expertise and more from their ability to elicit
+and respond to student reasoning in real time. This suggests that ITS design
+should prioritise responsive feedback over predictive accuracy --- a principle
+that directly informs the scaffolding architecture of the system presented in
+this project (Section~\ref{sec:meth_scaffolding}).
+
+\subsection{Zone of Proximal Development}
+\label{subsec:lr_zpd}
+
+Vygotsky's \parencite*{vygotsky1978} sociocultural theory provides the
+foundational framework for adaptive question sequencing through the concept of
+the Zone of Proximal Development (ZPD). The ZPD defines the critical cognitive
+space between what a learner can achieve independently and what they can achieve
+with appropriate scaffolding. Crucially, scaffolding must be precisely
+calibrated: tasks below the ZPD produce boredom; tasks above it produce
+cognitive overload; only tasks within the ZPD produce optimal learning.
+
+The technical operationalisation of the ZPD in an ITS requires a continuous
+estimate of learner ability and a mechanism for selecting items whose difficulty
+is matched to that estimate. In this system, the ZPD is operationalised through
+the IRT target probability $P(\theta) \approx 0.70$: the next question selected
+is the item of highest psychometric information at a difficulty level where the
+learner has approximately 70\% probability of success. This is neither trivial
+(which produces no learning) nor insurmountable (which produces frustration),
+implementing the ZPD as a computational targeting criterion.
+
+\textcite{park2004} note that ZPD theory places demands on adaptive systems
+beyond simple difficulty sequencing. In Geography specifically, the domain
+comprises interconnected declarative knowledge (factual recall of locations and
+physical processes), procedural knowledge (applying geographic frameworks to
+novel data), and conceptual understanding (explaining spatial patterns and causal
+relationships). The prerequisite graph implemented in this system --- encoding
+structural dependencies between 13 Knowledge Components --- is the knowledge
+representation mechanism enabling the adaptive engine to navigate this
+multi-dimensional knowledge space.
+
+\subsection{Mastery Learning and Bloom's Taxonomy}
+\label{subsec:lr_mastery}
+
+\textcite{bloom1984} proposed mastery learning as a pedagogical approach in
+which progression through a curriculum is gated by demonstrated competence at
+each stage rather than by time-on-task. Students who demonstrate mastery of
+prerequisite knowledge are permitted to advance; those who do not receive
+targeted remediation until mastery is achieved. Bloom's original framework
+predicts that given appropriate instruction and sufficient time, 90\% of
+students can achieve what only the top 20\% achieve under conventional
+instruction.
+
+The implementation of mastery learning in a digital system requires both a
+mastery criterion and a progression gate. \textcite{ritter2016} demonstrate that
+mastery thresholds must be precisely calibrated: thresholds above 90\% accuracy
+create unnecessary cognitive burden, while thresholds below 60\% permit
+knowledge gaps that undermine subsequent learning. Their analysis of
+large-scale Cognitive Tutor deployments positions 80\% accuracy as an optimal
+threshold. In this system, the BKT mastery gate requires $p(\text{Learned}) \geq
+0.80$ per Knowledge Component before the learner can progress to dependent KCs.
+
+Bloom's cognitive taxonomy \parencite{bloom1956}, subsequently revised by
+\textcite{anderson2001}, provides the hierarchical framework for question
+difficulty beyond simple parametric difficulty. The revised taxonomy identifies
+six cognitive levels --- Remembering, Understanding, Applying, Analysing,
+Evaluating, and Creating --- with each level requiring cognitive operations of
+greater abstraction than the last. This project implements a three-level
+approximation: Bloom Level 1 (Remembering: recall of geographic facts), Level 2
+(Understanding: explanation of geographic processes), and Level 3 (Applying:
+interpretation of geographic data in novel contexts). The adaptive engine
+enforces a Bloom escalation gate: Level 2 items are unlocked when
+$p(\text{Learned}) \geq 0.40$ for a KC or when a direct prerequisite KC exceeds
+$0.50$; Level 3 items require $p(\text{Learned}) \geq 0.60$. This ensures that
+learners master declarative knowledge before encountering analytical demands,
+implementing cognitive scaffolding aligned with the taxonomy's hierarchical
+structure.
+
+\subsection{Spaced Repetition and Successive Relearning}
+\label{subsec:lr_spacing}
+
+A body of evidence spanning over a century establishes that distributed practice
+--- spacing repetitions of study material over time rather than massing them in
+a single session --- substantially improves long-term retention
+\parencite{cepeda2006}. The spacing effect is one of the most replicated
+findings in experimental psychology and has direct implications for adaptive
+system design.
+
+\textcite{pavlik2005} formalise the spacing effect through an
+activation-based memory model, demonstrating that the optimal inter-repetition
+interval depends on the current activation strength of a memory trace. Items
+with high activation (recently practised) benefit from longer gaps; items with
+low activation (not recently practised, or not yet consolidated) benefit from
+shorter gaps and more repetition. Successive Relearning --- the practice of
+re-presenting material after forgetting has begun rather than before --- is
+particularly effective for long-term retention, producing superior recall at
+delayed tests compared to massed practice or standard spaced repetition
+\parencite{kornell2009}.
+
+This project implements Successive Relearning through the BKT decay detection
+mechanism: Knowledge Components whose $p(\text{Learned})$ has declined below
+the mastery threshold since a prior session are flagged as decayed and receive a
+$1.5\times$ information boost in the next-question selection process. This
+prioritises re-presentation of consolidating material over introduction of new
+content, directly implementing the successive relearning principle in the
+adaptive selection criterion.
+
+\subsection{Cognitive Load Theory}
+\label{subsec:lr_clt}
+
+\textcite{sweller1988} proposed cognitive load theory (CLT) to account for the
+conditions under which instructional design either facilitates or impedes
+learning. CLT distinguishes three types of cognitive load: intrinsic load
+(determined by the complexity of the material and the learner's schema
+development), extraneous load (imposed by poor instructional design), and
+germane load (the cognitive effort directed toward schema construction and
+automation).
+
+CLT has direct implications for adaptive system design: systems should minimise
+extraneous load through clean interface design while maintaining sufficient
+intrinsic load to support learning. The graduated hint system in this project
+manages intrinsic load by providing incremental scaffolding: conceptual hints at
+Level 1 restating the question in simpler terms, procedural hints at Level 2
+providing a strategy, and worked examples at Level 3. Each hint level reduces
+intrinsic load while also reducing the evidential weight of a subsequent correct
+answer \parencite{koedinger2007}. The credit factor modification to BKT formalises
+this relationship: a correct answer after a worked example (credit factor 0.50)
+contributes less to the mastery estimate than an unaided correct answer (credit
+factor 1.00), reflecting the reduced cognitive demand of hint-assisted success.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Adaptive Algorithms: A Critical Comparative Analysis}
+\label{sec:lr_algorithms}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The choice of adaptive algorithm is a critical architectural decision with
+long-term consequences for system effectiveness, interpretability, and
+maintenance. \textcite{matos2025} identify three dominant approaches in current
+ITS deployments: Elo-based rating systems, probabilistic models (IRT and BKT),
+and deep learning approaches. Each is evaluated here against four criteria
+relevant to this project: \textit{data requirements}, \textit{domain
+suitability} (multi-KC, prerequisite-structured), \textit{interpretability},
+and \textit{calibration complexity}.
+
+\subsection{Elo Rating System}
+\label{subsec:lr_elo}
+
+Originally developed for chess player ranking \parencite{elo1978}, the Elo system
+models learner ability and item difficulty on a shared continuous scale, updating
+ratings after each interaction via:
+
+\begin{equation}
+  R_i^{\text{new}} = R_i + K \cdot \left(\text{outcome} - P(\text{correct})\right)
+  \label{eq:elo_update}
+\end{equation}
+
+\noindent where $P(\text{correct}) = 1 / (1 + 10^{(R_j - R_i)/400})$, $R_i$ is
+the learner ability rating, $R_j$ is the item difficulty rating, and $K$ is the
+update step size. \textcite{pelanek2016} demonstrates that Elo systems achieve
+approximately 92\% prediction accuracy after only 25--30 learner interactions,
+making them attractive for resource-constrained deployments.
+
+However, Elo's simplicity imposes critical limitations for this project's
+requirements. First, Elo treats all items as equivalent in discriminating power:
+an item that distinguishes ability at a wide range of levels is treated
+identically to one that only discriminates near a single difficulty point. In
+Geography, items vary considerably in their discriminating properties due to the
+range of cognitive demands across the three Bloom levels. Second, Elo operates
+as a single global ability estimate: it cannot model a learner who has mastered
+Tectonic Hazards but not yet mastered Urban Issues. This per-KC resolution is
+essential for a 13-KC curriculum with prerequisite dependencies. Third, Elo
+provides no modelling of knowledge decay, making it unsuitable for longitudinal
+study designs incorporating 7-day retention assessment. For these reasons, Elo
+was evaluated and rejected in favour of the IRT+BKT hybrid.
+
+\subsection{Item Response Theory (3PL)}
+\label{subsec:lr_irt}
+
+Item Response Theory \parencite{embretson2000} models the probability of a correct
+response as a function of the learner's latent ability $\theta$ and item-specific
+parameters. The three-parameter logistic model \parencite{birnbaum1968} is:
+
+\begin{equation}
+  P(X=1 \mid \theta) = c + \frac{1-c}{1 + e^{-a(\theta - b)}}
+  \label{eq:irt_3pl}
+\end{equation}
+
+\noindent where $a$ is item discrimination (steepness of the item characteristic
+curve), $b$ is item difficulty (the ability level at which $P = 0.5(1+c)$), and
+$c$ is the pseudo-guessing parameter (lower asymptote). The 3PL model
+explicitly captures three distinct measurement phenomena that simpler models
+cannot: items vary in their discriminating power ($a$), in their difficulty
+($b$), and in the probability that a low-ability learner answers correctly by
+chance ($c$). The guessing parameter is particularly important for this project:
+Geography multiple-choice items with four options carry a non-trivial guessing
+probability ($c = 0.25$ for four-option items), and ignoring this would
+systematically overestimate learner ability following correct responses.
+
+\subsubsection*{Limitations and Calibration Requirements}
+
+The principal limitation of IRT is its calibration data requirement.
+Traditional item parameter estimation via maximum likelihood requires 500+ response
+observations per item for stable parameter recovery \parencite{lord1980}. This is
+infeasible for a student project with a question bank calibrated from pilot data.
+Two mitigations are available: first, fixing the guessing parameter $c$ at
+its theoretical value (0.25 for four-option items) rather than estimating it
+from data, which substantially stabilises the estimation of $a$ and $b$;
+second, adopting the more parsimonious Rasch (1PL) model with fixed discrimination
+and no guessing parameter when convergence diagnostics reveal 3PL instability.
+This project implements both mitigations: $c = 0.25$ is fixed as an equality
+constraint in the calibration pipeline, and a fallback to Rasch is documented
+in the risk register (Section~\ref{sec:meth_evaluation}).
+
+IRT has no native mechanism for tracking knowledge acquisition over time; it
+estimates ability at a point in time from a response pattern. For multi-KC
+curricula requiring longitudinal tracking, IRT must be combined with a
+knowledge state model --- hence the hybrid architecture.
+
+\subsection{Bayesian Knowledge Tracing}
+\label{subsec:lr_bkt}
+
+BKT \parencite{corbett1995} conceptualises learning as a hidden Markov process
+with binary latent states: a learner either knows or does not know a Knowledge
+Component. Four parameters govern the model per KC:
+
+\begin{align}
+  p(L_0) &= \text{initial probability of knowing the KC} \label{eq:bkt_l0}\\
+  p(T)   &= \text{probability of learning transition (not-know} \to \text{know)} \label{eq:bkt_t}\\
+  p(S)   &= \text{probability of slip (correct response despite not knowing)} \label{eq:bkt_s}\\
+  p(G)   &= \text{probability of guess (incorrect response despite knowing)} \label{eq:bkt_g}
+\end{align}
+
+After each observation, the posterior probability of knowing the KC is updated
+via Bayes' theorem:
+
+\begin{equation}
+  p(L_n \mid \text{obs}) = \frac{P(\text{obs} \mid L_n) \cdot p(L_n)}{P(\text{obs} \mid L_n) \cdot p(L_n) + P(\text{obs} \mid \neg L_n) \cdot (1 - p(L_n))}
+  \label{eq:bkt_update}
+\end{equation}
+
+\noindent where $P(\text{correct} \mid L_n) = 1 - p(S)$ and
+$P(\text{correct} \mid \neg L_n) = p(G)$. This is then used to compute the
+probability of knowing after a potential learning transition:
+
+\begin{equation}
+  p(L_{n+1}) = p(L_n \mid \text{obs}) + \bigl(1 - p(L_n \mid \text{obs})\bigr) \cdot p(T)
+  \label{eq:bkt_transition}
+\end{equation}
+
+The critical strength of BKT for this project is that it maintains a separate
+knowledge state per KC, enabling mastery-gated progression: a learner cannot
+advance to UK\_COASTAL until UK\_CLIMATE is mastered, because coastal process
+understanding requires prior knowledge of climatic drivers. This per-KC
+resolution is unavailable in global ability models such as IRT or Elo.
+
+\textcite{beck2007} identify a parameter identifiability problem in BKT: for
+certain parameter combinations, multiple parameter sets produce identical model
+predictions, making maximum likelihood estimation unreliable with sparse data.
+This is mitigated in this project by setting informed priors based on domain
+analysis (Geography KCs at Level 1 difficulty are assigned higher $p(L_0)$
+than Level 3 KCs) and by fixing $p(S)$ and $p(G)$ at domain-standard values
+following \textcite{pardos2011}.
+
+\textbf{Credit factor modification.} Standard BKT assumes each correct response
+carries equal evidential weight. \textcite{koedinger2007} demonstrate that this
+assumption fails when scaffolding is available: correct responses following
+worked examples are substantially less informative about latent knowledge than
+unaided correct responses. This project modifies BKT by scaling the effective
+learning gain by a credit factor $\text{cf} \in \{1.0, 0.9, 0.7, 0.5\}$
+depending on the maximum hint level revealed:
+
+\begin{equation}
+  p(L_{n+1})^* = p(L_n \mid \text{obs}) + \bigl(1 - p(L_n \mid \text{obs})\bigr) \cdot p(T) \cdot \text{cf}
+  \label{eq:bkt_credit}
+\end{equation}
+
+The credit factor values follow the empirical estimates reported by
+\textcite{koedinger2007} from their reanalysis of three Cognitive Tutor datasets.
+The asymmetry (0.7 for procedural hints vs. 0.5 for worked examples) reflects
+the stepped scaffolding hierarchy: a worked example fully discloses the solution,
+so correctness carries minimal diagnostic signal.
+
+\subsection{Deep Knowledge Tracing and Neural Approaches}
+\label{subsec:lr_dkt}
+
+\textcite{piech2015} introduced Deep Knowledge Tracing (DKT), replacing BKT's
+explicit probabilistic model with a Long Short-Term Memory (LSTM) recurrent
+neural network. Trained on a sequence of (KC, correctness) pairs, DKT
+outperforms BKT on held-out prediction tasks across several benchmark datasets,
+achieving Area Under the Curve (AUC) improvements of approximately 6\% over BKT.
+
+However, \textcite{khajah2016} demonstrate that a substantial portion of DKT's
+predictive advantage over BKT disappears when BKT is extended with temporal
+features and per-student priors: the performance gap reduces from 6\% to 1--2\%.
+More critically for this project, DKT sacrifices interpretability entirely: the
+hidden state vector of an LSTM has no correspondence to psychologically
+meaningful constructs, and adaptive decisions cannot be traced to specific
+knowledge state estimates. \textcite{matos2025} confirm that in small-scale
+educational deployments (the context of this project), rule-based and
+probabilistic systems remain more appropriate than deep learning approaches
+precisely because their transparency supports both learner trust and academic
+scrutiny. DKT is therefore unsuitable for a dissertation project requiring
+full accountability of every adaptive decision.
+
+\subsection{Hybrid IRT + BKT: Rationale and Prior Work}
+\label{subsec:lr_hybrid}
+
+The hybrid approach integrates IRT's item-level psychometric precision with
+BKT's temporal, per-KC knowledge state modelling. Each algorithm addresses the
+other's primary limitation: BKT provides no item-level discrimination, which
+causes all questions of equal difficulty to be treated identically regardless of
+their discriminating power; IRT provides no per-KC mastery tracking, which
+prevents mastery-gated progression and prerequisite enforcement.
+
+\textcite{kaser2017} confirm across 1.2 million student-problem interactions
+that the predictive advantage of IRT over Elo is modest (82\% vs. 78\%
+prediction accuracy), but that the critical value of the hybrid architecture
+lies not in marginal accuracy improvement but in the simultaneous modelling of
+item properties and temporal knowledge dynamics.
+
+\textcite{desmarais2012} review 40 learner modelling systems and conclude that
+hybrid probabilistic approaches consistently outperform single-algorithm systems
+in structured multi-KC curricula. The algorithm selection applied to this
+project is summarised in Table~\ref{tab:algo_comparison}.
+
+\begin{table}[H]
+\centering
+\caption{Comparative evaluation of adaptive algorithms against project requirements.}
+\label{tab:algo_comparison}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Criterion} & \textbf{Elo} & \textbf{IRT 3PL} & \textbf{BKT} & \textbf{IRT+BKT Hybrid} \\
+\midrule
+Data requirements & Low & High & Medium & Medium (with priors) \\
+Per-KC mastery tracking & No & No & Yes & Yes \\
+Prerequisite enforcement & No & No & Yes & Yes \\
+Item discrimination modelling & No & Yes & No & Yes \\
+Knowledge decay detection & No & No & Partial & Yes (via decay flag) \\
+Interpretability & High & High & High & High \\
+Calibration stability (small $n$) & High & Low & Medium & Medium \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Computerised Adaptive Testing}
+\label{sec:lr_cat}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Principles and Item Selection}
+\label{subsec:lr_cat_principles}
+
+Computerised Adaptive Testing (CAT) is the application of IRT to sequential item
+selection, in which each successive item is chosen based on all previous
+responses rather than from a fixed predetermined sequence \parencite{wainer2000}.
+The foundational principle is maximum information selection: the optimal item at
+any point in a test is the item maximising Fisher information at the learner's
+current ability estimate. Fisher information for the 3PL model is:
+
+\begin{equation}
+  I(\theta) = \frac{a^2 \cdot P(\theta)(1-P(\theta))}{\left(\dfrac{P(\theta)-c}{1-c}\right)^2}
+  \label{eq:fisher_information}
+\end{equation}
+
+\noindent where $P(\theta)$ is the item characteristic function evaluated at the
+current $\theta$ estimate. Information is maximised at the point on the ability
+scale where the item provides maximum discriminating power, which for 3PL items
+occurs slightly below $b$ (the difficulty parameter) due to the non-zero lower
+asymptote $c$. Maximum information selection is the standard CAT item selection
+criterion \parencite{weiss1982} and is implemented directly in this system's
+question selection algorithm.
+
+\subsection{Ability Estimation: EAP vs.\ MLE}
+\label{subsec:lr_eap}
+
+Two primary methods exist for estimating $\theta$ from a response sequence:
+Maximum Likelihood Estimation (MLE) and Expected A Posteriori (EAP) estimation.
+MLE finds the $\hat{\theta}$ maximising the log-likelihood:
+
+\begin{equation}
+  \hat{\theta}_{\text{MLE}} = \arg\max_\theta \sum_{i=1}^{n} \left[ x_i \ln P_i(\theta) + (1-x_i) \ln (1 - P_i(\theta)) \right]
+  \label{eq:mle}
+\end{equation}
+
+MLE is asymptotically unbiased but has a critical limitation: it is undefined
+when a learner answers all items correctly or all items incorrectly, which is
+common in short sessions. EAP estimation integrates the posterior distribution
+over a discrete grid of ability values:
+
+\begin{equation}
+  \hat{\theta}_{\text{EAP}} = \frac{\displaystyle\sum_k \theta_k \cdot L(\theta_k) \cdot \pi(\theta_k)}{\displaystyle\sum_k L(\theta_k) \cdot \pi(\theta_k)}
+  \label{eq:eap}
+\end{equation}
+
+\noindent where $L(\theta_k)$ is the likelihood of the observed response
+pattern at grid point $\theta_k$ and $\pi(\theta_k)$ is the prior probability.
+EAP always produces a finite estimate and incorporates prior uncertainty through
+the prior distribution $\pi(\theta)$, making it more robust for short sessions
+of 20--27 items \parencite{bock1982}.
+
+This project implements EAP over a grid $\theta \in [-4, 4]$ with step $0.1$
+(81 grid points), using a standard normal prior $\theta_0 \sim \mathcal{N}(-0.780, 0.543)$,
+where the initial mean of $-0.780$ corresponds to the 20th percentile of the
+normalised ability distribution, reflecting the conservative assumption that a
+new learner is likely below average relative to the general population.
+\textcite{baker2004} confirm that EAP with a well-specified prior outperforms
+MLE in short-test conditions on both bias and mean squared error criteria.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Empirical Effectiveness of Intelligent Tutoring Systems}
+\label{sec:lr_effectiveness}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Meta-analyses and Effect Sizes}
+\label{subsec:lr_meta}
+
+\textcite{vanlehn2011} provides the most comprehensive evaluation of ITS
+effectiveness, synthesising 60 controlled studies and reporting the following
+effect size hierarchy:
+
+\begin{table}[H]
+\centering
+\caption{Effect size comparison across tutoring modalities \parencite{vanlehn2011}.}
+\label{tab:effect_sizes}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lc}
+\toprule
+\textbf{Tutoring modality} & \textbf{Effect size ($d$)} \\
+\midrule
+Human one-to-one tutoring & 0.79 \\
+Step-based ITS & 0.76 \\
+Answer-based tutoring systems & 0.31 \\
+No-tutoring control & 0.00 (baseline) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The near-equivalence of step-based ITS and human tutoring ($d = 0.76$ vs.
+$d = 0.79$) is the empirical foundation justifying the development of this
+system. \textcite{kulik2016} corroborate these findings across 50 experimental
+studies, reporting a weighted average effect size of $d = 0.42$ for adaptive
+systems over conventional instruction, with systems implementing continuous
+real-time adaptation ($d = 0.66$) substantially outperforming discrete checkpoint
+systems ($d = 0.28$). VanLehn's benchmark of $d = 0.76$ is adopted as the
+primary comparison benchmark for this project's evaluation.
+
+\subsection{Effectiveness in Non-STEM Domains}
+\label{subsec:lr_nonstems}
+
+The preponderance of ITS research addresses procedural knowledge domains,
+particularly mathematics and programming, where objective performance metrics are
+readily available and knowledge component boundaries are well-defined. Evidence
+for ITS effectiveness in declarative-knowledge domains remains comparatively
+sparse. \textcite{steenbergen2013} confirm strong ITS effects on mathematical
+learning ($d = 0.36$ across 26 studies) but note that ``the generalisability of
+these findings to non-mathematical domains remains an open empirical question''
+(p. 984).
+
+Geography education presents an intermediate epistemological structure. Factual
+knowledge (capital cities, river systems, physical landscape features) admits
+objective assessment. Procedural knowledge (interpreting climate graphs,
+analysing population data) requires application of geographic frameworks.
+Conceptual understanding (explaining spatial inequality, evaluating sustainability
+arguments) involves higher-order reasoning. \textcite{lambert2010} characterise
+Geography as a ``thinking subject'', emphasising that effective Geography
+education requires learners to develop not merely factual recall but geographical
+imaginations --- the capacity to interpret spatial patterns and processes.
+This epistemological complexity makes Geography a meaningful and underexplored
+testbed for ITS research.
+
+\textcite{bednarz2013} identify significant underrepresentation of UK Geography
+specifically in adaptive learning research. The predominance of North American
+and East Asian studies \parencite{matos2025} means that the particular pedagogical
+context of UK KS3/GCSE Geography --- including the AQA/Edexcel specification
+structure, the emphasis on fieldwork and geographical enquiry, and the UK
+curriculum's distinctive treatment of human-physical geography integration ---
+remains insufficiently studied.
+
+\subsection{Long-Term Retention}
+\label{subsec:lr_retention}
+
+A persistent methodological limitation in ITS research is the near-exclusive
+reliance on immediate post-test performance as the outcome measure. Most studies
+measure learning gains within a single session or immediately following
+intervention, providing no evidence about knowledge retention over ecologically
+relevant timescales. \textcite{cepeda2006} demonstrate that the relative
+effectiveness of learning strategies changes substantially when measured at
+delayed retention intervals: massed practice often outperforms spaced practice
+on immediate tests but is consistently outperformed by spaced practice at delays
+of one week or more.
+
+The inclusion of a 7-day delayed retention assessment in this project's
+evaluation protocol directly addresses this methodological gap, providing
+evidence about whether the adaptive system's learning gains are retained over
+a period consistent with educational relevance, rather than merely reflecting
+short-term performance improvement.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Implementation Challenges}
+\label{sec:lr_challenges}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Cold-Start Problem}
+\label{subsec:lr_coldstart}
+
+The cold-start problem describes the challenge of personalising effectively
+before sufficient learner data has accumulated. A new learner who has not
+interacted with the system provides no response data from which to estimate
+ability, making the first several interactions necessarily suboptimal.
+\textcite{matos2025} identify the cold-start problem as a ``significant
+implementation gap'' in real-world adaptive system deployments.
+
+This project addresses the cold-start problem through pre-test seeding: before
+the adaptive session begins, a 13-item diagnostic assessment spanning all KCs
+at Bloom Level 1 provides initial ability evidence. The resulting response
+pattern is converted to a Laplace-smoothed logit estimate:
+
+\begin{equation}
+  \theta_{\text{seed}} = \frac{\ln\!\left(\dfrac{n_{\text{correct}} + 0.5}{n_{\text{incorrect}} + 0.5}\right)}{1.7}
+  \label{eq:theta_seed}
+\end{equation}
+
+\noindent where the 1.7 scaling factor is the standard IRT logistic approximation
+mapping log-odds to the normal-ogive $D$ parameter \parencite{lord1980}. Laplace
+smoothing prevents boundary estimates at perfect or zero scores. The seed
+estimate is bounded at $\theta \in [-2.5, 2.5]$ and used to set the session
+starting theta, with a reduced prior standard deviation of 0.35 (vs.\ the default
+0.543) reflecting the additional information from the pre-test.
+
+\subsection{IRT Calibration with Small Samples}
+\label{subsec:lr_calibration}
+
+Traditional IRT calibration via expectation-maximisation or marginal maximum
+likelihood requires response matrices of 500+ observations per item for stable
+parameter recovery, particularly for the 3PL model where the $c$ parameter is
+notoriously difficult to estimate with sparse data \parencite{lord1980}. This
+project's pilot study involves a small number of participants, making full 3PL
+calibration with freely estimated parameters infeasible.
+
+The calibration strategy adopted is a constrained two-stage pipeline: item
+parameters are estimated using the \texttt{mirt} package in R \parencite{chalmers2012}
+with the guessing parameter $c$ fixed at 0.25 (its theoretical value for
+four-option items), and the calibration is verified against pilot data using
+convergence diagnostics. If 3PL estimation proves unstable (RMSEA $> 0.10$ or
+non-convergence within 500 EM cycles), a fallback to the Rasch (1PL) model is
+pre-specified. This decision is documented explicitly in the project's risk
+register and constitutes a defensible adaptive methodology, not a failure: the
+Rasch model's parsimony is a genuine advantage in small-sample conditions
+\parencite{embretson2000}.
+
+\subsection{Usability and User Experience Design}
+\label{subsec:lr_usability}
+
+\textcite{bangor2008} established the System Usability Scale (SUS) as the
+standard metric for evaluating educational technology usability. Products scoring
+above 68 are considered above average; scores above 85 indicate excellent
+usability. Their analysis of 206 studies found adaptive systems typically score
+15--20 points lower than conventional interfaces due to increased navigational
+complexity and unpredictable content sequencing.
+
+\textcite{mayer2009} provides the theoretical foundation for minimising extraneous
+cognitive load through multimedia design principles: coherence (remove extraneous
+material), signalling (highlight the organisation), redundancy (avoid
+representing the same information in multiple formats simultaneously), and
+segmentation (allow learner-controlled pacing). These principles directly inform
+the interface design choices in this project: the five-tab session summary
+provides coherence by separating analytical information into distinct categories;
+the first-visit tour provides signalling by explaining the adaptive engine's
+decisions; and the pause-and-resume mechanism implements segmentation by allowing
+learner-controlled session pacing.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Ethical Considerations}
+\label{sec:lr_ethics}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Algorithmic Transparency and Accountability}
+\label{subsec:lr_transparency}
+
+\textcite{baker2021} identify three primary ethical dimensions of adaptive
+educational systems. First, \textit{transparency}: learners and educators have a
+right to understand why the system presents particular content. Black-box
+adaptation --- in which the learner experiences a changing sequence of questions
+with no explanation of the underlying logic --- erodes trust and agency.
+\textcite{murray1999} argues that for educational systems to be accepted by
+learners, the system's reasoning must be at least partially legible.
+
+This project addresses transparency through the session summary dashboard's
+five-tab interface: the Trajectory tab displays the learner's theta progression
+across a session, the Skills tab shows per-KC BKT mastery probabilities, and
+the Misconceptions tab presents the most frequent wrong-answer attractors per
+KC. These visualisations make the adaptive engine's internal state visible and
+interpretable, enabling learners to understand why the system selected specific
+questions and to identify their own knowledge gaps.
+
+\subsection{Data Protection and GDPR Compliance}
+\label{subsec:lr_gdpr}
+
+\textcite{voigt2017} provide a comprehensive treatment of the General Data
+Protection Regulation's (GDPR) implications for educational technology. The
+critical GDPR principles relevant to this project are: \textit{data minimisation}
+(collect only the personal data necessary for the stated purpose);
+\textit{purpose limitation} (use collected data only for the purpose for which
+consent was obtained); and \textit{storage limitation} (retain personal data
+only for as long as necessary).
+
+This system implements GDPR compliance through: server-side validated consent
+flows presented before any data collection begins; storage of only
+session-level performance data (no geolocation, no device fingerprinting, no
+persistent tracking beyond the study period); JWT-based authentication with
+bcrypt password hashing following the authentication security guidelines of
+\textcite{nist2017}; and rate limiting on authentication endpoints to prevent
+credential stuffing attacks.
+
+\subsection{Algorithmic Bias and Equity}
+\label{subsec:lr_bias}
+
+\textcite{baker2021} document that adaptive systems can inadvertently reinforce
+educational inequities through differential error rates across demographic groups.
+In Geography specifically, prior access to geographical experiences (international
+travel, diverse urban environments) may correlate with item performance in ways
+unrelated to curricular knowledge, producing systematically biased ability
+estimates for learners from less privileged backgrounds.
+
+This limitation is acknowledged in this project's evaluation protocol as a
+constraint on the generalisability of findings: the participant pool (University
+of Hull undergraduate and postgraduate students) is not representative of the
+KS3/GCSE student population the system targets. The evaluation findings should
+therefore be interpreted as proof-of-concept validation in a convenience sample
+rather than as evidence of universal effectiveness. Bias auditing procedures
+are identified as a priority for any production deployment of the system.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Research Gaps and Project Contribution}
+\label{sec:lr_gaps}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The literature reviewed above reveals five significant gaps that this project
+directly addresses.
+
+\textbf{Gap 1: ITS application to UK Geography.}
+No published ITS system targets UK KS3/GCSE Geography specifically. The
+overwhelming majority of adaptive learning research addresses mathematics,
+programming, and North American science curricula. This project provides a
+proof-of-concept adaptive system for the UK Geography curriculum, extending the
+empirical evidence base for ITS effectiveness beyond traditional STEM domains.
+
+\textbf{Gap 2: Hybrid IRT+BKT implementation with open source accessibility.}
+While hybrid approaches are theoretically advocated \parencite{desmarais2012,
+matos2025}, few open-source implementations exist that combine IRT's item-level
+precision with BKT's per-KC mastery tracking in a production-deployed web
+application. This project provides a publicly accessible implementation at
+\url{https://github.com/dlalloyd/E-Learning-Final-Project}.
+
+\textbf{Gap 3: Bloom-gated adaptive progression.}
+Existing ITS systems typically sequence items by IRT difficulty alone, without
+enforcing cognitive-level prerequisites. This project implements Bloom-gated
+selection: the adaptive engine enforces that learners consolidate recall before
+encountering analysis-level items, implementing the taxonomy's hierarchical
+structure as a computational constraint.
+
+\textbf{Gap 4: Long-term retention evaluation.}
+The near-universal reliance on immediate post-test outcomes in ITS evaluation
+research is a methodological limitation noted by multiple reviewers
+\parencite{cepeda2006, vanlehn2011}. This project's 7-day delayed retention
+assessment provides evidence on the persistence of adaptive learning gains.
+
+\textbf{Gap 5: Interpretability under real-time adaptation.}
+The interpretability-efficacy trade-off identified by \textcite{matos2025}
+--- in which more powerful adaptive algorithms tend to be less interpretable
+--- is addressed through the combination of an interpretable probabilistic model
+(IRT+BKT, where every adaptive decision is traceable to specific parameter values)
+and a transparent visualisation layer (the five-tab session summary dashboard).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Future Directions: Cross-Domain Knowledge Transfer}
+\label{sec:lr_future}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The system is architecturally domain-agnostic: the adaptive engine operates on
+any content that can be expressed as Knowledge Components with prerequisite
+edges, IRT-parameterised question variants, and BKT mastery states. Geography
+was chosen as the validation domain for this project because its declarative-
+knowledge structure admits objective assessment and because the domain is
+underrepresented in existing ITS research. However, the architecture is designed
+to support extension to additional domains without modification of the core
+adaptive engine.
+
+The most theoretically significant extension is cross-domain knowledge transfer
+\parencite{singley1989}: the identification of shared cognitive skills between
+domains and the adaptive allocation of practice to transfer-relevant knowledge
+components. \textcite{koedinger2012} demonstrate through the
+Knowledge-Learning-Instruction (KLI) framework that learning outcomes depend
+not merely on domain knowledge but on the cognitive features of instructional
+events: practice that develops both a declarative knowledge fact and the
+procedural skill of applying it in novel contexts produces superior transfer.
+
+In the context of this system's architecture, cross-domain transfer would be
+implemented through: shared KC representations across domain boundaries (for
+example, the spatial reasoning required to interpret population distribution maps
+in Geography shares cognitive structure with statistical reasoning in Mathematics);
+inter-domain prerequisite edges encoding these structural relationships; and
+cross-domain BKT parameters allowing learning in one domain to inform the prior
+estimates in another. \textcite{brusilovsky2004} identify adaptive sequencing
+across domain boundaries as an open research challenge; this project's
+domain-agnostic architecture provides the technical foundation for future
+investigation of this problem.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:lr_conclusion}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The literature establishes that adaptive intelligent tutoring systems can
+approach human tutoring effectiveness when designed with appropriate interaction
+granularity, principled algorithm selection, and transparent feedback mechanisms.
+The hybrid IRT+BKT approach is theoretically optimal for structured multi-KC
+curricula with prerequisite dependencies, and the UK Geography domain represents
+a meaningful and underexplored validation context.
+
+The following design principles, derived from this review, inform the system
+architecture presented in Chapter~\ref{ch:methodology}:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{ZPD operationalisation}: target $P(\theta) \approx 0.70$ for
+  item selection, maintaining challenge within the zone of proximal development.
+  \item \textbf{Mastery gating}: require $p(\text{Learned}) \geq 0.80$ per KC
+  before permitting progression to dependent KCs.
+  \item \textbf{Bloom-cognitive scaffolding}: enforce Bloom-level prerequisites
+  as selection gates, not merely as difficulty labels.
+  \item \textbf{EAP estimation}: use Expected A Posteriori ability estimation
+  over a discretised grid to ensure stability in short sessions.
+  \item \textbf{Credit-adjusted BKT}: reduce the evidential weight of hint-assisted
+  correct responses using graduated credit factors.
+  \item \textbf{Successive relearning}: prioritise re-presentation of decayed KCs
+  through discrimination-boosted selection.
+  \item \textbf{Transparent adaptation}: surface internal model states to the
+  learner through visualisation, not concealment.
+\end{enumerate}
+
+These principles collectively instantiate an adaptive system that is
+simultaneously pedagogically grounded, psychometrically rigorous, interpretable
+to learners and examiners, and architecturally extensible to future domains.

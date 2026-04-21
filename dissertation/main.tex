@@ -1,0 +1,151 @@
+\documentclass[12pt,a4paper]{report}
+
+% ── Encoding & fonts ──────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% ── Page geometry ─────────────────────────────────────────────────────────────
+\usepackage[a4paper, margin=2.5cm, top=3cm, bottom=3cm]{geometry}
+
+% ── Typography ────────────────────────────────────────────────────────────────
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{parskip}
+
+% ── Mathematics ───────────────────────────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% ── Tables & figures ──────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[labelfont=bf]{caption}
+
+% ── Code listings ─────────────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+  keywordstyle=\color{blue!70},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!60!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt
+}
+
+% ── Diagrams ──────────────────────────────────────────────────────────────────
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, shapes.geometric, shapes.symbols, positioning, fit}
+\usepackage{pgfgantt}
+\usepackage{enumitem}
+
+% ── Headers & footers ─────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\slshape\leftmark}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+  pdftitle={GeoMentor: A Hybrid IRT/BKT Intelligent Tutoring System for UK Geography Education},
+  pdfauthor={Dylan Bengi}
+]{hyperref}
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  sorting=nyt,
+  maxbibnames=99,
+  maxcitenames=2,
+  uniquename=false,
+  dashed=false
+]{biblatex}
+\addbibresource{references.bib}
+
+% ── Utilities ─────────────────────────────────────────────────────────────────
+\usepackage{enumitem}
+\usepackage{csquotes}
+\usepackage{pdflscape}
+
+% ── Chapter heading style ─────────────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Large University of Hull \par}
+  {\large Department of Computer Science \par}
+  \vspace{1.5cm}
+  {\huge\bfseries GeoMentor: A Hybrid IRT/BKT Intelligent Tutoring System for UK Geography Education \par}
+  \vspace{1.5cm}
+  {\large Submitted in partial fulfilment of the requirements for\par}
+  {\large BSc (Hons) Computer Science (Software Engineering) \par}
+  \vspace{2cm}
+  {\Large Dylan Bengi \par}
+  \vspace{0.5cm}
+  {\large Student Number: [Student Number] \par}
+  {\large Supervisor: Peter Robinson \par}
+  \vspace{0.5cm}
+  {\large May 2026 \par}
+  \vfill
+  {\small Word Count: [UPDATE FROM TURNITIN] \par}
+\end{titlepage}
+
+% ── Front matter ──────────────────────────────────────────────────────────────
+\pagenumbering{roman}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+% TODO: write abstract last
+\textit{[To be written after all chapters are complete.]}
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\textit{[Optional. Write last.]}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+
+% ── Chapters ──────────────────────────────────────────────────────────────────
+\input{chapters/01_introduction}
+\input{chapters/02_literature_review}
+\input{chapters/03_methodology}
+\input{chapters/04_implementation}
+\input{chapters/05_results}
+\input{chapters/06_discussion}
+\input{chapters/07_conclusion}
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\printbibliography[heading=bibintoc, title={References}]
+
+\end{document}
