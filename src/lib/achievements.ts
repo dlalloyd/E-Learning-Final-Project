@@ -29,27 +29,55 @@ export const XP_VALUES = {
   MAP_FACT_UNLOCKED: 5,     // unlocking a fun fact on map
 } as const;
 
-// --- Level Thresholds (logarithmic curve) ---
+// --- Level Thresholds (dual-gate: XP + KCs mastered) ---
 
+const LEVEL_TABLE: { level: number; xp: number; kcs: number }[] = [
+  { level: 1,  xp: 0,    kcs: 0  },
+  { level: 2,  xp: 100,  kcs: 0  },
+  { level: 3,  xp: 250,  kcs: 1  },
+  { level: 4,  xp: 450,  kcs: 2  },
+  { level: 5,  xp: 700,  kcs: 3  },
+  { level: 6,  xp: 1000, kcs: 4  },
+  { level: 7,  xp: 1400, kcs: 5  },
+  { level: 8,  xp: 1900, kcs: 6  },
+  { level: 9,  xp: 2500, kcs: 8  },
+  { level: 10, xp: 3300, kcs: 9  },
+  { level: 11, xp: 4300, kcs: 10 },
+  { level: 12, xp: 5500, kcs: 11 },
+  { level: 13, xp: 7000, kcs: 12 },
+  { level: 14, xp: 9000, kcs: 13 },
+];
+
+export function levelFromXPAndMastery(xp: number, kcsMastered: number): number {
+  let reached = 1;
+  for (const row of LEVEL_TABLE) {
+    if (xp >= row.xp && kcsMastered >= row.kcs) reached = row.level;
+  }
+  return reached;
+}
+
+// Kept for backward-compat — prefer levelFromXPAndMastery
 export function levelFromXP(xp: number): number {
-  // Each level requires ~30% more XP than the last
-  // Level 1: 0, Level 2: 100, Level 3: 230, Level 4: 400, ...
-  if (xp <= 0) return 1;
-  return Math.floor(1 + Math.log(1 + xp / 100) / Math.log(1.3));
+  return levelFromXPAndMastery(xp, 99);
 }
 
 export function xpForLevel(level: number): number {
-  if (level <= 1) return 0;
-  return Math.round(100 * (Math.pow(1.3, level - 1) - 1));
+  return LEVEL_TABLE.find(r => r.level === level)?.xp ?? 0;
 }
 
-export function xpProgress(xp: number): { level: number; currentLevelXp: number; nextLevelXp: number; progress: number } {
-  const level = levelFromXP(xp);
+export function xpProgress(
+  xp: number,
+  kcsMastered = 99,
+): { level: number; currentLevelXp: number; nextLevelXp: number; progress: number; kcGated: boolean } {
+  const level = levelFromXPAndMastery(xp, kcsMastered);
   const currentThreshold = xpForLevel(level);
-  const nextThreshold = xpForLevel(level + 1);
+  const nextRow = LEVEL_TABLE.find(r => r.level === level + 1);
+  const nextThreshold = nextRow?.xp ?? currentThreshold;
   const range = nextThreshold - currentThreshold;
-  const progress = range > 0 ? (xp - currentThreshold) / range : 0;
-  return { level, currentLevelXp: xp - currentThreshold, nextLevelXp: range, progress: Math.min(progress, 1) };
+  const progress = range > 0 ? (xp - currentThreshold) / range : 1;
+  // kcGated = user has enough XP for next level but not enough KCs
+  const kcGated = nextRow !== undefined && xp >= nextRow.xp && kcsMastered < nextRow.kcs;
+  return { level, currentLevelXp: xp - currentThreshold, nextLevelXp: range, progress: Math.min(progress, 1), kcGated };
 }
 
 // --- Achievement Definitions ---

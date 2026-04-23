@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/client';
 import { getAuthFromCookie } from '@/lib/auth/jwt';
-import { XP_VALUES, levelFromXP, xpProgress, ACHIEVEMENTS } from '@/lib/achievements';
+import { XP_VALUES, levelFromXPAndMastery, xpProgress, ACHIEVEMENTS } from '@/lib/achievements';
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return d1.getFullYear() === d2.getFullYear() &&
@@ -81,6 +81,7 @@ export async function GET() {
       select: {
         totalXp: true,
         level: true,
+        kcsMastered: true,
         currentStreak: true,
         longestStreak: true,
         lastActivityDate: true,
@@ -90,7 +91,7 @@ export async function GET() {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const progress = xpProgress(user.totalXp);
+    const progress = xpProgress(user.totalXp, user.kcsMastered);
     const earnedBadgeIds = user.badges.map(b => b.badge.name);
 
     // Check which achievements are earned vs locked
@@ -161,12 +162,15 @@ export async function POST(req: NextRequest) {
     });
 
     // Update user totals
+    const current = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { totalXp: true, kcsMastered: true },
+    });
+    const newXp = (current?.totalXp ?? 0) + amount;
+    const newLevel = levelFromXPAndMastery(newXp, current?.kcsMastered ?? 0);
     const updated = await prisma.user.update({
       where: { id: auth.userId },
-      data: {
-        totalXp: { increment: amount },
-        level: levelFromXP((await prisma.user.findUnique({ where: { id: auth.userId }, select: { totalXp: true } }))!.totalXp + amount),
-      },
+      data: { totalXp: { increment: amount }, level: newLevel },
     });
 
     // Update streak
@@ -188,7 +192,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const progress = xpProgress(updated.totalXp + (streak.streakBonusXp || 0));
+    const progress = xpProgress(updated.totalXp + (streak.streakBonusXp || 0), current?.kcsMastered ?? 0);
 
     return NextResponse.json({
       awarded: amount,
