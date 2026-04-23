@@ -217,6 +217,7 @@ export default function QuizPage() {
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
+  const [correctiveFeedback, setCorrectiveFeedback] = useState<string | null>(null);
   const [startTime, setStartTime] = useState<number>(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [totalCorrect, setTotalCorrect] = useState(0);
@@ -287,6 +288,7 @@ export default function QuizPage() {
       setCurrentKcId(data.kc);
       setSelected(null);
       setResult(null);
+      setCorrectiveFeedback(null);
       setCognitiveLoad(null);
       setHintsUsedThisQ(0);
       setHintLevelMaxThisQ(0);
@@ -422,6 +424,17 @@ export default function QuizPage() {
       } else {
         newFailures = consecutiveFailures + 1;
         setConsecutiveFailures(newFailures);
+        // Fetch corrective learning material for the failed KC
+        setCorrectiveFeedback(null);
+        if (currentKcId) {
+          fetch(`/api/learning-objects/${currentKcId}`)
+            .then((r) => r.ok ? r.json() : null)
+            .then((d) => {
+              const first = d?.learningObjects?.[0];
+              if (first?.content) setCorrectiveFeedback(first.content);
+            })
+            .catch(() => null);
+        }
       }
 
       const trigger = shouldTriggerInstruction(data, newFailures);
@@ -1566,6 +1579,15 @@ export default function QuizPage() {
                     </div>
                   )}
                 </div>
+
+                {!result.correct && correctiveFeedback && (
+                  <div className="mt-3 p-3 bg-slate-800/60 ring-1 ring-white/[0.06] rounded-lg">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                      <BookOpen className="w-3 h-3" />Key concept
+                    </p>
+                    <p className="text-slate-300 text-sm leading-relaxed">{correctiveFeedback}</p>
+                  </div>
+                )}
 
                 {willTriggerInstruction && (
                   <div className="mt-3 p-3 bg-indigo-500/5 ring-1 ring-indigo-500/20 rounded-lg">
