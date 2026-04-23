@@ -28,11 +28,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, name, password } = await req.json();
+    const { email, name, password, consentGiven } = await req.json();
 
     if (!email || !name || !password) {
       return NextResponse.json(
         { error: 'Email, name, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!consentGiven) {
+      return NextResponse.json(
+        { error: 'Research consent is required to create an account' },
         { status: 400 }
       );
     }
@@ -83,6 +90,12 @@ export async function POST(req: NextRequest) {
         name,
         password: hashedPassword,
         role: 'learner',
+        researchConsent: {
+          create: {
+            consentGiven: true,
+            consentDate: new Date(),
+          },
+        },
       },
     });
 

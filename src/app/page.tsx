@@ -128,6 +128,7 @@ export default function QuizPage() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
+  const [authConsent, setAuthConsent] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'forgot' | 'reset'>('login');
@@ -522,13 +523,17 @@ export default function QuizPage() {
         setAuthError('Password must contain at least one letter and one number');
         return;
       }
+      if (!authConsent) {
+        setAuthError('You must agree to participate before creating an account');
+        return;
+      }
     }
 
     setAuthLoading(true);
     try {
       const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
       const body = authMode === 'signup'
-        ? { email: authEmail, name: authName, password: authPassword }
+        ? { email: authEmail, name: authName, password: authPassword, consentGiven: authConsent }
         : { email: authEmail, password: authPassword };
 
       const res = await fetch(endpoint, {
@@ -813,13 +818,29 @@ export default function QuizPage() {
                       />
                     </div>
 
+                    {authMode === 'signup' && (
+                      <label className="flex items-start gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={authConsent}
+                          onChange={(e) => setAuthConsent(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-600 bg-slate-800 accent-indigo-500 cursor-pointer shrink-0"
+                        />
+                        <span className="text-xs text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                          I agree to participate in this research study. My anonymised responses
+                          will be used solely for academic purposes in accordance with the University
+                          of Hull ethics policy. I can withdraw at any time.
+                        </span>
+                      </label>
+                    )}
+
                     {authError && (
                       <p className="text-red-400 text-sm text-center">{authError}</p>
                     )}
 
                     <button
                       onClick={handleAuth}
-                      disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && !authName)}
+                      disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && (!authName || !authConsent))}
                       className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                       {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Initialize Session →' : 'Create Account →'}
