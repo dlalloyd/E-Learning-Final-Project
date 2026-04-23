@@ -196,15 +196,18 @@ export function updateKCState(
 ): KCState {
   const result = updateBKT(state.pLearned, isCorrect, params, creditFactor);
 
+  const newAttempts = state.attempts + 1;
   return {
     ...state,
     pLearned: result.pLearned_after,
-    attempts: state.attempts + 1,
+    attempts: newAttempts,
     // Only count as a "real" correct for progress tracking when it was unassisted.
     // Hint-assisted corrects still improve pLearned (partially) but are not
     // counted toward the clean accuracy displayed in dashboards.
     correct: state.correct + (isCorrect && creditFactor >= 0.999 ? 1 : 0),
-    isMastered: result.isMastered,
+    // Require at least 5 KC presentations before mastery can be claimed.
+    // Prevents a lucky-streak false-mastery on the first few questions.
+    isMastered: result.isMastered && newAttempts >= 5,
   };
 }
 
