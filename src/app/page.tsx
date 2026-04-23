@@ -22,6 +22,7 @@ import PauseMenu from '@/components/PauseMenu';
 import OnboardingModal from '@/components/OnboardingModal';
 import Leaderboard from '@/components/Leaderboard';
 import ShareCard from '@/components/ShareCard';
+import { SessionErrorBoundary } from '@/components/SessionErrorBoundary';
 import { useSfx } from '@/lib/hooks/useSfx';
 import { xpProgress } from '@/lib/achievements';
 import { shouldShowConditionExplainer, shouldShowSUS } from '@/lib/sessionFlow';
@@ -1398,6 +1399,7 @@ export default function QuizPage() {
   const willTriggerInstruction = result && !result.correct && shouldTriggerInstruction(result, consecutiveFailures);
 
   return (
+    <SessionErrorBoundary>
     <>
       {/* Fixed top nav — always visible during session */}
       <header className="fixed top-0 w-full z-50 bg-[#0b1323]/80 backdrop-blur-md border-b border-white/[0.06]">
@@ -1671,6 +1673,7 @@ export default function QuizPage() {
       <OnboardingModal onDone={() => setShowOnboarding(false)} />
     )}
     </>
+    </SessionErrorBoundary>
   );
 }
 
