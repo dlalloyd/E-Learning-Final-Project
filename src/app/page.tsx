@@ -1221,6 +1221,15 @@ export default function QuizPage() {
             />
           ) : (
             <>
+              {/* Go again CTA */}
+              <button
+                onClick={handleNewSession}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-500/20"
+              >
+                <RotateCcw className="w-5 h-5" />
+                Go again — build on your progress
+              </button>
+
               <div className="bg-[#0d1527] ring-1 ring-white/[0.06] rounded-2xl p-6 sm:p-8">
                 <SessionSummaryDashboard
                   sessionId={sessionId}
@@ -1260,15 +1269,6 @@ export default function QuizPage() {
                   <span className="text-slate-400">End: {theta.toFixed(3)}</span>
                 </div>
               </div>
-
-              {/* Go again CTA */}
-              <button
-                onClick={handleNewSession}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-500/20"
-              >
-                <RotateCcw className="w-5 h-5" />
-                Go again — build on your progress
-              </button>
 
               {/* XP summary */}
               {xpData && (
