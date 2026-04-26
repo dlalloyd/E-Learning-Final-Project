@@ -1,4 +1,6 @@
-﻿/** @type {import('next').NextConfig} */
+/** @type {import('next').NextConfig} */
+const { withSentryConfig } = require('@sentry/nextjs');
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -8,4 +10,11 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  silent: true,
+  org: 'geomentor',
+  project: 'geomentor',
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+});

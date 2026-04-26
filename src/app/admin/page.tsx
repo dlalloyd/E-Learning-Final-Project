@@ -96,12 +96,45 @@ export default function AdminPage() {
   const { participants, summary, kc_masteries } = stats;
   const real = participants.filter((p) => p.completed !== null);
 
+  const adaptive = real.filter((p) => p.condition === 'adaptive');
+  const staticGroup = real.filter((p) => p.condition === 'static');
+  const avgGain = (arr: Participant[]) =>
+    arr.length > 0
+      ? arr.reduce((a, p) => a + (Number(p.final_theta) - Number(p.initial_theta)), 0) / arr.length
+      : null;
+  const adaptiveGain = avgGain(adaptive);
+  const staticGain = avgGain(staticGroup);
+
+  const exportCSV = () => {
+    const headers = ['name','email','condition','joined','started','completed','duration_mins','initial_theta','final_theta','theta_gain','total_questions','correct','accuracy_pct','avg_response_secs','sus_score'];
+    const rows = participants.map((p) => {
+      const gain = p.completed ? (Number(p.final_theta) - Number(p.initial_theta)).toFixed(4) : '';
+      return [p.name, p.email, p.condition, p.joined, p.started, p.completed ?? '', p.duration_mins ?? '', p.initial_theta, p.final_theta, gain, p.total_questions, p.correct, p.accuracy_pct ?? '', p.avg_response_secs ?? '', p.sus_score ?? ''].join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `geomentor-participants-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-200 p-6 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <p className="text-xs text-indigo-400 uppercase tracking-widest mb-1">GeoMentor</p>
-        <h1 className="text-2xl font-semibold text-white">Study Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Live participant data — admin only</p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-1">GeoMentor</p>
+          <h1 className="text-2xl font-semibold text-white">Study Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Live participant data — admin only</p>
+        </div>
+        <button
+          onClick={exportCSV}
+          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Export CSV
+        </button>
       </div>
 
       {/* Summary cards */}
@@ -247,6 +280,58 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Condition breakdown — core research comparison */}
+      {real.length > 0 && (
+        <div className="mb-8 bg-slate-900 border border-white/[0.06] rounded-xl p-4">
+          <h2 className="text-sm font-medium text-slate-400 uppercase tracking-widest mb-4">
+            Condition Comparison — Adaptive vs Static
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Adaptive', n: adaptive.length, gain: adaptiveGain, color: 'text-indigo-400' },
+              { label: 'Static', n: staticGroup.length, gain: staticGain, color: 'text-slate-400' },
+            ].map((c) => (
+              <div key={c.label} className="bg-slate-800/60 rounded-lg p-4">
+                <p className={`text-xs font-bold uppercase tracking-widest ${c.color} mb-3`}>{c.label}</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">n (completed)</span>
+                    <span className="text-white font-semibold">{c.n}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Avg θ gain</span>
+                    <span className={`font-semibold ${c.gain == null ? 'text-slate-600' : c.gain > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {c.gain != null ? (c.gain > 0 ? `+${c.gain.toFixed(3)}` : c.gain.toFixed(3)) : 'n/a'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Avg accuracy</span>
+                    <span className="text-white font-semibold">
+                      {c.n > 0
+                        ? `${(participants.filter(p => p.condition === c.label.toLowerCase() && p.completed).reduce((a, p) => a + (p.accuracy_pct || 0), 0) / c.n).toFixed(1)}%`
+                        : 'n/a'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Avg session time</span>
+                    <span className="text-white font-semibold">
+                      {c.n > 0
+                        ? `${(participants.filter(p => p.condition === c.label.toLowerCase() && p.completed).reduce((a, p) => a + (p.duration_mins || 0), 0) / c.n).toFixed(1)} min`
+                        : 'n/a'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {adaptiveGain != null && staticGain != null && (
+            <p className="text-xs text-slate-500 mt-3 text-center">
+              Adaptive advantage: {(adaptiveGain - staticGain) > 0 ? '+' : ''}{(adaptiveGain - staticGain).toFixed(3)} θ
+            </p>
+          )}
         </div>
       )}
 

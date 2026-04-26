@@ -5,7 +5,7 @@ import {
   AlertTriangle, CheckCircle2, XCircle, BookOpen, Star, ArrowRight, Volume2, VolumeX,
   Flame, Gem, MapPin, User as UserIcon, Trophy, Pause, TrendingUp, RotateCcw,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
@@ -118,6 +118,7 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
 export default function QuizPage() {
   const { play: playSfx, muted: sfxMuted, toggleMute: toggleSfx } = useSfx();
   const [appState, setAppState] = useState<AppState>('start');
+  const prefersReducedMotion = useReducedMotion();
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [condition, setCondition] = useState<'adaptive' | 'static'>('adaptive');
@@ -234,6 +235,12 @@ export default function QuizPage() {
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [currentKcId, setCurrentKcId] = useState<string>('');
   const [instructionTrigger, setInstructionTrigger] = useState<InstructionTrigger>('low_mastery');
+  // Ref captures the trigger reason and question at the exact moment instruction is entered,
+  // preventing stale-closure reads in handleInstructionComplete.
+  const instructionEntryRef = useRef<{ trigger: InstructionTrigger; hasQuestion: boolean }>({
+    trigger: 'low_mastery',
+    hasQuestion: false,
+  });
 
   // --- Replayability State ---
   const [showProgressDashboard, setShowProgressDashboard] = useState(false);
@@ -452,6 +459,7 @@ export default function QuizPage() {
   // -- Handle "Review Material" button click ------------------------------
 
   const handleReviewRequest = () => {
+    instructionEntryRef.current = { trigger: 'user_request', hasQuestion: !!question };
     setInstructionTrigger('user_request');
     setAppState('instruction');
   };
@@ -460,12 +468,13 @@ export default function QuizPage() {
 
   const handleInstructionComplete = () => {
     setConsecutiveFailures(0);
-    if (instructionTrigger === 'user_request' && question) {
-      // User clicked "Review Material" mid-question - return to the same question
+    const { trigger, hasQuestion } = instructionEntryRef.current;
+    if (trigger === 'user_request' && hasQuestion) {
+      // User clicked "Review Material" mid-question — return to the same question
       setStartTime(Date.now());
       setAppState('question');
     } else {
-      // Auto-triggered after wrong answer - fetch next question
+      // Auto-triggered after wrong answer — fetch next question
       fetchNextQuestion(sessionId);
     }
   };
@@ -485,6 +494,7 @@ export default function QuizPage() {
     setShowElaboration(false);
     const trigger = shouldTriggerInstruction(result!, consecutiveFailures);
     if (trigger) {
+      instructionEntryRef.current = { trigger, hasQuestion: false };
       setInstructionTrigger(trigger);
       setAppState('instruction');
     } else {
@@ -1471,7 +1481,13 @@ export default function QuizPage() {
             </button>
           </div>
         </div>
-        {/* Progress bar underneath nav */}
+        {/* Progress indicator underneath nav */}
+        <div className="px-5 pt-1.5 pb-1 max-w-4xl mx-auto flex items-center justify-between">
+          <span className="text-[10px] text-slate-400 font-mono">
+            Question {(question?.meta.questionsAnswered ?? 0) + 1} of ~{questionsTotal || 15}
+          </span>
+          <span className="text-[10px] text-slate-500 font-mono">{progress}%</span>
+        </div>
         <div className="h-[2px] w-full bg-[#131c2b]">
           <div
             className="h-full bg-indigo-500 transition-all duration-500"
@@ -1534,9 +1550,9 @@ export default function QuizPage() {
               {Object.entries(question.options).map(([label, text]) => (
                 <motion.button
                   key={label}
-                  whileHover={appState === 'question' && !selected ? { scale: 1.01 } : {}}
-                  whileTap={appState === 'question' && !selected ? { scale: 0.99 } : {}}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  whileHover={!prefersReducedMotion && appState === 'question' && !selected ? { scale: 1.01 } : {}}
+                  whileTap={!prefersReducedMotion && appState === 'question' && !selected ? { scale: 0.99 } : {}}
+                  transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 25 }}
                   onClick={() => {
                     if (appState === 'question' && !selected) {
                       playSfx('click');
@@ -1688,9 +1704,9 @@ export default function QuizPage() {
         {/* XP Toast */}
         {xpToast && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
             className="fixed bottom-6 right-6 bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50"
           >
             <Gem className="w-4 h-4" />
