@@ -127,7 +127,7 @@ export default function LearnerProfile({ onClose }: LearnerProfileProps) {
             <p className="text-violet-200 text-sm font-medium mt-2">{profile.archetype.primary}</p>
             <p className="text-violet-300/70 text-xs mt-0.5">Secondary: {profile.archetype.secondary}</p>
           </div>
-          <button onClick={onClose} className="text-violet-200 hover:text-white">
+          <button onClick={onClose} className="text-violet-200 hover:text-white" aria-label="Close profile">
             <X className="w-5 h-5" />
           </button>
         </div>

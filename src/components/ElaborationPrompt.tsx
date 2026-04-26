@@ -83,7 +83,7 @@ export default function ElaborationPrompt({
           <Lightbulb size={16} className="text-amber-400" />
           <span className="text-sm font-medium text-indigo-300">Quick Reflection</span>
         </div>
-        <button onClick={onSkip} className="text-slate-600 hover:text-slate-400">
+        <button onClick={onSkip} className="text-slate-600 hover:text-slate-400" aria-label="Skip reflection">
           <X size={14} />
         </button>
       </div>

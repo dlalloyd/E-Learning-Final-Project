@@ -261,7 +261,7 @@ export default function InteractiveMap({
             </p>
           </div>
           {onClose && (
-            <button onClick={onClose} className="text-emerald-200 hover:text-white transition-colors">
+            <button onClick={onClose} className="text-emerald-200 hover:text-white transition-colors" aria-label="Close map">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -386,7 +386,7 @@ export default function InteractiveMap({
                 </div>
               </div>
             </div>
-            <button onClick={() => { setSelectedFeature(null); setPopupFeature(null); }} className="text-slate-500 hover:text-white shrink-0">
+            <button onClick={() => { setSelectedFeature(null); setPopupFeature(null); }} className="text-slate-500 hover:text-white shrink-0" aria-label="Close feature panel">
               <X className="w-4 h-4" />
             </button>
           </div>

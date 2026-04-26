@@ -711,10 +711,10 @@ export default function QuizPage() {
                   <>
                     <div className="text-center space-y-1">
                       <p className="text-white font-bold text-base">Recover Credentials</p>
-                      <p className="text-slate-500 text-xs">Enter your email and we&apos;ll send a reset link.</p>
+                      <p className="text-slate-400 text-xs">Enter your email and we&apos;ll send a reset link.</p>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
                       <input
                         type="email"
                         value={forgotEmail}
@@ -746,10 +746,10 @@ export default function QuizPage() {
                   <>
                     <div className="text-center space-y-1">
                       <p className="text-white font-bold text-base">Set New Password</p>
-                      <p className="text-slate-500 text-xs">Choose a new security key for your account.</p>
+                      <p className="text-slate-400 text-xs">Choose a new security key for your account.</p>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">New Security Key</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">New Security Key</label>
                       <input
                         type="password"
                         value={resetNewPassword}
@@ -797,7 +797,7 @@ export default function QuizPage() {
 
                     {authMode === 'signup' && (
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Name</label>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Name</label>
                         <input
                           type="text"
                           value={authName}
@@ -809,7 +809,7 @@ export default function QuizPage() {
                     )}
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
                       <input
                         type="email"
                         value={authEmail}
@@ -820,7 +820,7 @@ export default function QuizPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Security Key</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Security Key</label>
                       <input
                         type="password"
                         value={authPassword}
@@ -881,7 +881,7 @@ export default function QuizPage() {
                 <div className="text-center space-y-0.5">
                   <p className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase">System Online</p>
                   <p className="text-white font-black text-lg tracking-tight">Welcome back, {userName}</p>
-                  <p className="text-slate-600 text-xs">{authEmail || userId}</p>
+                  <p className="text-slate-400 text-xs">{authEmail || userId}</p>
                 </div>
 
                 {resumableSessionId && (
@@ -1456,17 +1456,18 @@ export default function QuizPage() {
             <button
               onClick={toggleSfx}
               className="p-1.5 rounded-md hover:bg-white/5 text-slate-500 transition-colors"
-              title={sfxMuted ? 'Unmute sounds' : 'Mute sounds'}
+              aria-label={sfxMuted ? 'Unmute sounds' : 'Mute sounds'}
             >
               {sfxMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
             {/* Pause / exit */}
             <button
               onClick={() => setShowPauseMenu(true)}
-              className="p-1.5 rounded-md hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
-              title="Pause session"
+              className="flex items-center gap-1.5 min-h-[44px] px-3 rounded-md hover:bg-white/5 text-slate-300 hover:text-white transition-colors"
+              aria-label="Pause session"
             >
               <Pause className="w-3.5 h-3.5" />
+              <span className="text-xs font-medium">Pause</span>
             </button>
           </div>
         </div>

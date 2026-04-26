@@ -148,7 +148,7 @@ export default function PostSessionFlow({ sessionId, onDismiss }: Props) {
             />
           ))}
         </div>
-        <button onClick={onDismiss} className="text-slate-600 hover:text-slate-400">
+        <button onClick={onDismiss} className="text-slate-600 hover:text-slate-400" aria-label="Dismiss">
           <X size={16} />
         </button>
       </div>
