@@ -62,6 +62,44 @@ IRT calibration & R + \texttt{mirt} &
 \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
+\subsection{Non-Functional Properties}
+\label{subsec:impl_nfr}
+
+The architecture was designed against the following non-functional targets,
+relevant to the CP6 CSSE competency requirement:
+
+\begin{description}
+  \item[Scalability.] The monolithic Next.js deployment scales horizontally
+    via Vercel's serverless function infrastructure: each API route invocation
+    is an independent function execution, and Vercel automatically provisions
+    additional instances under load. The primary scalability constraint is
+    the PostgreSQL connection pool; Supabase's PgBouncer connection pooler
+    mitigates this for the expected evaluation-scale traffic. For a deployment
+    beyond a few hundred concurrent learners, connection pooling configuration
+    and read-replica routing would be required.
+
+  \item[Reliability.] The system targets \textgreater\,99\% uptime via
+    Vercel's edge network SLA. Supabase Frankfurt operates on a managed
+    PostgreSQL cluster with daily automated backups and point-in-time recovery.
+    Error boundaries (\texttt{error.tsx} boundary components) prevent
+    component-level failures from crashing the full session.
+
+  \item[Efficiency.] The adaptive engine executes the EAP grid integration
+    and BKT update in-process within the API route, targeting an end-to-end
+    question selection latency of under 500\,ms (measured from request receipt
+    to response delivery). The JSON-serialised \texttt{kcStates} field on the
+    \texttt{Session} model was chosen to eliminate join overhead on the
+    hot path.
+
+  \item[Maintainability.] TypeScript strict mode enforces type safety at
+    every layer; Prisma migration files provide a versioned, auditable schema
+    history; and Git atomic commits with descriptive messages enable precise
+    reconstruction of the development timeline. The adaptive engine's
+    pure-function architecture means algorithm changes can be made without
+    touching the database or API layers.
+\end{description}
+
+% ─────────────────────────────────────────────────────────────────────────────
 \section{Database Schema}
 \label{sec:impl_schema}
 % ─────────────────────────────────────────────────────────────────────────────
@@ -547,6 +585,84 @@ rapid iteration on the development database) or \texttt{prisma migrate deploy}
 migration strategy was an intentional trade-off: the development speed of
 \texttt{db push} was prioritised during early sprints, with the switch to
 formal migration files coinciding with the Sprint 7 security hardening phase.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Testing Strategy}
+\label{sec:impl_testing}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Three layers of testing were implemented to validate system correctness across
+algorithmic, integration, and regression dimensions.
+
+\begin{description}
+  \item[Unit tests.] The IRT and BKT algorithm modules (\texttt{irt.ts},
+    \texttt{bkt.ts}) are covered by 79 unit tests, validating: the 3PL
+    probability function at boundary $\hat{\theta}$ values; EAP convergence
+    on synthetic correct/incorrect response sequences; BKT posterior
+    monotonicity under correct and incorrect response streams; credit-factor
+    interpolation at all three hint levels ($cf \in \{1.0, 0.85, 0.65\}$);
+    and Bloom gate threshold enforcement. Tests are authored in Jest and
+    execute as part of the local development workflow. The algorithm modules'
+    pure-function architecture --- no database calls, deterministic given the
+    same inputs --- makes them directly amenable to unit testing without mocking.
+
+  \item[Integration testing.] The end-to-end session flow was validated
+    through a structured developer self-pilot on 2026-02-26: a 13-question
+    pre-test followed by a full adaptive session, verifying that the EAP
+    estimator, BKT update pipeline, item selector, and session state
+    persistence all behaved correctly under realistic response patterns.
+    This session also provided the empirical prior parameters
+    ($\hat{\theta}_0 = -0.780$, $\sigma_0 = 0.543$) used by the live system.
+
+  \item[Regression testing via CI.] TypeScript strict-mode type checking
+    (\texttt{tsc --noEmit}) and the Next.js production build execute
+    automatically on every push to \texttt{main}. The build fails on any
+    type error or unresolved import, providing automated regression detection
+    across all API routes and components. Feature branches are deployed to
+    isolated Vercel preview URLs before merge, enabling manual integration
+    testing without affecting the production environment.
+\end{description}
+
+The primary quality assurance gap is the absence of automated end-to-end
+browser tests (Playwright or Cypress). UI regression testing relied on
+manual verification against Vercel preview deployments. This limitation is
+disclosed per the CSSE quality assurance principle: honest reporting of
+defects and gaps, not a claim of defect-free delivery.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Accessibility Implementation}
+\label{sec:impl_accessibility}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The interface was developed to meet WCAG 2.1 Level AA accessibility guidelines
+\parencite{w3c2018}. The following controls were implemented:
+
+\begin{description}
+  \item[ARIA labels.] All icon-only interactive elements --- the hint panel
+    toggle, pause button, tab navigation icons, and progress indicators ---
+    carry \texttt{aria-label} attributes describing their function, ensuring
+    screen reader compatibility for learners using assistive technology.
+  \item[Colour contrast.] Foreground text on authentication forms and answer
+    option buttons was reviewed to meet the WCAG 4.5:1 minimum contrast ratio
+    for normal text. Answer chips use a dark background with high-contrast
+    light text, maintaining legibility under the system's dark theme across
+    all feedback states (neutral, correct, incorrect).
+  \item[Keyboard navigation.] Answer options, hint panels, and navigation
+    controls are rendered as native \texttt{<button>} elements, accessible
+    via Tab and activated via Enter or Space, preserving browser-native
+    keyboard interaction without custom keyboard event handlers.
+  \item[Reduced motion.] Framer Motion animation components (rank-change
+    animation on the leaderboard) respect the operating system's
+    \texttt{prefers-reduced-motion} media query; transitions are suppressed
+    when the user has enabled the reduce-motion accessibility preference.
+\end{description}
+
+A full automated WCAG 2.1 AA audit (e.g., via axe-core or Lighthouse
+accessibility scoring) was not conducted within the project timeline;
+accessibility improvements were applied through manual review and iterative
+correction. A comprehensive audit is identified as a prerequisite for any
+production deployment targeting secondary school learners, where the public
+sector bodies accessibility regulations may apply.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Self-Pilot Calibration}

@@ -641,36 +641,60 @@ milestones are tagged in the repository to facilitate evaluation.
 \label{sec:meth_gantt}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Table~\ref{tab:gantt} presents the planned and actual project timeline. Grey
-bars indicate the original planned duration; blue bars indicate the actual
-duration as inferred from the Git commit history. The Sprint 5 scope reduction
-(vertical dashed line) and the resulting re-planning are clearly visible.
+Figure~\ref{fig:gantt} presents the planned and actual project timeline,
+reconstructed from the Git commit history. The Sprint~5 scope reduction
+(red dashed line) and the resulting re-planning are clearly visible.
 
-\begin{table}[H]
+\begin{figure}[H]
 \centering
-\caption{Project timeline by sprint (each sprint = one fortnight). Scope
-reduction at Sprint~5 (February 2026) eliminated multi-domain expansion in
-favour of single-domain Geography KC validation.}
-\label{tab:gantt}
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{llXl}
-\toprule
-\textbf{Phase} & \textbf{Sprints} & \textbf{Tasks} & \textbf{Period} \\
-\midrule
-\textbf{Initiation \& Design} & S1--S4 & KC ontology + prereq graph; technology selection (ADRs); algorithm design (IRT+BKT hybrid) & Oct--Nov 2025 \\
-\midrule
-\textbf{Core Development} & S5--S10 & Adaptive engine (\texttt{adaptive-engine.ts}); database schema + Prisma; question bank + IRT calibration; hint system + variant dedup & Dec 2025--Jan 2026 \\
-\midrule
-\textbf{Integration \& Hardening} & S11--S14 & Session continuity + onboarding; security hardening (NIST 800-63B, RLS); leaderboard + XP system & Feb--Mar 2026 \\
-\midrule
-\textbf{Evaluation} & S15--S17 & Participant sessions ($n=4$); SUS + misconception analysis & Mar--Apr 2026 \\
-\midrule
-\textbf{Dissertation} & S16--S20 & Literature review; methodology + implementation chapters; results + discussion; submission & Apr--May 2026 \\
-\midrule
-\textbf{Milestone} & S20 & \multicolumn{2}{l}{Submission: 06 May 2026} \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\begin{tikzpicture}[x=0.92cm, y=0.72cm]
+  % ── Vertical grid
+  \foreach \x in {0,...,10} {
+    \draw[gray!22, thin] (\x, 0.65) -- (\x, -4.60);
+  }
+  % ── Sprint header
+  \foreach \i in {1,...,10} {
+    \pgfmathsetmacro\xc{\i - 0.5}
+    \node[font=\footnotesize\bfseries] at (\xc, 0.45) {S\i};
+  }
+  % ── Month sub-row
+  \foreach \xc/\mo in
+      {0.5/Oct, 1.5/Nov, 2.5/Dec, 3.5/Jan, 4.5/Feb,
+       5.5/Mar, 6.5/Mar, 7.5/Apr, 8.5/Apr, 9.5/May} {
+    \node[font=\tiny, gray!60] at (\xc, 0.10) {\mo};
+  }
+  % ── Phase bars
+  % Initiation & Design  S1–S4
+  \fill[blue!28, rounded corners=2pt] (0,-0.30) rectangle (4,-0.80);
+  \node[anchor=east, font=\small] at (-0.22,-0.55) {Initiation \& Design};
+  % Core Development  S2–S5
+  \fill[blue!48, rounded corners=2pt] (1,-1.00) rectangle (5,-1.50);
+  \node[anchor=east, font=\small] at (-0.22,-1.25) {Core Development};
+  % Integration & Hardening  S6–S8
+  \fill[blue!68, rounded corners=2pt] (5,-1.70) rectangle (8,-2.20);
+  \node[anchor=east, font=\small] at (-0.22,-1.95) {Integration \& Hardening};
+  % Evaluation  S9
+  \fill[orange!55, rounded corners=2pt] (8,-2.40) rectangle (9,-2.90);
+  \node[anchor=east, font=\small] at (-0.22,-2.65) {Evaluation ($n=4$)};
+  % Dissertation  S9–S10
+  \fill[green!35!black!55, rounded corners=2pt] (8,-3.10) rectangle (10,-3.60);
+  \node[anchor=east, font=\small] at (-0.22,-3.35) {Dissertation};
+  % ── Scope reduction marker  x = 4
+  \draw[red!65, thick, dashed] (4, 0.65) -- (4,-4.10);
+  \node[red!65, font=\tiny, align=center, above] at (4, 0.65)
+      {\textbf{Scope}\\reduction};
+  % ── Submission diamond  x = 10
+  \fill[red!60]
+      (10.00,-3.35) -- (10.22,-3.15) -- (10.44,-3.35) -- (10.22,-3.55) -- cycle;
+  \node[anchor=west, font=\tiny, red!70] at (10.50,-3.35) {06~May};
+  % ── Border
+  \draw[black!25] (0, 0.65) rectangle (10,-4.10);
+\end{tikzpicture}
+\caption{Project Gantt chart. Each column = one fortnightly sprint (Oct~2025–May~2026).
+Bar shading indicates development phase; the red dashed line marks the Sprint~5
+scope reduction from multi-domain to single-domain Geography KC validation.}
+\label{fig:gantt}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Risk Register}
@@ -707,7 +731,7 @@ R6 & Scope overrun (multi-domain ambition) &
   Sprint 5 scope reduction to single-domain Geography KC validation \\
 R7 & Gantt chart absent from interim report &
   H & M & Resolved &
-  Gantt included in this final report (Table~\ref{tab:gantt}) \\
+  Gantt included in this final report (Figure~\ref{fig:gantt}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
