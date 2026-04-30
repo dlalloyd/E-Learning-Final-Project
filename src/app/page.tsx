@@ -154,6 +154,7 @@ export default function QuizPage() {
           setResumableSessionId(data.incompleteSession.id);
           setCondition(data.incompleteSession.condition);
         } else {
+          setCondition(data.user.studyCondition ?? 'adaptive');
           try {
             const seen = localStorage.getItem('gm_condition_explainer_seen') === 'true';
             if (!seen) setShowConditionExplainer(true);
@@ -578,6 +579,7 @@ export default function QuizPage() {
         setResumableSessionId(data.incompleteSession.id);
         setCondition(data.incompleteSession.condition);
       } else {
+        setCondition(data.user.studyCondition ?? 'adaptive');
         checkConditionExplainer();
       }
     } catch (err) {
@@ -673,8 +675,7 @@ export default function QuizPage() {
     } catch { /* localStorage unavailable */ }
   };
 
-  const handleConditionChosen = (chosen: 'adaptive' | 'static') => {
-    setCondition(chosen);
+  const handleConditionAcknowledged = () => {
     setShowConditionExplainer(false);
   };
 
@@ -944,7 +945,7 @@ export default function QuizPage() {
                 )}
 
                 {showConditionExplainer ? (
-                  <ConditionExplainer onChoose={handleConditionChosen} />
+                  <ConditionExplainer condition={condition} onAcknowledge={handleConditionAcknowledged} />
                 ) : (
                   <div className="space-y-3">
                     {/* Active condition badge */}
@@ -954,7 +955,7 @@ export default function QuizPage() {
                         onClick={() => setShowConditionExplainer(true)}
                         className="text-xs font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 transition-colors"
                       >
-                        {condition === 'adaptive' ? 'Adaptive (IRT+BKT)' : 'Static (fixed)'} — change
+                        {condition === 'adaptive' ? 'Adaptive (IRT+BKT)' : 'Static (fixed)'}
                       </button>
                     </div>
                     <button
