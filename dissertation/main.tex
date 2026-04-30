@@ -7,9 +7,10 @@
 
 % ── Page geometry ─────────────────────────────────────────────────────────────
 \usepackage[a4paper, margin=2.5cm, top=3cm, bottom=3cm]{geometry}
+\setlength{\headheight}{14.5pt}
 
 % ── Typography ────────────────────────────────────────────────────────────────
-\usepackage{microtype}
+% microtype removed — adds 30-60s per compile on long documents
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{parskip}
@@ -32,6 +33,28 @@
 % ── Code listings ─────────────────────────────────────────────────────────────
 \usepackage{listings}
 \usepackage{xcolor}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, const, continue, debugger, default, delete,
+    do, else, export, finally, for, function, if, import, in, instanceof,
+    let, new, return, switch, this, throw, try, typeof, var, void, while,
+    with, yield, async, await, class, extends, from, of, static, super},
+  keywordstyle=\color{blue!70}\bfseries,
+  ndkeywords={true, false, null, undefined, number, string, boolean, void,
+    any, never, object, unknown, interface, type, enum, implements, declare,
+    readonly, export, import, namespace, module},
+  ndkeywordstyle=\color{blue!40},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{red!60!black},
+  morestring=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}
+\lstalias{TypeScript}{JavaScript}
+
 \lstset{
   basicstyle=\ttfamily\small,
   breaklines=true,
@@ -47,8 +70,7 @@
 
 % ── Diagrams ──────────────────────────────────────────────────────────────────
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, shapes.geometric, shapes.symbols, positioning, fit}
-\usepackage{pgfgantt}
+\usetikzlibrary{arrows.meta, shapes.geometric, positioning, fit}
 \usepackage{enumitem}
 
 % ── Headers & footers ─────────────────────────────────────────────────────────
@@ -82,7 +104,6 @@
 \addbibresource{references.bib}
 
 % ── Utilities ─────────────────────────────────────────────────────────────────
-\usepackage{enumitem}
 \usepackage{csquotes}
 \usepackage{pdflscape}
 

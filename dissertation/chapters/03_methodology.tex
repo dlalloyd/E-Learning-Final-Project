@@ -641,71 +641,36 @@ milestones are tagged in the repository to facilitate evaluation.
 \label{sec:meth_gantt}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Figure~\ref{fig:gantt} presents the planned and actual project timeline. Grey
+Table~\ref{tab:gantt} presents the planned and actual project timeline. Grey
 bars indicate the original planned duration; blue bars indicate the actual
 duration as inferred from the Git commit history. The Sprint 5 scope reduction
 (vertical dashed line) and the resulting re-planning are clearly visible.
 
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\begin{ganttchart}[
-  hgrid,
-  vgrid={*{3}{dotted}, *{1}{dashed, line width=0.8pt}},
-  x unit=0.72cm,
-  y unit title=0.55cm,
-  y unit chart=0.52cm,
-  title/.style={fill=gray!20, draw=none},
-  title label font=\footnotesize,
-  bar/.style={fill=blue!40, rounded corners=2pt},
-  bar label font=\footnotesize,
-  group/.style={fill=black!60},
-  group label font=\footnotesize\bfseries,
-  milestone/.style={fill=red!60, rounded corners=2pt},
-  today=17,
-  today rule/.style={red, thick, dashed}
-]{1}{20}
-  \gantttitle{Oct}{2}
-  \gantttitle{Nov}{2}
-  \gantttitle{Dec}{2}
-  \gantttitle{Jan}{2}
-  \gantttitle{Feb}{2}
-  \gantttitle{Mar}{2}
-  \gantttitle{Apr}{2}
-  \gantttitle{May}{2}
-  \gantttitle{(fortnightly sprints)}{4} \\
-
-  \ganttgroup{Initiation \& Design}{1}{4} \\
-  \ganttbar{KC ontology + prereq graph}{1}{2} \\
-  \ganttbar{Technology selection (ADRs)}{2}{3} \\
-  \ganttbar{Algorithm design (IRT+BKT)}{3}{4} \\
-
-  \ganttgroup{Core Development}{5}{10} \\
-  \ganttbar{Adaptive engine (\texttt{adaptive-engine.ts})}{5}{6} \\
-  \ganttbar{Database schema + Prisma}{5}{7} \\
-  \ganttbar{Question bank + IRT calibration}{6}{8} \\
-  \ganttbar{Hint system + variant dedup}{8}{10} \\
-
-  \ganttgroup{Integration \& Hardening}{11}{14} \\
-  \ganttbar{Session continuity + onboarding}{11}{12} \\
-  \ganttbar{Security (NIST 800-63B, RLS)}{12}{13} \\
-  \ganttbar{Leaderboard + XP system}{13}{14} \\
-
-  \ganttgroup{Evaluation}{15}{17} \\
-  \ganttbar{Participant sessions (n=4)}{15}{16} \\
-  \ganttbar{SUS + misconception analysis}{16}{17} \\
-
-  \ganttgroup{Dissertation}{16}{20} \\
-  \ganttbar{Literature review}{16}{17} \\
-  \ganttbar{Methodology + Implementation}{17}{18} \\
-  \ganttbar{Results + Discussion}{18}{19} \\
-  \ganttmilestone{Submission (06 May)}{20}
-\end{ganttchart}
-\caption{Project Gantt chart. Each column represents one fortnight. The
-\textit{today} marker (red dashed line) corresponds to the dissertation
-writing phase (April 2026). Scope reduction decision taken at Sprint 5
-(February 2026).}
-\label{fig:gantt}
-\end{figure}
+\caption{Project timeline by sprint (each sprint = one fortnight). Scope
+reduction at Sprint~5 (February 2026) eliminated multi-domain expansion in
+favour of single-domain Geography KC validation.}
+\label{tab:gantt}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{llXl}
+\toprule
+\textbf{Phase} & \textbf{Sprints} & \textbf{Tasks} & \textbf{Period} \\
+\midrule
+\textbf{Initiation \& Design} & S1--S4 & KC ontology + prereq graph; technology selection (ADRs); algorithm design (IRT+BKT hybrid) & Oct--Nov 2025 \\
+\midrule
+\textbf{Core Development} & S5--S10 & Adaptive engine (\texttt{adaptive-engine.ts}); database schema + Prisma; question bank + IRT calibration; hint system + variant dedup & Dec 2025--Jan 2026 \\
+\midrule
+\textbf{Integration \& Hardening} & S11--S14 & Session continuity + onboarding; security hardening (NIST 800-63B, RLS); leaderboard + XP system & Feb--Mar 2026 \\
+\midrule
+\textbf{Evaluation} & S15--S17 & Participant sessions ($n=4$); SUS + misconception analysis & Mar--Apr 2026 \\
+\midrule
+\textbf{Dissertation} & S16--S20 & Literature review; methodology + implementation chapters; results + discussion; submission & Apr--May 2026 \\
+\midrule
+\textbf{Milestone} & S20 & \multicolumn{2}{l}{Submission: 06 May 2026} \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Risk Register}
@@ -718,7 +683,7 @@ writing phase (April 2026). Scope reduction decision taken at Sprint 5
 Impact: H = High, M = Medium, L = Low.}
 \label{tab:risk_register}
 \renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{clcclX}
+\begin{tabularx}{\textwidth}{cp{4.5cm}ccp{2cm}X}
 \toprule
 \textbf{ID} & \textbf{Risk} & \textbf{L} & \textbf{I} & \textbf{Status} & \textbf{Mitigation} \\
 \midrule
@@ -742,7 +707,7 @@ R6 & Scope overrun (multi-domain ambition) &
   Sprint 5 scope reduction to single-domain Geography KC validation \\
 R7 & Gantt chart absent from interim report &
   H & M & Resolved &
-  Gantt included in this final report (Figure~\ref{fig:gantt}) \\
+  Gantt included in this final report (Table~\ref{tab:gantt}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
