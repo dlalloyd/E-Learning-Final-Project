@@ -129,13 +129,46 @@ evidence.
 
 The within-subjects quasi-experimental design specified in the methodology
 required each participant to experience both an adaptive and a static
-(linear) condition. The static condition was not implemented as a live system
-feature due to time constraints; VanLehn's meta-analytic benchmark was used
-as a surrogate comparator. This means that any observed within-session
-$\Delta\hat{\theta}$ cannot be attributed specifically to the adaptive
-mechanism: it could reflect general learning from Geography content regardless
-of sequencing. A two-condition study is required to isolate the adaptation
-effect.
+(linear) condition. The static question-sequencing branch is correctly
+implemented in the system: when a session's \texttt{condition} field is set
+to \texttt{static}, the next-question route selects items by ascending
+difficulty parameter $b$ rather than by Fisher information, providing a
+fixed-difficulty linear progression through the item pool. What failed was
+the assignment mechanism: as described in Section~\ref{subsec:disc_condition_gap},
+all evaluation participants received the adaptive condition because the
+condition assignment was not wired through to the signup pipeline.
+VanLehn's meta-analytic benchmark was therefore used as a surrogate
+comparator rather than an internal control arm. This means that any
+observed within-session $\Delta\hat{\theta}$ cannot be attributed
+specifically to the adaptive mechanism: it could reflect general learning
+from Geography content regardless of sequencing. A two-condition study is
+required to isolate the adaptation effect.
+
+\subsection{Condition Assignment Implementation Gap}
+\label{subsec:disc_condition_gap}
+
+A late-stage audit of the codebase against dissertation claims revealed that
+the \texttt{studyCondition} field, added to the \texttt{User} model at
+Sprint~8, was never populated by the signup API route. The Prisma schema
+default (\texttt{"adaptive"}) therefore silently applied to every registered
+user, and the \texttt{ConditionExplainer} component presented participants
+with a binary choice between conditions rather than communicating a
+pre-assigned condition --- introducing self-selection bias at the point of
+evaluation. The bug was identified by comparing the dissertation's claim
+(``participants are randomly assigned to adaptive or static at account
+creation'') against the actual signup route implementation, and corrected
+before final submission. However, by the time of discovery all four
+evaluation participants had already completed their sessions under the
+adaptive condition.
+
+This represents a gap between specification and implementation that is
+instructive from a software engineering perspective. The schema was correct;
+the data flow was incomplete; and the error was invisible during feature
+development because the adaptive condition also happened to be the
+behaviorally correct path. The gap would have been caught earlier by an
+integration test asserting that \texttt{studyCondition} is non-null
+after user creation, or by a pre-evaluation audit of the live database.
+Both are identified as process improvements for future iterations.
 
 \subsection{IRT Parameters from Small Calibration Sample}
 \label{subsec:disc_calibration}
@@ -156,10 +189,38 @@ immediate next step for any continued development.
 The evaluation captured single-session data for all $n = 4$ participants.
 The BKT cross-session decay detection mechanism --- one of the system's novel
 contributions --- could therefore not be evaluated empirically. Similarly,
-the 7-day delayed retention assessment was administered to \textit{{[TBA]}}
-participants, providing insufficient data for retention analysis. Multi-session
+the 7-day delayed retention assessment was administered to zero
+participants within the available data collection window, providing no
+data for retention analysis. Multi-session
 longitudinal data collection is the most important methodological gap for
 future work.
+
+\subsection{Partial Session Abandonments}
+\label{subsec:disc_abandonments}
+
+Database records show three additional participants who began evaluation
+sessions but did not reach the session completion screen: one participant
+answered four questions, one answered eight, and one opened the system
+without answering any questions before exiting. These partial sessions are
+informative in two respects.
+
+First, they confirm that the system was reachable and functional: participants
+were able to authenticate, start a session, and receive adaptive question
+selections during the evaluation window. The question-and-answer loop,
+the hint scaffolding, and the $\hat{\theta}$ update pipeline all operated
+correctly for these users; the data simply does not include a completed
+session pair from which $\Delta\hat{\theta}$ can be computed. Their partial
+$\hat{\theta}$ trajectories are stored in the database and available for
+future analysis.
+
+Second, the dropout pattern is consistent with what the literature reports
+for voluntary digital learning deployments. \textcite{koedinger2012} note
+that self-directed abandonment prior to session completion is a normative
+behaviour in low-stakes adaptive learning contexts, and does not necessarily
+indicate interface failure. Nevertheless, with only four completed sessions
+in the sample, even partial dropout substantially affects statistical power.
+Identifying and eliminating interface friction points that cause early
+abandonment is a priority for any subsequent recruitment effort.
 
 \subsection{Convenience Sample Generalisability}
 \label{subsec:disc_generalisability}
@@ -221,12 +282,18 @@ parameters for multiple domains within the available timeline; (b) the
 dilution of evaluation statistical power across subgroups. The architecture
 supports multi-domain extension; the content does not yet exist.
 
-\textbf{Full A/B randomised controlled trial.} The original evaluation plan
-called for a completed no-adaptation control condition. This was not
-implemented as a live feature. A static question sequence (randomised from
-the same item pool, without IRT selection) would have been the correct
-implementation of the control arm and remains the most important addition
-for any follow-up study.
+\textbf{Completed A/B randomised controlled trial.} The original evaluation
+plan called for a completed no-adaptation control condition. The static
+question-sequencing branch was implemented (items sorted by ascending
+difficulty $b$ rather than Fisher information), but the condition
+assignment pipeline was not fully wired at signup, meaning all evaluation
+participants received the adaptive condition in practice
+(Section~\ref{subsec:disc_condition_gap}). The comparison with the static
+arm therefore relies on VanLehn's meta-analytic benchmark as a surrogate
+rather than an internal control condition. A two-arm study with confirmed
+random assignment, verified at the point of data collection via database
+audit, is the most important methodological addition for any follow-up
+investigation.
 
 \textbf{$n = 15$ participant target.} Participant recruitment fell short of
 the target sample size. Contributing factors include: the compressed timeline
@@ -297,7 +364,7 @@ development:
 
 The CSSE competency requires demonstration of the ability to ``use established
 software development methodologies to discover authentic requirements, respond
-to change, ensure quality and deliver value to users and stakeholders.'' Four
+to change, ensure quality and deliver value to users and stakeholders.'' Five
 episodes from this project's development are identified as direct evidence of
 this competency.
 
@@ -327,6 +394,28 @@ before merge. The Review Material bug (Section~\ref{subsec:impl_review_bug})
 was identified during quality testing and documented honestly rather than
 concealed --- demonstrating that quality assurance is a process of finding
 and disclosing defects, not of claiming defect-free code.
+
+A further quality episode arose during the write-up phase. The EAP
+$\hat{\theta}$ estimation initially used a 21-point quadrature grid (step
+size 0.3), which produced stepped ability trajectories rather than smooth
+convergence. The error was identified by inspecting the algorithm validation
+output and tracing the discontinuity to the grid resolution; extending to a
+161-point grid resolved it. This illustrates a recurrent pattern in
+psychometric software engineering: clean mathematical formulations do not
+survive translation to fixed-precision computation unchanged, and validation
+of numerical outputs against expected analytical behaviour is a distinct and
+necessary quality assurance step beyond type checking and compilation.
+
+\textbf{Auditing claims against implementation.} A late-stage cross-check
+of dissertation claims against the live codebase revealed that the condition
+assignment mechanism, while correctly specified in the database schema, was
+not wired through to the signup API route
+(Section~\ref{subsec:disc_condition_gap}). The discovery was made by asking
+the question: ``does the implementation actually do what the report claims?''
+and reading the relevant source file. This form of claim-against-code audit
+is underused in student project development and is recommended as a
+standard pre-submission practice. The fix was applied before final
+submission; the evaluation data could not be retracted.
 
 \textbf{Delivering value.} The system is production-deployed and accessible
 to any learner with an internet connection. The open-source repository provides
