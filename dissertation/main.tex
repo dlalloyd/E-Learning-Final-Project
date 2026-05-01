@@ -144,8 +144,43 @@
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-% TODO: write abstract last
-\textit{[To be written after all chapters are complete.]}
+
+This project designs, implements, and evaluates GeoMentor: a production-deployed
+adaptive intelligent tutoring system (ITS) for UK KS3/GCSE Geography. The system
+implements a hybrid Item Response Theory 3-Parameter Logistic (IRT 3PL) and
+Bayesian Knowledge Tracing (BKT) algorithm that continuously estimates learner
+ability via Expected A Posteriori (EAP) updating, tracks per-Knowledge Component
+mastery state, and selects items targeting the learner's Zone of Proximal
+Development using Fisher information maximisation. A novel credit-factor
+modification to the standard BKT learning transition equation is introduced,
+weighting posterior updates according to the maximum hint level accessed per
+question. Bloom's taxonomy is implemented as a computational selection
+constraint, enforcing cognitive prerequisite ordering across a 13-KC curriculum
+graph aligned to the AQA GCSE Geography specification.
+
+The project follows a Design Science Research methodology across ten two-week
+development sprints. Evaluation adopts a five-track multi-method validity
+framework --- algorithm validation, engagement data, System Usability Scale
+(SUS) usability, misconception analysis, and system robustness monitoring ---
+in response to the constraint of $n = 4$ external participants, for which
+inferential statistics are not viable.
+
+All four participants exhibited positive within-session $\Delta\hat{\theta}$
+(range $+0.379$ to $+0.571$ logits; mean $+0.479$) at 80--87\% response
+accuracy across 15-question adaptive sessions, consistent with Zone of Proximal
+Development targeting. Two participants who completed the in-app System Usability
+Scale scored 92.5 and 87.5 (mean 90.0), exceeding the $\geq 85$ ``excellent''
+threshold. The system achieved 99.9\% uptime with zero session state corruption
+events over the evaluation period.
+
+Five concrete contributions are made: (1) the first publicly accessible adaptive
+ITS for UK Geography; (2) a credit-factor BKT modification formalising
+scaffolding usage as graded mastery evidence; (3) Bloom-gated adaptive
+progression as a live selection constraint; (4) a five-track multi-method
+evaluation framework reusable for small-sample ITS validation; and (5) a
+domain-agnostic open-source ITS architecture parameterised by KC identifiers
+and IRT parameter files, requiring no algorithmic changes to support additional
+subject domains.
 
 \chapter*{Acknowledgements}
 \addcontentsline{toc}{chapter}{Acknowledgements}
