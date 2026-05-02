@@ -99,7 +99,7 @@ function ThetaBar({ theta, sd }: { theta: number; sd: number }) {
       <div className="flex justify-between text-[10px] font-bold tracking-widest text-slate-500 uppercase">
         <span>Novice</span>
         <span className="text-slate-400 normal-case tracking-normal font-mono">
-          Analyst Level: θ {theta.toFixed(3)} ± {sd.toFixed(3)}
+          θ {theta.toFixed(3)} ± {sd.toFixed(3)}
         </span>
         <span>Expert</span>
       </div>
@@ -693,14 +693,6 @@ export default function QuizPage() {
         <FirstVisitTour />
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            {/* System online indicator */}
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-400 uppercase">System Online</span>
-            </div>
-            <div className="inline-block mb-3 px-3 py-1 rounded-full bg-slate-800/80 ring-1 ring-white/[0.06] text-slate-500 text-[10px] font-mono tracking-widest uppercase">
-              Laboratory Interface V4.02
-            </div>
             <h1 className="text-4xl font-black text-white tracking-tighter">
               GeoMentor
             </h1>
@@ -710,10 +702,6 @@ export default function QuizPage() {
           </div>
 
           <div className="bg-[#0d1527]/90 ring-1 ring-white/[0.06] rounded-2xl p-8 space-y-6 backdrop-blur-sm relative">
-            {/* Lat/Lng corner decoration */}
-            <div className="absolute top-3 right-4 text-[9px] font-mono text-slate-700 text-right leading-relaxed hidden sm:block">
-              LAT: 53.7676° N<br />LONG: 0.3274° W<br />SCALE: 1:250,000
-            </div>
             {/* Auth form when not logged in */}
             {!isLoggedIn ? (
               <>
@@ -725,7 +713,7 @@ export default function QuizPage() {
                       <p className="text-slate-400 text-xs">Enter your email and we&apos;ll send a reset link.</p>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Email address</label>
                       <input
                         type="email"
                         value={forgotEmail}
@@ -760,7 +748,7 @@ export default function QuizPage() {
                       <p className="text-slate-400 text-xs">Choose a new security key for your account.</p>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">New Security Key</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">New password</label>
                       <input
                         type="password"
                         value={resetNewPassword}
@@ -808,7 +796,7 @@ export default function QuizPage() {
 
                     {authMode === 'signup' && (
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Name</label>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Your name</label>
                         <input
                           type="text"
                           value={authName}
@@ -820,7 +808,7 @@ export default function QuizPage() {
                     )}
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Analyst Identifier</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Email address</label>
                       <input
                         type="email"
                         value={authEmail}
@@ -831,7 +819,7 @@ export default function QuizPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Security Key</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Password</label>
                       <input
                         type="password"
                         value={authPassword}
@@ -867,20 +855,16 @@ export default function QuizPage() {
                       disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && (!authName || !authConsent))}
                       className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Initialize Session →' : 'Create Account →'}
+                      {authLoading ? 'Signing in...' : authMode === 'login' ? 'Sign in →' : 'Create account →'}
                     </button>
                     {authMode === 'login' && (
-                      <div className="flex items-center justify-between text-[10px] text-slate-600 px-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                          <span>Secure Connection</span>
-                        </div>
-                        <span
+                      <div className="text-center">
+                        <button
                           onClick={() => { setAuthView('forgot'); setForgotMsg(''); setForgotEmail(authEmail); }}
-                          className="text-slate-600 hover:text-slate-400 cursor-pointer transition-colors"
+                          className="text-[11px] text-slate-600 hover:text-slate-400 cursor-pointer transition-colors"
                         >
-                          Recover Credentials
-                        </span>
+                          Forgot password?
+                        </button>
                       </div>
                     )}
                   </>
@@ -890,7 +874,6 @@ export default function QuizPage() {
               /* Logged in - show session options */
               <>
                 <div className="text-center space-y-0.5">
-                  <p className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase">System Online</p>
                   <p className="text-white font-black text-lg tracking-tight">Welcome back, {userName}</p>
                   <p className="text-slate-400 text-xs">{authEmail || userId}</p>
                 </div>
@@ -987,11 +970,11 @@ export default function QuizPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Mode: {condition === 'adaptive' ? 'Adaptive' : 'Static'}
+                        {condition === 'adaptive' ? 'Adaptive' : 'Static'} mode
                       </span>
                     </div>
                     <div className="h-2.5 w-px bg-white/10" />
-                    <span className="text-[10px] text-slate-600 uppercase tracking-widest">ITS v4.02</span>
+                    <span className="text-[10px] text-slate-600 uppercase tracking-widest">IRT · BKT</span>
                   </div>
                 </div>
 
