@@ -701,7 +701,7 @@ export default function QuizPage() {
             </p>
           </div>
 
-          <div className="bg-[#0d1527]/90 ring-1 ring-white/[0.06] rounded-2xl p-8 space-y-6 backdrop-blur-sm relative">
+          <div className="bg-[#0d1527] ring-1 ring-white/[0.08] rounded-2xl p-7 space-y-5">
             {/* Auth form when not logged in */}
             {!isLoggedIn ? (
               <>
@@ -709,8 +709,8 @@ export default function QuizPage() {
                   /* Forgot password form */
                   <>
                     <div className="text-center space-y-1">
-                      <p className="text-white font-bold text-base">Recover Credentials</p>
-                      <p className="text-slate-400 text-xs">Enter your email and we&apos;ll send a reset link.</p>
+                      <p className="text-white font-semibold text-base">Reset password</p>
+                      <p className="text-slate-500 text-sm">We&apos;ll send a link to your email.</p>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Email address</label>
@@ -720,7 +720,7 @@ export default function QuizPage() {
                         onChange={(e) => setForgotEmail(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
                         placeholder="you@example.com"
-                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                        className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/50 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all"
                       />
                     </div>
                     {forgotMsg && (
@@ -729,7 +729,7 @@ export default function QuizPage() {
                     <button
                       onClick={handleForgotPassword}
                       disabled={forgotLoading || !forgotEmail}
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98]"
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors active:scale-[0.99]"
                     >
                       {forgotLoading ? 'Sending...' : 'Send Reset Link →'}
                     </button>
@@ -744,8 +744,8 @@ export default function QuizPage() {
                   /* Reset password form */
                   <>
                     <div className="text-center space-y-1">
-                      <p className="text-white font-bold text-base">Set New Password</p>
-                      <p className="text-slate-400 text-xs">Choose a new security key for your account.</p>
+                      <p className="text-white font-semibold text-base">Set new password</p>
+                      <p className="text-slate-500 text-sm">Choose a new password for your account.</p>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">New password</label>
@@ -755,7 +755,7 @@ export default function QuizPage() {
                         onChange={(e) => setResetNewPassword(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
                         placeholder="Min. 8 characters"
-                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                        className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/50 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all"
                       />
                     </div>
                     {resetMsg && (
@@ -764,7 +764,7 @@ export default function QuizPage() {
                     <button
                       onClick={handleResetPassword}
                       disabled={resetLoading || resetNewPassword.length < 8}
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98]"
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors active:scale-[0.99]"
                     >
                       {resetLoading ? 'Updating...' : 'Update Password →'}
                     </button>
@@ -778,18 +778,18 @@ export default function QuizPage() {
                 ) : (
                   /* Standard login / signup form */
                   <>
-                    <div className="flex rounded-lg bg-slate-800 p-1">
+                    <div className="flex gap-5 border-b border-white/[0.06] pb-4">
                       {(['login', 'signup'] as const).map((m) => (
                         <button
                           key={m}
                           onClick={() => { setAuthMode(m); setAuthError(''); }}
-                          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+                          className={`text-sm font-semibold pb-0.5 border-b-2 -mb-px transition-all ${
                             authMode === m
-                              ? 'bg-indigo-600 text-white'
-                              : 'text-slate-400 hover:text-slate-300'
+                              ? 'text-white border-indigo-500'
+                              : 'text-slate-500 border-transparent hover:text-slate-300'
                           }`}
                         >
-                          {m === 'login' ? 'Log In' : 'Sign Up'}
+                          {m === 'login' ? 'Log in' : 'Create account'}
                         </button>
                       ))}
                     </div>
@@ -802,7 +802,7 @@ export default function QuizPage() {
                           value={authName}
                           onChange={(e) => setAuthName(e.target.value)}
                           placeholder="Your full name"
-                          className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                          className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/50 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all"
                         />
                       </div>
                     )}
@@ -814,7 +814,7 @@ export default function QuizPage() {
                         value={authEmail}
                         onChange={(e) => setAuthEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                        className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/50 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all"
                       />
                     </div>
 
@@ -826,7 +826,7 @@ export default function QuizPage() {
                         onChange={(e) => setAuthPassword(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
                         placeholder="Min. 8 characters"
-                        className="w-full bg-[#131c2b] ring-1 ring-white/[0.06] focus:ring-2 focus:ring-indigo-500/40 rounded-lg px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition-all"
+                        className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/50 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all"
                       />
                     </div>
 
@@ -853,7 +853,7 @@ export default function QuizPage() {
                     <button
                       onClick={handleAuth}
                       disabled={authLoading || !authEmail || !authPassword || (authMode === 'signup' && (!authName || !authConsent))}
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#131c2b] disabled:text-slate-600 text-white font-bold text-sm tracking-wide rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors active:scale-[0.99] flex items-center justify-center gap-2"
                     >
                       {authLoading ? 'Signing in...' : authMode === 'login' ? 'Sign in →' : 'Create account →'}
                     </button>
@@ -904,21 +904,21 @@ export default function QuizPage() {
 
                 {/* XP / Streak / Level bar */}
                 {xpData && (
-                  <div className="bg-slate-800/50 rounded-xl p-3 space-y-2">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Gem className="w-4 h-4 text-indigo-400" />
-                        <span className="text-white text-sm font-bold">Level {xpData.level}</span>
-                        <span className="text-slate-500 text-xs">{xpData.totalXp} XP</span>
+                        <Gem className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-slate-300 text-sm font-semibold">Level {xpData.level}</span>
+                        <span className="text-slate-600 text-xs">{xpData.totalXp} XP</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Flame className={`w-4 h-4 ${xpData.currentStreak > 0 ? 'text-orange-400' : 'text-slate-600'}`} />
-                        <span className={`text-sm font-bold ${xpData.currentStreak > 0 ? 'text-orange-400' : 'text-slate-600'}`}>
-                          {xpData.currentStreak}
-                        </span>
-                      </div>
+                      {xpData.currentStreak > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Flame className="w-3.5 h-3.5 text-orange-400" />
+                          <span className="text-orange-400 text-sm font-semibold">{xpData.currentStreak}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full">
+                    <div className="h-1 bg-white/[0.06] rounded-full">
                       <div
                         className="h-full bg-indigo-500 rounded-full transition-all duration-700"
                         style={{ width: `${(xpData.levelProgress || 0) * 100}%` }}
@@ -936,7 +936,7 @@ export default function QuizPage() {
                       <span className="text-slate-500 text-xs">Mode</span>
                       <button
                         onClick={() => setShowConditionExplainer(true)}
-                        className="text-xs font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 transition-colors"
+                        className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.07] text-slate-400 hover:border-white/[0.14] transition-colors"
                       >
                         {condition === 'adaptive' ? 'Adaptive (IRT+BKT)' : 'Static (fixed)'}
                       </button>
@@ -948,19 +948,16 @@ export default function QuizPage() {
                         learnQueueRef.current = queue;
                         startSession();
                       }}
-                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl shadow-lg shadow-emerald-900/30 transition-all"
+                      className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition-colors active:scale-[0.99]"
                     >
-                      Learn First, Then Quiz
+                      Learn first, then quiz
                     </button>
                     <button
                       onClick={() => startSession()}
-                      className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-medium rounded-xl shadow-lg shadow-indigo-900/30 transition-all text-sm"
+                      className="w-full py-3 bg-white/[0.04] ring-1 ring-white/[0.08] hover:ring-white/[0.15] hover:bg-white/[0.06] text-slate-300 hover:text-white font-medium text-sm rounded-xl transition-all active:scale-[0.99]"
                     >
-                      Jump Into Questions
+                      Jump straight in
                     </button>
-                    <p className="text-slate-600 text-xs text-center">
-                      New? Choose &quot;Learn First&quot; for guided instruction. Ready to test? Jump straight in.
-                    </p>
                   </div>
                 )}
 
@@ -979,7 +976,7 @@ export default function QuizPage() {
                 </div>
 
                 {/* Leaderboard on start screen */}
-                <div className="bg-slate-900/50 rounded-xl p-4">
+                <div className="border-t border-white/[0.05] pt-4">
                   <Leaderboard />
                 </div>
 
@@ -993,12 +990,9 @@ export default function QuizPage() {
             )}
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-700 text-[10px] font-mono tracking-wider">
+          <div className="mt-5 text-center">
+            <p className="text-slate-600 text-[11px]">
               University of Hull · BSc Software Engineering · 2026
-            </p>
-            <p className="text-slate-800 text-[9px] mt-0.5">
-              Academic Portal · Dylan Bengi · Supervised by Peter Robinson
             </p>
           </div>
         </div>
