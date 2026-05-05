@@ -6,6 +6,7 @@ import {
   Flame, Gem, MapPin, User as UserIcon, Trophy, Pause, TrendingUp, RotateCcw,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import InstructionMode from '@/components/InstructionMode';
 import SessionSummaryDashboard from '@/components/SessionSummaryDashboard';
 import HintPanel from '@/components/HintPanel';
@@ -1580,7 +1581,18 @@ export default function QuizPage() {
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                       <BookOpen className="w-3 h-3" />Key concept
                     </p>
-                    <p className="text-slate-300 text-sm leading-relaxed">{correctiveFeedback}</p>
+                    <div className="prose prose-sm prose-invert max-w-none
+                      prose-headings:text-slate-200 prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1
+                      prose-h2:text-sm prose-h3:text-xs
+                      prose-p:text-slate-300 prose-p:leading-relaxed prose-p:my-1
+                      prose-strong:text-slate-200 prose-strong:font-semibold
+                      prose-ul:my-1 prose-ul:pl-4 prose-li:text-slate-300 prose-li:my-0.5
+                      prose-table:text-xs prose-td:px-2 prose-td:py-1 prose-th:px-2 prose-th:py-1
+                      prose-td:border prose-td:border-slate-700 prose-th:border prose-th:border-slate-600
+                      prose-th:text-slate-300 prose-td:text-slate-400
+                      prose-hr:border-slate-700 prose-hr:my-2">
+                      <ReactMarkdown>{correctiveFeedback}</ReactMarkdown>
+                    </div>
                   </div>
                 )}
 
