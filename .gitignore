@@ -44,3 +44,12 @@ yarn-error.log*
 
 .env*.local
 .claude/
+
+# Claude Code internals — local tooling, not project code
+.agents/
+skills-lock.json
+
+# Submission artefacts
+dissertation.zip
+instruction-mode.zip
+tsconfig.tsbuildinfo
