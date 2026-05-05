@@ -1,125 +1,204 @@
-# E-Learning Adaptive System
+# GeoMentor — Adaptive E-Learning System
 
-Personalised E-Learning Intelligent Tutoring System with Adaptive Assessments that dynamically adapts to individual learning patterns through intelligent assessment algorithms.
+Adaptive intelligent tutoring system for UK KS3/GCSE Geography. Personalises question difficulty in real time using a hybrid IRT 3PL + Bayesian Knowledge Tracing algorithm and tracks per-topic mastery across 13 knowledge components.
+
+Live deployment: https://e-learning-final-project.vercel.app
 
 ## Project Overview
 
-**Primary Objectives:**
-- Analyse existing adaptive learning approaches
-- Design and implement a rule-based adaptive assessment system that:
-  - Adjusts question difficulty using Elo rating system (Elo, 1978)
-  - Sequences learning content based on mastery thresholds (≥80% accuracy)
-  - Logs all user interactions in PostgreSQL
-  - Achieves ≥90% unit test coverage (Jest)
-- Develop responsive web interface with progress tracking
-- Evaluate system through usability testing
+**Research context:** Randomised controlled study comparing adaptive (IRT+BKT) vs static (fixed-difficulty) question sequencing. Participants are randomly assigned to condition at signup. The admin dashboard tracks θ gain per condition for dissertation analysis.
 
-**Secondary Objectives:**
-- Integrate gamification features (badges, levels)
-- Experiment with simple ML models (logistic regression) vs rule-based logic
+**Core objectives:**
+- Implement IRT 3PL for real-time ability estimation (θ)
+- Implement BKT for per-KC mastery tracking with minimum 5 presentation gate
+- Sequence questions to target P(correct) ≈ 0.70 (zone of proximal development)
+- Trigger instruction mode when mastery drops or consecutive failures threshold is hit
+- Collect SUS usability scores and cognitive load ratings for evaluation
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Backend:** Next.js API Routes, TypeScript
-- **Database:** PostgreSQL 15, Prisma ORM
-- **Testing:** Jest, React Testing Library (≥90% coverage target)
-- **Containerization:** Docker, Docker Compose
-- **Admin Panel:** Adminer
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 15 (App Router), React 18, TypeScript, Tailwind CSS |
+| Backend | Next.js API Routes, TypeScript |
+| Database | PostgreSQL (Supabase, Frankfurt), Prisma ORM |
+| Auth | JWT (httpOnly cookie), bcrypt, in-memory rate limiting |
+| Maps | Mapbox GL JS (live reference maps in instruction mode) |
+| Email | Resend (password reset) |
+| Error tracking | Sentry |
+| Deployment | Vercel |
+| Testing | Jest, React Testing Library |
+| Containerisation | Docker, Docker Compose |
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── app/                    # Next.js app directory
-│   │   ├── api/               # Backend API routes
-│   │   ├── page.tsx           # Home page
+│   ├── app/
+│   │   ├── api/               # API routes
+│   │   │   ├── sessions/      # Session create, next-question, answer
+│   │   │   ├── auth/          # Login, signup, logout, password reset
+│   │   │   ├── admin/         # Study dashboard (admin only)
+│   │   │   ├── xp/            # XP and level system
+│   │   │   ├── progress/      # Cross-session KC progress
+│   │   │   ├── learning-objects/  # Instructional content by KC
+│   │   │   ├── sus/           # SUS usability questionnaire
+│   │   │   └── ...            # Analytics, leaderboard, goals, etc.
+│   │   ├── page.tsx           # Main quiz application (all states)
 │   │   └── layout.tsx         # Root layout
 │   ├── components/            # React components
-│   ├── lib/
-│   │   ├── algorithms/        # Core adaptive logic
-│   │   │   ├── elo.ts        # Elo rating system
-│   │   │   └── mastery.ts    # Mastery threshold logic
-│   │   └── db/               # Database utilities
-│   └── types/                # TypeScript types
-├── __tests__/                 # Test files
+│   │   ├── SessionSummaryDashboard.tsx
+│   │   ├── InstructionMode.tsx (lives at /components root)
+│   │   ├── ProgressDashboard.tsx
+│   │   ├── PauseMenu.tsx
+│   │   └── ...
+│   └── lib/
+│       ├── algorithms/
+│       │   ├── irt.ts         # IRT 3PL: P(θ) = c + (1-c)/(1+e^(-a(θ-b)))
+│       │   ├── bkt.ts         # Bayesian Knowledge Tracing
+│       │   ├── mastery.ts     # Mastery gate logic
+│       │   └── elo.ts         # Legacy (not used in main flow)
+│       ├── auth/              # JWT, bcrypt, rate limiting
+│       ├── db/                # Prisma client
+│       ├── hooks/             # React hooks (useSfx, useSessionMode)
+│       ├── achievements.ts    # XP + level calculations
+│       └── sessionFlow.ts     # Condition explainer / SUS trigger gates
+├── components/                # Additional components (InstructionMode, etc.)
+├── __tests__/
+│   ├── irt.test.ts
+│   ├── bkt.test.ts
+│   └── sessionFlow.test.ts
 ├── prisma/
-│   └── schema.prisma         # Database schema
-├── docker-compose.yml        # Docker services
-├── Dockerfile               # App container config
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed-templates.ts      # 13 KC question bank with IRT parameters
+├── public/                    # Static assets, audio SFX
+├── Dockerfile
+├── docker-compose.yml
 └── package.json
 ```
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
-- Docker & Docker Compose (optional)
-- PostgreSQL 15
+- PostgreSQL database (or Supabase project)
 
 ### Installation
 
-1. **Clone repository and install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. **Set up environment variables:**
-   ```bash
-   cp .env.example .env.local
-   ```
+### Environment variables
 
-3. **Setup Prisma:**
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev --name init
-   ```
+Copy `.env.example` to `.env.local` and fill in:
+
+```
+DATABASE_URL=          # PostgreSQL connection string (pooled)
+DIRECT_URL=            # PostgreSQL direct connection (for migrations)
+JWT_SECRET=            # Random secret for JWT signing
+RESEND_API_KEY=        # Resend.dev key for password reset emails
+NEXT_PUBLIC_MAPBOX_TOKEN=  # Mapbox public token for reference maps
+```
+
+### Database setup
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+npx prisma db seed
+```
 
 ### Development
 
-**Run locally:**
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000)
 
-**Run with Docker:**
+### Build
+
 ```bash
-docker-compose up --build
+npx prisma generate && npm run build
 ```
 
 ### Testing
 
 ```bash
-npm test              # Run tests
-npm run test:watch   # Watch mode
-npm run test:coverage # Coverage report
+npm test                  # Run all tests
+npm run test:coverage     # Coverage report
 ```
-Target: ≥90% coverage
 
-## Database Schema
+### Docker (optional)
 
-Core models:
-- **User** - Learner/Instructor/Admin
-- **Topic** - Learning topics with prerequisites
-- **Lesson** - Content units
-- **Quiz** - Assessments
-- **Question** - Quiz items with Elo ratings
-- **Assessment** - User attempts
-- **UserProgress** - Mastery tracking (≥80% threshold)
-- **Badge** - Gamification
+```bash
+docker-compose up --build
+```
 
 ## Core Algorithms
 
-### Elo Rating System
-- Initial: 1500
-- K-factor: 32
-- Difficulty: Very Easy to Very Hard
+### IRT 3PL (Item Response Theory, 3-Parameter Logistic)
 
-### Mastery Threshold
-- Mastery: ≥80% accuracy
-- Skip: ≥60% after 3 attempts
-- Review: Continue practice
+```
+P(θ) = c + (1 - c) / (1 + e^(-a(θ - b)))
+```
+
+- `θ` — learner ability estimate (logit scale, initialised at -0.780)
+- `a` — item discrimination
+- `b` — item difficulty
+- `c` — pseudo-guessing parameter
+
+θ is updated after each answer using maximum likelihood estimation. Questions are selected to target P ≈ 0.70 (zone of proximal development, Vygotsky 1978).
+
+### BKT (Bayesian Knowledge Tracing)
+
+Tracks P(Learned) per knowledge component:
+
+```
+P(Learned | correct) = P(Learned) * P(correct | known) / P(correct)
+```
+
+Parameters: P(L0), P(T), P(S), P(G) per KC. Mastery gate: P(Learned) ≥ 0.80 with minimum 5 presentations (prevents false mastery on lucky streaks).
+
+### Instruction mode triggers (adaptive condition only)
+
+- P(Learned) < 0.30 after a wrong answer → fetch learning content for that KC
+- 3 consecutive wrong answers → full topic review
+- User clicks "Review" button → return to same question after review
+
+### Successive Relearning
+
+Decayed KCs (not practised in 7+ days) receive a discrimination boost on next encounter, targeting re-encoding rather than surface retrieval.
+
+## 13 Knowledge Components
+
+| ID | Topic |
+|---|---|
+| tectonic_hazards | Tectonic Hazards |
+| weather_hazards | Weather Hazards |
+| climate_change | Climate Change |
+| ecosystems | Ecosystems |
+| urban_issues | Urban Issues |
+| changing_economic_world | Changing Economic World |
+| resource_management | Resource Management |
+| physical_landscapes_uk | Physical Landscapes UK |
+| glacial_landscapes | Glacial Landscapes |
+| fieldwork_skills | Fieldwork & Skills |
+| map_skills | Map Skills |
+| development_globalisation | Development & Globalisation |
+| geographical_enquiry | Geographical Enquiry |
+
+## Admin Dashboard
+
+Available at `/admin` (admin role required). Shows:
+
+- Per-participant θ start/end, accuracy, session time, SUS score
+- Condition breakdown: adaptive vs static avg θ gain (core research comparison)
+- KC mastery heatmap across all participants
+- CSV export for SPSS/R analysis
 
 ## License
 
