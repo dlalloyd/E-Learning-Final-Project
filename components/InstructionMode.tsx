@@ -555,6 +555,8 @@ export default function InstructionMode({
               <button
                 key={idx}
                 onClick={() => setCardIndex(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+                aria-current={idx === cardIndex ? 'true' : undefined}
                 className={`shrink-0 rounded-full transition-all duration-300 ${
                   idx === cardIndex
                     ? 'w-4 h-1.5 bg-indigo-500'

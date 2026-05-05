@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Play, LogOut, ToggleLeft, ToggleRight, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 interface PauseMenuProps {
   open: boolean;
@@ -25,6 +25,7 @@ export default function PauseMenu({
   onSwitchMode,
 }: PauseMenuProps) {
   const otherMode = condition === 'adaptive' ? 'static' : 'adaptive';
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <AnimatePresence>
@@ -33,19 +34,19 @@ export default function PauseMenu({
           {/* Backdrop */}
           <motion.div
             className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
+            initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: prefersReducedMotion ? 1 : 0 }}
             onClick={onResume}
           />
 
           {/* Sheet */}
           <motion.div
             className="fixed bottom-0 left-0 right-0 z-50 bg-[#0d1527] border-t border-white/[0.08] rounded-t-2xl max-w-lg mx-auto"
-            initial={{ y: '100%' }}
+            initial={{ y: prefersReducedMotion ? 0 : '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            exit={{ y: prefersReducedMotion ? 0 : '100%' }}
+            transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 300 }}
           >
             <div className="p-6 space-y-5">
               {/* Handle */}
@@ -61,6 +62,7 @@ export default function PauseMenu({
                 </div>
                 <button
                   onClick={onResume}
+                  aria-label="Close pause menu"
                   className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
                 >
                   <X className="w-4 h-4" />

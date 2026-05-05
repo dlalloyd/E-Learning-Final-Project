@@ -30,7 +30,7 @@ Repo: https://github.com/dlalloyd/E-Learning-Final-Project
 
 \- `lib/adaptive-engine.ts` — IRT+BKT hybrid core
 
-\- `components/InstructionMode.tsx` — Review Material bug lives here
+\- `components/InstructionMode.tsx` — Sectioned instruction cards, swipe navigation, ELI5 toggle
 
 \- `components/SessionSummaryDashboard.tsx` — Progress Dashboard (commit bedcad3)
 
@@ -54,11 +54,9 @@ Map skills, Development \& globalisation, Geographical enquiry
 
 \## Known Bug
 
-"Review Material" → quiz restart. `onComplete()` fires correctly in
+None. Review Material flow resolved — ref-based handleInstructionComplete
 
-InstructionMode.tsx. Root cause: unexpected `setAppState('start')` in
-
-render path. Not yet resolved.
+correctly returns to same question (trigger=user_request + hasQuestion=true path).
 
 
 
