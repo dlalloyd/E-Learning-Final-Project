@@ -11,7 +11,7 @@ Router paradigm, deployed to Vercel's edge network with a Supabase PostgreSQL
 database hosted in the Frankfurt (eu-central-1) region. This architectural
 choice departs from a microservices pattern: the adaptive engine, API routes,
 and frontend components all reside in a single codebase. This was a deliberate
-CSSE decision — the system's research contribution lies in the adaptive
+CSSE decision: the system's research contribution lies in the adaptive
 algorithm, not in distributed systems complexity, and a monolith reduced
 operational overhead and eliminated the inter-service latency that would
 have degraded the interactive learning experience.
@@ -20,7 +20,7 @@ The key architectural constraint is the \textbf{isolation of the adaptive
 engine}: the algorithm modules (\texttt{src/lib/algorithms/irt.ts} and
 \texttt{src/lib/algorithms/bkt.ts}) are implemented as pure functions with no
 direct database access. All database I/O passes through Next.js API route
-handlers, which orchestrate the learner state lifecycle — loading state,
+handlers, which orchestrate the learner state lifecycle: loading state,
 invoking engine functions, persisting updated state, and returning the
 question to the client. This isolation makes the engine independently testable
 and domain-agnostic: replacing the Geography question bank with any other KC
@@ -115,22 +115,22 @@ The \texttt{Session} model is the principal state carrier for the adaptive
 engine. Key fields:
 
 \begin{itemize}[leftmargin=2em]
-  \item \texttt{theta~Float} — current EAP ability estimate, initialised at
+  \item \texttt{theta~Float}: current EAP ability estimate, initialised at
         $-0.780$ (the 20th percentile derived from the self-pilot calibration,
         2026-02-26).
-  \item \texttt{thetaSd~Float} — posterior standard deviation, initialised at
+  \item \texttt{thetaSd~Float}: posterior standard deviation, initialised at
         $0.543$, used to widen or tighten the EAP prior.
-  \item \texttt{kcStates~String} — JSON-serialised
+  \item \texttt{kcStates~String}: JSON-serialised
         \texttt{Record\textless{}kcId, KCState\textgreater{}}, carrying the
         full BKT state for all 13 Knowledge Components between requests.
         JSON serialisation was chosen over a normalised \texttt{KCState} table
         to reduce read latency: a single \texttt{Session.findUnique} call
         returns all per-KC state without joins.
-  \item \texttt{condition~String} — \texttt{"adaptive"} or \texttt{"static"},
+  \item \texttt{condition~String}: \texttt{"adaptive"} or \texttt{"static"},
         assigned at signup via the \texttt{studyCondition} field on the
         \texttt{User} model, preventing self-selection bias in the
         within-subjects evaluation design.
-  \item \texttt{startedFromAssessmentId~String?} — links to the pre-test
+  \item \texttt{startedFromAssessmentId~String?}: links to the pre-test
         \texttt{Assessment} record that seeded the session's initial
         $\hat{\theta}$, providing a verifiable audit trail of cold-start
         seeding decisions.
@@ -143,18 +143,18 @@ The \texttt{Interaction} model records every question--answer event at full
 psychometric resolution:
 
 \begin{itemize}[leftmargin=2em]
-  \item \texttt{theta\_before}, \texttt{theta\_after} — EAP estimates
+  \item \texttt{theta\_before}, \texttt{theta\_after}: EAP estimates
         immediately before and after the response, enabling per-item
         $\Delta\theta$ analysis.
-  \item \texttt{pLearned\_before}, \texttt{pLearned\_after} — BKT posteriors
+  \item \texttt{pLearned\_before}, \texttt{pLearned\_after}: BKT posteriors
         for the question's KC, enabling per-response knowledge state analysis.
-  \item \texttt{hintsUsed~Int}, \texttt{hintLevelMax~Int} — total hints
+  \item \texttt{hintsUsed~Int}, \texttt{hintLevelMax~Int}: total hints
         accessed and the maximum hint level revealed, used by the credit
         factor computation in the BKT update.
-  \item \texttt{cognitiveLoad~Int?} — optional NASA-TLX style self-report
+  \item \texttt{cognitiveLoad~Int?}: optional NASA-TLX style self-report
         (1=Very Easy, 5=Very Difficult) collected after each question,
         enabling cognitive load analysis across Bloom levels.
-  \item \texttt{responseTimeMs~Int} — response latency in milliseconds,
+  \item \texttt{responseTimeMs~Int}: response latency in milliseconds,
         providing a behavioural correlate of item difficulty.
 \end{itemize}
 
@@ -186,15 +186,15 @@ The \texttt{AnalyticsEvent} model provides a structured event log for the
 five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 
 \begin{itemize}[leftmargin=2em]
-  \item \texttt{bloom\_escalation} — emitted when a learner's Bloom gate
+  \item \texttt{bloom\_escalation}: emitted when a learner's Bloom gate
         advances, with payload recording the KC, new Bloom level, and
         triggering $p(\text{Learned})$ value.
-  \item \texttt{variant\_pool\_exhausted} — emitted when no unseen variants
+  \item \texttt{variant\_pool\_exhausted}: emitted when no unseen variants
         remain for a KC-Bloom combination, triggering the fallback selection
         logic.
-  \item \texttt{kc\_mastered} — emitted when $p(\text{Learned}) \geq 0.95$
+  \item \texttt{kc\_mastered}: emitted when $p(\text{Learned}) \geq 0.95$
         for a KC, with payload recording the number of questions required.
-  \item \texttt{decay\_detected} — emitted at session start when a KC's
+  \item \texttt{decay\_detected}: emitted at session start when a KC's
         cross-session $p(\text{Learned})$ decline exceeds the decay threshold.
 \end{itemize}
 
@@ -568,13 +568,13 @@ The build pipeline executes the following steps on every push to the main
 branch:
 
 \begin{enumerate}[leftmargin=2em]
-  \item \texttt{prisma generate} — regenerates the Prisma client from the
+  \item \texttt{prisma generate}: regenerates the Prisma client from the
         current schema, ensuring type safety is up to date.
-  \item \texttt{tsc --noEmit} — TypeScript strict-mode type check. Build
+  \item \texttt{tsc --noEmit}: TypeScript strict-mode type check. Build
         fails on any type error.
-  \item \texttt{next build} — Next.js production build. Fails on any build
+  \item \texttt{next build}: Next.js production build. Fails on any build
         error or unresolved import.
-  \item Vercel deployment — if all previous steps pass, Vercel deploys the
+  \item Vercel deployment: if all previous steps pass, Vercel deploys the
         new build to the preview URL (for feature branches) or the production
         URL (for merges to main).
 \end{enumerate}
@@ -603,8 +603,8 @@ algorithmic, integration, and regression dimensions.
     interpolation at all three hint levels ($cf \in \{1.0, 0.85, 0.65\}$);
     and Bloom gate threshold enforcement. Tests are authored in Jest and
     execute as part of the local development workflow. The algorithm modules'
-    pure-function architecture --- no database calls, deterministic given the
-    same inputs --- makes them directly amenable to unit testing without mocking.
+    pure-function architecture (no database calls, deterministic given the
+    same inputs) makes them directly amenable to unit testing without mocking.
 
   \item[Integration testing.] The end-to-end session flow was validated
     through a structured developer self-pilot on 2026-02-26: a 13-question
@@ -638,8 +638,8 @@ The interface was developed to meet WCAG 2.1 Level AA accessibility guidelines
 \parencite{w3c2018}. The following controls were implemented:
 
 \begin{description}
-  \item[ARIA labels.] All icon-only interactive elements --- the hint panel
-    toggle, pause button, tab navigation icons, and progress indicators ---
+  \item[ARIA labels.] All icon-only interactive elements (the hint panel
+    toggle, pause button, tab navigation icons, and progress indicators)
     carry \texttt{aria-label} attributes describing their function, ensuring
     screen reader compatibility for learners using assistive technology.
   \item[Colour contrast.] Foreground text on authentication forms and answer

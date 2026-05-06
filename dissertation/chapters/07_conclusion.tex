@@ -22,8 +22,8 @@ learning transition equation was designed and implemented. This modification
 formalises the evidential relationship between scaffolding usage and mastery
 evidence by weighting the BKT posterior update according to the maximum hint
 level accessed per question. To the author's knowledge, this specific
-implementation --- interpolating between the full Bayesian posterior and the
-prior in proportion to the credit factor --- has not been published in the
+implementation (interpolating between the full Bayesian posterior and the
+prior in proportion to the credit factor) has not been published in the
 existing BKT literature, and represents a modest but concrete algorithmic
 contribution.
 
@@ -62,7 +62,7 @@ The answer is: \textit{yes, with qualification}. The algorithmic and technical
 components of the claim are fully established: the engine selects items by
 Fisher information at the learner's current $\hat{\theta}$, enforces
 Bloom-level gates, tracks per-KC BKT state, and applies credit-factor
-modifications for hint-assisted responses --- all as specified, all in a
+modifications for hint-assisted responses, all as specified, all in a
 production deployment. The empirical component of the claim is supported at
 proof-of-concept level by the $n = 4$ evaluation study, but cannot be
 confirmed at statistical confidence without a powered study with a completed
@@ -96,9 +96,9 @@ transparency matters for both academic scrutiny and learner trust.
 
 \textbf{Domain-agnostic architecture as a research platform.} The system's
 KC graph, IRT parameter store, and BKT state management are designed for
-extension. The most significant future direction --- Cross-Domain Knowledge
-Transfer, in which learning in Geography KCs informs the prior estimates for
-structurally related KCs in Mathematics or Computer Science --- is architecturally
+extension. The most significant future direction, Cross-Domain Knowledge
+Transfer (in which learning in Geography KCs informs the prior estimates for
+structurally related KCs in Mathematics or Computer Science), is architecturally
 feasible without algorithmic changes. This positions the project not as a
 finished product but as a research platform for investigating transfer learning
 in adaptive educational systems.
@@ -118,15 +118,15 @@ and its primary source of value.
 
 The scope reduction at Sprint 5 was the most professionally significant
 decision of the project. The original ambition was larger; the final system
-is more rigorous. That trade-off --- depth over breadth, defensible claims over
-impressive-sounding ones --- is the central lesson of the project and one that
+is more rigorous. That trade-off, depth over breadth, defensible claims over
+impressive-sounding ones, is the central lesson of the project and one that
 applies beyond academic work. A system that makes three well-evidenced claims
 is more valuable than one that makes ten weakly-evidenced ones.
 
 The experience of implementing a psychometric algorithm in a production web
-application --- handling the gap between the clean mathematics of the IRT
+application (handling the gap between the clean mathematics of the IRT
 equations and the messy realities of JSON serialisation, race conditions, and
-browser rendering --- has provided a level of engineering judgement that no
+browser rendering) has provided a level of engineering judgement that no
 coursework exercise could replicate. The Review Material bug, the EAP grid
 resolution issue, the K-means supersession: these are not failures. They are
 the data points from which engineering judgement is built.
@@ -139,7 +139,7 @@ design, SUS administration, misconception analysis). Each of these disciplines
 represents transferable knowledge that extends beyond the honours programme and
 contributes to a foundation for lifelong learning in educational technology,
 data science, and software architecture. The decision to work across domain
-boundaries --- rather than optimising depth in a single area --- reflects a
+boundaries, rather than optimising depth in a single area, reflects a
 deliberate professional development strategy: the highest-value engineering
 problems in the next decade will consistently sit at the intersection of
 technical implementation and domain expertise.
@@ -154,7 +154,7 @@ to any automated system across the full range of educational contexts and
 learner profiles. But the problem is tractable: the literature shows that
 well-designed adaptive systems can close the gap substantially, and that the
 key design variables are interaction granularity, principled algorithm
-selection, and transparent feedback --- not algorithmic complexity or scale.
+selection, and transparent feedback, not algorithmic complexity or scale.
 
 GeoMentor is a small contribution to a large problem. It demonstrates that
 these design principles can be implemented at production quality by a single

@@ -19,7 +19,7 @@ the credit factor modification for hint-assisted responses. All components
 behave as specified, as confirmed by the algorithm validation evidence in
 Track 1 (Section~\ref{sec:results_algorithm}).
 
-The empirical answer --- whether measurable learning gains actually occur --- is
+The empirical answer, whether measurable learning gains actually occur, is
 provisionally supported by the within-session $\Delta\hat{\theta}$ data
 collected from $n = 4$ participants, but cannot be stated with statistical
 confidence given the sample size. The honest position is: the system is
@@ -64,7 +64,7 @@ interaction granularity.
 \label{subsec:disc_kulik}
 
 \textcite{kulik2016} report a weighted mean effect size of $d = 0.66$ for
-systems implementing continuous real-time adaptation --- the category into which
+systems implementing continuous real-time adaptation, the category into which
 GeoMentor falls, since $\hat{\theta}$ and $p(\text{Learned})$ are updated after
 every single response. Their comparison with discrete checkpoint systems ($d =
 0.28$) supports the design decision to implement per-response EAP updating
@@ -84,9 +84,9 @@ project's claims. The opposite case is argued here.
 \textcite{desmarais2012} note that the most common failure mode in adaptive
 system research is shallow multi-domain validation, in which a system is
 demonstrated to work across many domains with weak evidence in each. Deep
-single-domain validation --- rigorous psychometric calibration, detailed
-misconception analysis, and multi-track validity evidence within one domain
---- produces more defensible research contributions. The geographic focus also
+single-domain validation (rigorous psychometric calibration, detailed
+misconception analysis, and multi-track validity evidence within one domain)
+produces more defensible research contributions. The geographic focus also
 enables a contribution that the multi-domain version could not have made:
 the demonstration that ITS methods transfer to a declarative-knowledge
 non-STEM domain is itself a research finding, addressing Gap 1 identified in
@@ -109,7 +109,7 @@ is therefore a validation decision, not an architectural constraint.
 
 The most significant limitation of this evaluation is the sample size of
 $n = 4$ external participants. Paired $t$-test at $n = 4$ has approximately
-19\% statistical power at $d = 0.76$ and $\alpha = 0.05$ --- effectively
+19\% statistical power at $d = 0.76$ and $\alpha = 0.05$, effectively
 indistinguishable from chance in terms of hypothesis testing. The evaluation's
 multi-method approach was adopted precisely because inferential statistics are
 not viable at this sample size. The findings reported in Chapter~\ref{ch:results}
@@ -153,7 +153,7 @@ Sprint~8, was never populated by the signup API route. The Prisma schema
 default (\texttt{"adaptive"}) therefore silently applied to every registered
 user, and the \texttt{ConditionExplainer} component presented participants
 with a binary choice between conditions rather than communicating a
-pre-assigned condition --- introducing self-selection bias at the point of
+pre-assigned condition, introducing self-selection bias at the point of
 evaluation. The bug was identified by comparing the dissertation's claim
 (``participants are randomly assigned to adaptive or static at account
 creation'') against the actual signup route implementation, and corrected
@@ -187,8 +187,8 @@ immediate next step for any continued development.
 \label{subsec:disc_single_session}
 
 The evaluation captured single-session data for all $n = 4$ participants.
-The BKT cross-session decay detection mechanism --- one of the system's novel
-contributions --- could therefore not be evaluated empirically. Similarly,
+The BKT cross-session decay detection mechanism, one of the system's novel
+contributions, could therefore not be evaluated empirically. Similarly,
 the 7-day delayed retention assessment was administered to zero
 participants within the available data collection window, providing no
 data for retention analysis. Multi-session
@@ -392,7 +392,7 @@ Prisma migration files provide a versioned, auditable schema history; and
 Vercel preview deployments enabled integration testing per feature branch
 before merge. The Review Material bug (Section~\ref{subsec:impl_review_bug})
 was identified during quality testing and documented honestly rather than
-concealed --- demonstrating that quality assurance is a process of finding
+concealed, demonstrating that quality assurance is a process of finding
 and disclosing defects, not of claiming defect-free code.
 
 A further quality episode arose during the write-up phase. The EAP

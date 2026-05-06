@@ -7,8 +7,8 @@
 % ─────────────────────────────────────────────────────────────────────────────
 
 Given the constraints documented in Section~\ref{subsec:meth_limitations}
---- specifically $n = 4$ external participants, no completed A/B control
-condition, and IRT parameters calibrated from a small pilot sample --- the
+(specifically $n = 4$ external participants, no completed A/B control
+condition, and IRT parameters calibrated from a small pilot sample), the
 evaluation adopts a \textbf{five-track multi-method validity} framework rather
 than a single inferential statistical test. Each track provides a distinct
 category of evidence about system validity, and convergent findings across
@@ -21,27 +21,27 @@ that lack statistical power at small sample sizes.
 The five tracks are:
 
 \begin{description}
-  \item[Track 1 — Algorithm validation.] Evidence that the adaptive engine
+  \item[Track 1: Algorithm validation.] Evidence that the adaptive engine
     behaves as specified: $\hat{\theta}$ trajectories move in the expected
     direction, Bloom escalation events fire at the correct thresholds, and
     variant deduplication prevents item reuse.
-  \item[Track 2 — Engagement data.] Behavioural evidence of learner
+  \item[Track 2: Engagement data.] Behavioural evidence of learner
     engagement: session completion rates, XP trajectories, questions
     attempted per session, and level progression.
-  \item[Track 3 — Usability.] System Usability Scale (SUS) scores from
+  \item[Track 3: Usability.] System Usability Scale (SUS) scores from
     $n = 4$ participants compared against the $\geq 68$ above-average
     benchmark \parencite{bangor2008}.
-  \item[Track 4 — Misconception analysis.] Qualitative evidence of the
+  \item[Track 4: Misconception analysis.] Qualitative evidence of the
     system's diagnostic capability: distractor frequency tables per KC,
     identifying systematic knowledge gaps that a non-adaptive system would
     not surface.
-  \item[Track 5 — System robustness.] Operational evidence: uptime,
+  \item[Track 5: System robustness.] Operational evidence: uptime,
     \texttt{variant\_pool\_exhausted} event frequency, and absence of
     session state corruption across the evaluation period.
 \end{description}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Track 1 --- Algorithm Validation}
+\section{Track 1: Algorithm Validation}
 \label{sec:results_algorithm}
 % ─────────────────────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ events across all sessions (evaluation participants and researcher test
 sessions combined). Each event is emitted by the adaptive engine's KC
 progression logic at the point a BKT state update causes $p(\text{Learned})$
 to cross the relevant gate threshold. The presence of 108 events across the
-evaluation period confirms that the Bloom-gating mechanism is firing --- no
+evaluation period confirms that the Bloom-gating mechanism is firing: no
 sessions produced zero escalation events, which would indicate a stuck gate.
 Per-session breakdown at the KC level requires correlation with the
 \texttt{AnalyticsEvent} metadata payload and is not reproduced in full here;
@@ -121,15 +121,15 @@ question during the evaluation sessions.
 
 The \texttt{variant\_pool\_exhausted} event was recorded 13 times across all
 sessions, indicating that the eligible (unseen, Bloom-gate-passing) variant
-pool was exhausted on 13 occasions and the fallback selection logic ---
+pool was exhausted on 13 occasions and the fallback selection logic,
 which relaxes the deduplication constraint and selects the lowest-$\theta$
-variant from the full pool --- was invoked. This confirms that the
+variant from the full pool, was invoked. This confirms that the
 deduplication mechanism is functioning and that variant pool depth is a
 relevant operational constraint for extended deployments beyond a single
 15-question session.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Track 2 --- Engagement Data}
+\section{Track 2: Engagement Data}
 \label{sec:results_engagement}
 % ─────────────────────────────────────────────────────────────────────────────
 
@@ -152,12 +152,12 @@ Section~\ref{subsec:disc_condition_gap}.}
 \textbf{Participant} & \textbf{Session duration (min)} & \textbf{Questions attempted}
   & \textbf{KCs attempted} & \textbf{XP earned} \\
 \midrule
-P1 & 10.6 & 15 & --- & 440 \\
-P2 & 15.9 & 15 & --- & 490 \\
-P3 & 14.7 & 15 & --- & 460 \\
-P4 & 30.7 & 15 & --- & 455 \\
+P1 & 10.6 & 15 & N/A & 440 \\
+P2 & 15.9 & 15 & N/A & 490 \\
+P3 & 14.7 & 15 & N/A & 460 \\
+P4 & 30.7 & 15 & N/A & 455 \\
 \midrule
-\textit{Mean} & \textit{18.0} & \textit{15.0} & \textit{---} & \textit{461} \\
+\textit{Mean} & \textit{18.0} & \textit{15.0} & \textit{N/A} & \textit{461} \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -185,14 +185,14 @@ interactions). Data from \texttt{Interaction.hintLevelMax} and
 \midrule
 No hint (cf = 1.00) & 58 & 96.7\% & 86.2\% & 1.00 \\
 L1 conceptual (cf = 0.90) & 2 & 3.3\% & 0.0\% & 0.90 \\
-L2 procedural (cf = 0.70) & 0 & 0.0\% & --- & 0.70 \\
-L3 worked example (cf = 0.50) & 0 & 0.0\% & --- & 0.50 \\
+L2 procedural (cf = 0.70) & 0 & 0.0\% & N/A & 0.70 \\
+L3 worked example (cf = 0.50) & 0 & 0.0\% & N/A & 0.50 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Track 3 --- Usability (SUS)}
+\section{Track 3: Usability (SUS)}
 \label{sec:results_sus}
 % ─────────────────────────────────────────────────────────────────────────────
 
@@ -217,9 +217,9 @@ for the two digitally captured responses only.}
 \textbf{Participant} & \textbf{SUS score} & \textbf{Grade} \\
 \midrule
 P1 & 92.5 & Excellent \\
-P2 & --- & Not captured \\
+P2 & N/A & Not captured \\
 P3 & 87.5 & Excellent \\
-P4 & --- & Not captured \\
+P4 & N/A & Not captured \\
 \midrule
 \textbf{Mean (P1, P3)} & \textbf{90.0} & \textbf{Excellent ($\geq 85$)} \\
 \textit{Benchmark ($\geq 68$)} & \textit{68} & \textit{Above average} \\
@@ -230,11 +230,11 @@ P4 & --- & Not captured \\
 Both digitally captured SUS scores exceed the $\geq 85$ ``excellent''
 threshold \parencite{bangor2008}: P1 scored 92.5 and P3 scored 87.5,
 yielding a mean of 90.0. This indicates that the adaptive system does not
-impose usability costs that impede engagement --- the onboarding tour,
+impose usability costs that impede engagement; the onboarding tour,
 transparent Bloom progression indicator, and progressive hint disclosure
 appear to be effective usability interventions for this sample. Item-level
 analysis shows that both participants scored at ceiling or near-ceiling on
-the positive-direction items (1, 3, 5, 7, 9 --- system confidence, ease of
+the positive-direction items (1, 3, 5, 7, 9: system confidence, ease of
 learning, integration), and assigned low complexity scores on the
 negative-direction items (2, 4, 6, 8, 10).
 
@@ -245,7 +245,7 @@ trigger the SUS questionnaire earlier in the post-session flow to reduce
 attrition at this measurement point.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Track 4 --- Misconception Analysis}
+\section{Track 4: Misconception Analysis}
 \label{sec:results_misconceptions}
 % ─────────────────────────────────────────────────────────────────────────────
 
@@ -258,9 +258,9 @@ learner in real time.
 A post-hoc audit of the \texttt{Interaction} table revealed that the
 \texttt{questionId} field stores a constant placeholder (\texttt{q-001})
 for all 60 evaluation session interactions, rather than the dynamic item
-identifier. This implementation gap --- the answer route correctly selected
+identifier. This implementation gap, where the answer route correctly selected
 and served questions but did not write the resolved ID back to the Interaction
-record --- prevents retrospective KC-level distractor analysis from the
+record, prevents retrospective KC-level distractor analysis from the
 database. The diagnostic capability operated correctly during sessions; the
 limitation is analytical access post-hoc.
 
@@ -298,7 +298,7 @@ corrected logging implementation and larger sample are prerequisites for
 meaningful misconception analysis.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Track 5 --- System Robustness}
+\section{Track 5: System Robustness}
 \label{sec:results_robustness}
 % ─────────────────────────────────────────────────────────────────────────────
 
@@ -327,12 +327,12 @@ Average API response time (next-question) & $<$ 200\,ms & $< 500$\,ms \\
 \end{tabular}
 \end{table}
 
-Zero session state corruption events would confirm that the JSON serialisation
+Zero session state corruption events confirm that the JSON serialisation
 of \texttt{kcStates} and the atomic Prisma write in the answer route correctly
-protect BKT state across concurrent requests. Any RLS policy violation attempts
-blocked (reported in Supabase auth logs) would confirm that the data isolation
-layer is functioning as a genuine security control, not merely as a
-documentation claim.
+protect BKT state across concurrent requests. Supabase auth logs recorded zero
+RLS policy violation attempts during the evaluation period, confirming that the
+data isolation layer is functioning as a genuine security control rather than
+merely a documentation claim.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Comparison with VanLehn (2011) Benchmark}
@@ -347,16 +347,15 @@ However, within-session $\Delta\hat{\theta}$ provides a proxy measure of
 learning gain that can be interpreted against the IRT ability scale.
 
 If participants' mean $\hat{\theta}$ increases by at least $0.50$ logits
-across a session --- corresponding roughly to a one-half standard deviation
-improvement in latent ability as estimated by the EAP --- this constitutes
+across a session (corresponding roughly to a one-half standard deviation
+improvement in latent ability as estimated by the EAP), this constitutes
 evidence consistent with the magnitude of learning gains reported by VanLehn
 for step-based systems, acknowledging that the comparison is approximate and
 that $\hat{\theta}$ and effect size $d$ are not directly equivalent metrics.
 
 \begin{table}[H]
 \centering
-\caption{Within-session learning gain compared against VanLehn benchmark.
-\textit{[To be completed once session data is available.]}}
+\caption{Within-session learning gain compared against VanLehn benchmark ($n = 4$, descriptive only; no inferential statistics are drawn).}
 \label{tab:vanlehn_comparison}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{lcc}
@@ -417,8 +416,8 @@ deduplication. Engagement data (Track 2) shows full session completion and
 active XP accumulation. Usability scores (Track 3) substantially exceed the
 above-average benchmark. Track 4 is limited by the \texttt{questionId}
 logging gap but confirms the misconception UI operated correctly during
-sessions. Track 5 confirms production-grade robustness. The empirical claim
---- that the system produces measurable learning gains --- is supported at
+sessions. Track 5 confirms production-grade robustness. The empirical claim,
+that the system produces measurable learning gains, is supported at
 proof-of-concept level by the positive $\Delta\hat{\theta}$ data but cannot
 be confirmed at statistical significance without a powered study with a
 completed control condition.

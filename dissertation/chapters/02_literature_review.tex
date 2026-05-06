@@ -55,8 +55,8 @@ mechanisms of a skilled human tutor?
 \textcite{vanlehn2011}, in a landmark meta-analysis of 60 controlled studies,
 partially resolves this question. His findings demonstrate that human tutoring
 achieves $d = 0.79$ (not $d = 2.0$, reconsidering Bloom's original conditions),
-and that step-based ITS --- those providing feedback on individual solution steps
-rather than only final answers --- achieve $d = 0.76$, statistically
+and that step-based ITS (those providing feedback on individual solution steps
+rather than only final answers) achieve $d = 0.76$, statistically
 indistinguishable from human tutoring. This ``interaction plateau hypothesis''
 has profound design implications: the critical determinant of ITS effectiveness
 is not algorithmic sophistication but interaction granularity. Systems providing
@@ -66,7 +66,7 @@ of whether the underlying algorithm is Bayesian, logistic, or rule-based.
 \textcite{chi2008} provide a complementary account: the effectiveness of human
 tutors derives less from domain expertise and more from their ability to elicit
 and respond to student reasoning in real time. This suggests that ITS design
-should prioritise responsive feedback over predictive accuracy --- a principle
+should prioritise responsive feedback over predictive accuracy, a principle
 that directly informs the scaffolding architecture of the system presented in
 this project (Section~\ref{sec:meth_scaffolding}).
 
@@ -95,8 +95,8 @@ beyond simple difficulty sequencing. In Geography specifically, the domain
 comprises interconnected declarative knowledge (factual recall of locations and
 physical processes), procedural knowledge (applying geographic frameworks to
 novel data), and conceptual understanding (explaining spatial patterns and causal
-relationships). The prerequisite graph implemented in this system --- encoding
-structural dependencies between 13 Knowledge Components --- is the knowledge
+relationships). The prerequisite graph implemented in this system, encoding
+structural dependencies between 13 Knowledge Components, is the knowledge
 representation mechanism enabling the adaptive engine to navigate this
 multi-dimensional knowledge space.
 
@@ -124,8 +124,8 @@ threshold. In this system, the BKT mastery gate requires $p(\text{Learned}) \geq
 Bloom's cognitive taxonomy \parencite{bloom1956}, subsequently revised by
 \textcite{anderson2001}, provides the hierarchical framework for question
 difficulty beyond simple parametric difficulty. The revised taxonomy identifies
-six cognitive levels --- Remembering, Understanding, Applying, Analysing,
-Evaluating, and Creating --- with each level requiring cognitive operations of
+six cognitive levels (Remembering, Understanding, Applying, Analysing,
+Evaluating, and Creating), with each level requiring cognitive operations of
 greater abstraction than the last. This project implements a three-level
 approximation: Bloom Level 1 (Remembering: recall of geographic facts), Level 2
 (Understanding: explanation of geographic processes), and Level 3 (Applying:
@@ -140,9 +140,9 @@ structure.
 \subsection{Spaced Repetition and Successive Relearning}
 \label{subsec:lr_spacing}
 
-A body of evidence spanning over a century establishes that distributed practice
---- spacing repetitions of study material over time rather than massing them in
-a single session --- substantially improves long-term retention
+A body of evidence spanning over a century establishes that distributed practice,
+defined as spacing repetitions of study material over time rather than massing
+them in a single session, substantially improves long-term retention
 \parencite{cepeda2006}. The spacing effect is one of the most replicated
 findings in experimental psychology and has direct implications for adaptive
 system design.
@@ -152,8 +152,8 @@ activation-based memory model, demonstrating that the optimal inter-repetition
 interval depends on the current activation strength of a memory trace. Items
 with high activation (recently practised) benefit from longer gaps; items with
 low activation (not recently practised, or not yet consolidated) benefit from
-shorter gaps and more repetition. Successive Relearning --- the practice of
-re-presenting material after forgetting has begun rather than before --- is
+shorter gaps and more repetition. Successive Relearning, the practice of
+re-presenting material after forgetting has begun rather than before, is
 particularly effective for long-term retention, producing superior recall at
 delayed tests compared to massed practice or standard spaced repetition
 \parencite{kornell2009}.
@@ -275,7 +275,7 @@ in the risk register (Section~\ref{sec:meth_evaluation}).
 IRT has no native mechanism for tracking knowledge acquisition over time; it
 estimates ability at a point in time from a response pattern. For multi-KC
 curricula requiring longitudinal tracking, IRT must be combined with a
-knowledge state model --- hence the hybrid architecture.
+knowledge state model, hence the hybrid architecture.
 
 \subsection{Bayesian Knowledge Tracing}
 \label{subsec:lr_bkt}
@@ -526,16 +526,16 @@ Conceptual understanding (explaining spatial inequality, evaluating sustainabili
 arguments) involves higher-order reasoning. \textcite{lambert2010} characterise
 Geography as a ``thinking subject'', emphasising that effective Geography
 education requires learners to develop not merely factual recall but geographical
-imaginations --- the capacity to interpret spatial patterns and processes.
+imaginations: the capacity to interpret spatial patterns and processes.
 This epistemological complexity makes Geography a meaningful and underexplored
 testbed for ITS research.
 
 \textcite{bednarz2013} identify significant underrepresentation of UK Geography
 specifically in adaptive learning research. The predominance of North American
 and East Asian studies \parencite{matos2025} means that the particular pedagogical
-context of UK KS3/GCSE Geography --- including the AQA/Edexcel specification
+context of UK KS3/GCSE Geography, including the AQA/Edexcel specification
 structure, the emphasis on fieldwork and geographical enquiry, and the UK
-curriculum's distinctive treatment of human-physical geography integration ---
+curriculum's distinctive treatment of human-physical geography integration,
 remains insufficiently studied.
 
 \subsection{Long-Term Retention}
@@ -642,8 +642,8 @@ learner-controlled session pacing.
 \textcite{baker2021} identify three primary ethical dimensions of adaptive
 educational systems. First, \textit{transparency}: learners and educators have a
 right to understand why the system presents particular content. Black-box
-adaptation --- in which the learner experiences a changing sequence of questions
-with no explanation of the underlying logic --- erodes trust and agency.
+adaptation, in which the learner experiences a changing sequence of questions
+with no explanation of the underlying logic, erodes trust and agency.
 \textcite{murray1999} argues that for educational systems to be accepted by
 learners, the system's reasoning must be at least partially legible.
 
@@ -728,9 +728,9 @@ research is a methodological limitation noted by multiple reviewers
 assessment provides evidence on the persistence of adaptive learning gains.
 
 \textbf{Gap 5: Interpretability under real-time adaptation.}
-The interpretability-efficacy trade-off identified by \textcite{matos2025}
---- in which more powerful adaptive algorithms tend to be less interpretable
---- is addressed through the combination of an interpretable probabilistic model
+The interpretability-efficacy trade-off identified by \textcite{matos2025},
+in which more powerful adaptive algorithms tend to be less interpretable,
+is addressed through the combination of an interpretable probabilistic model
 (IRT+BKT, where every adaptive decision is traceable to specific parameter values)
 and a transparent visualisation layer (the five-tab session summary dashboard).
 

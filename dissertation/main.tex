@@ -11,7 +11,7 @@
 \setlength{\headheight}{14.5pt}
 
 % ── Typography ────────────────────────────────────────────────────────────────
-% microtype removed — adds 30-60s per compile on long documents
+% microtype removed: adds 30-60s per compile on long documents
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{parskip}
@@ -160,9 +160,9 @@ graph aligned to the AQA GCSE Geography specification.
 
 The project follows a Design Science Research methodology across ten two-week
 development sprints. Evaluation adopts a five-track multi-method validity
-framework --- algorithm validation, engagement data, System Usability Scale
-(SUS) usability, misconception analysis, and system robustness monitoring ---
-in response to the constraint of $n = 4$ external participants, for which
+framework of algorithm validation, engagement data, System Usability Scale
+(SUS) usability, misconception analysis, and system robustness monitoring,
+adopted in response to the constraint of $n = 4$ external participants, for which
 inferential statistics are not viable.
 
 All four participants exhibited positive within-session $\Delta\hat{\theta}$
@@ -184,7 +184,16 @@ subject domains.
 
 \chapter*{Acknowledgements}
 \addcontentsline{toc}{chapter}{Acknowledgements}
-\textit{[Optional. Write last.]}
+
+The author would like to thank Dr Peter Robinson, project supervisor, for his
+guidance throughout the development of this project and for his approval of
+the Sprint 5 scope reduction from multi-domain to single-domain validation,
+a decision that materially improved the rigour of the final evaluation.
+
+Thanks are also due to the study participants who gave their time during the
+evaluation period, and to the University of Hull Department of Computer
+Science for providing the academic framework within which this project was
+conducted.
 
 \tableofcontents
 \listoffigures
@@ -204,5 +213,9 @@ subject domains.
 
 % ── Bibliography ──────────────────────────────────────────────────────────────
 \printbibliography[heading=bibintoc, title={References}]
+
+% ── Appendices ────────────────────────────────────────────────────────────────
+\appendix
+\input{chapters/appendix_ai_declaration}
 
 \end{document}
