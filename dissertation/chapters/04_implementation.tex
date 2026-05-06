@@ -25,6 +25,9 @@ invoking engine functions, persisting updated state, and returning the
 question to the client. This isolation makes the engine independently testable
 and domain-agnostic: replacing the Geography question bank with any other KC
 graph requires no changes to the algorithm modules.
+Figure~\ref{fig:component_diagram} shows the four-layer architecture;
+Figure~\ref{fig:sequence_diagram} shows the question lifecycle across
+both routes; Figure~\ref{fig:er_diagram} shows the core database schema.
 
 \subsection{Technology Stack}
 \label{subsec:impl_stack}
@@ -98,6 +101,70 @@ relevant to the CP6 CSSE competency requirement:
     pure-function architecture means algorithm changes can be made without
     touching the database or API layers.
 \end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={rectangle, rounded corners=3pt, draw=black!60, fill=white,
+              text width=3.3cm, minimum height=0.85cm, align=center, font=\small},
+  engine/.style={box, fill=blue!7, draw=blue!45},
+  arr/.style={-{Latex[length=2mm]}, thick, black!45, shorten >=2pt, shorten <=2pt},
+  lbl/.style={font=\scriptsize, black!55, fill=white, inner sep=1pt}
+]
+%% Layer dividers
+\draw[black!14, dashed] (-5.4, 5.0) -- (5.4, 5.0);
+\draw[black!14, dashed] (-5.4, 3.0) -- (5.4, 3.0);
+\draw[black!14, dashed] (-5.4, 1.0) -- (5.4, 1.0);
+
+%% Layer labels
+\node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 6.0) {Presentation};
+\node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 4.0) {Application};
+\node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 2.0) {Adaptive Engine};
+\node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 0.0) {Persistence};
+
+%% Components
+\node[box] (fe) at (0, 6.0)
+  {\textbf{React Frontend}\\{\scriptsize SessionPage $\cdot$ QuestionCard}};
+
+\node[box] (nq) at (-2.8, 4.0)
+  {\textbf{GET /next-question}\\{\scriptsize item selection}};
+\node[box] (an) at (2.8, 4.0)
+  {\textbf{POST /answer}\\{\scriptsize state update}};
+
+\node[engine] (irt) at (-2.8, 2.0)
+  {\textbf{IRT Module}\\{\scriptsize \texttt{irt.ts} $\cdot$ pure function}};
+\node[engine] (bkt) at (2.8, 2.0)
+  {\textbf{BKT Module}\\{\scriptsize \texttt{bkt.ts} $\cdot$ pure function}};
+
+\node[box] (db) at (0, 0.0)
+  {\textbf{Supabase PostgreSQL}\\{\scriptsize Prisma ORM $\cdot$ eu-central-1}};
+
+%% Presentation to Application
+\draw[arr] (fe.south west) -- node[lbl, left]{HTTP GET} (nq.north);
+\draw[arr] (fe.south east) -- node[lbl, right]{HTTP POST} (an.north);
+
+%% Application to Engine
+\draw[arr] (nq) -- node[lbl, left=2pt]{Fisher info} (irt);
+\draw[arr] (an.south west) -- node[lbl, above, sloped]{EAP update} (irt.north east);
+\draw[arr] (an) -- node[lbl, right=2pt]{BKT update} (bkt);
+
+%% Application to Persistence (IRT/BKT have no DB arrows)
+\draw[arr] (nq.south east) -- node[lbl, above, sloped]{load variants} (db.north west);
+\draw[arr] (an.south west) -- node[lbl, above, sloped]{persist state} (db.north east);
+
+%% Engine decoupling box
+\draw[blue!25, thick, dashed, rounded corners=5pt]
+  (-4.5, 1.05) rectangle (4.5, 2.95);
+\node[font=\scriptsize\itshape, text=blue!50, anchor=south east] at (4.4, 1.1)
+  {zero UI/DB dependencies};
+\end{tikzpicture}
+\caption{UML 2.5 component diagram of the GeoMentor system. The Adaptive Engine
+subsystem (IRT and BKT modules) is implemented as pure functions with no direct
+UI or database dependencies. All state I/O passes through the Next.js API route
+handlers, which load learner state from Supabase and persist updated state after
+each response.}
+\label{fig:component_diagram}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Database Schema}
@@ -197,6 +264,118 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \item \texttt{decay\_detected}: emitted at session start when a KC's
         cross-session $p(\text{Learned})$ decline exceeds the decay threshold.
 \end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  ent/.style={rectangle, draw=black!60, fill=white, rounded corners=2pt,
+              text width=2.8cm, align=center, font=\small, inner sep=4pt},
+  hdr/.style={ent, fill=gray!12, font=\small\bfseries, minimum height=0.65cm},
+  arr/.style={-{Latex[length=2mm]}, thick, black!50, shorten >=2pt, shorten <=2pt},
+  lbl/.style={font=\scriptsize, black!55, fill=white, inner sep=1pt}
+]
+
+%% ── User ───────────────────────────────────────────────────────────
+\node[hdr] (uH) at (0, 8)      {User};
+\node[ent, anchor=north] (u) at (uH.south) {
+  \texttt{id} (PK)\\
+  \texttt{email}\\
+  \texttt{xpTotal}\\
+  \texttt{kcsMastered}
+};
+
+%% ── Session ─────────────────────────────────────────────────────────
+\node[hdr] (sH) at (4, 8)      {Session};
+\node[ent, anchor=north] (s) at (sH.south) {
+  \texttt{id} (PK)\\
+  \texttt{userId} (FK)\\
+  \texttt{theta}\\
+  \texttt{kcStates} (JSON)\\
+  \texttt{condition}
+};
+
+%% ── Interaction ──────────────────────────────────────────────────────
+\node[hdr] (iH) at (8, 8)      {Interaction};
+\node[ent, anchor=north] (i) at (iH.south) {
+  \texttt{id} (PK)\\
+  \texttt{sessionId} (FK)\\
+  \texttt{isCorrect}\\
+  \texttt{theta\_before/after}\\
+  \texttt{pLearned\_before/after}
+};
+
+%% ── QuestionTemplate ─────────────────────────────────────────────────
+\node[hdr] (tH) at (4, 3.5)    {QuestionTemplate};
+\node[ent, anchor=north] (t) at (tH.south) {
+  \texttt{id} (PK)\\
+  \texttt{kcId}\\
+  \texttt{bloomLevel}\\
+  \texttt{a}, \texttt{b}, \texttt{c}
+};
+
+%% ── QuestionVariant ──────────────────────────────────────────────────
+\node[hdr] (vH) at (8, 3.5)    {QuestionVariant};
+\node[ent, anchor=north] (v) at (vH.south) {
+  \texttt{id} (PK)\\
+  \texttt{templateId} (FK)\\
+  \texttt{content}
+};
+
+%% ── UserVariantSeen ──────────────────────────────────────────────────
+\node[hdr] (uvH) at (4, 0)     {UserVariantSeen};
+\node[ent, anchor=north] (uv) at (uvH.south) {
+  \texttt{userId} (FK, unique)\\
+  \texttt{variantId} (FK, unique)
+};
+
+%% ── SUSResponse ──────────────────────────────────────────────────────
+\node[hdr] (susH) at (0, 3.5)  {SUSResponse};
+\node[ent, anchor=north] (sus) at (susH.south) {
+  \texttt{id} (PK)\\
+  \texttt{sessionId} (FK)\\
+  \texttt{score}
+};
+
+%% ── Relationships ───────────────────────────────────────────────────
+%% User 1..N Session
+\draw[arr] (uH.east) -- node[lbl, above]{1} (sH.west)
+  node[lbl, near start, above]{};
+\node[lbl] at (0.8, 8.2)  {1};
+\node[lbl] at (3.1, 8.2)  {N};
+
+%% Session 1..N Interaction
+\draw[arr] (sH.east) -- node[lbl]{} (iH.west);
+\node[lbl] at (4.8, 8.2)  {1};
+\node[lbl] at (7.1, 8.2)  {N};
+
+%% QuestionTemplate 1..N QuestionVariant
+\draw[arr] (tH.east) -- node[lbl]{} (vH.west);
+\node[lbl] at (4.8, 3.7)  {1};
+\node[lbl] at (7.1, 3.7)  {N};
+
+%% QuestionVariant 1..N Interaction
+\draw[arr] (vH.north) -- node[lbl, right]{N} (iH.south)
+  node[lbl, near end, right]{1};
+
+%% User 1..N UserVariantSeen
+\draw[arr] (u.south) -- ++(0,-0.5) -| (uv.north west)
+  node[lbl, near start, right]{1};
+\node[lbl] at (3.3, 0.3) {N};
+
+%% QuestionVariant 1..N UserVariantSeen
+\draw[arr] (v.south) -- node[lbl, right]{1} (uv.north east)
+  node[lbl, near end, right]{N};
+
+%% Session 0..1 SUSResponse
+\draw[arr] (sH.west) -- node[lbl, above]{1} (susH.east)
+  node[lbl, near end, above]{0..1};
+\end{tikzpicture}
+\caption{Entity-relationship diagram for the six core Prisma schema models.
+\texttt{UserVariantSeen} enforces a unique (userId, variantId) constraint, preventing
+variant re-exposure across sessions. \texttt{kcStates} is stored as a JSON string on
+\texttt{Session} to eliminate join overhead on the hot adaptive selection path.}
+\label{fig:er_diagram}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Adaptive Engine Implementation}
@@ -347,6 +526,92 @@ distractor selection frequencies across all interactions for a given KC,
 returning the most common incorrect attractors. This route powers the
 Misconceptions tab and constitutes Track 4 of the multi-method evaluation
 (Section~\ref{sec:results_misconceptions}).
+
+Figure~\ref{fig:sequence_diagram} illustrates the complete adaptive question
+lifecycle across both routes.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  actor/.style={rectangle, rounded corners=2pt, draw=black!60, fill=gray!8,
+                text width=1.85cm, minimum height=0.65cm, align=center,
+                font=\footnotesize\bfseries},
+  msg/.style={-{Latex[length=2mm]}, thick, black!55, shorten >=2pt},
+  ret/.style={-{Latex[length=2mm]}, thick, black!35, dashed, shorten >=2pt},
+  lbl/.style={font=\scriptsize, black!60, fill=white, inner sep=1pt}
+]
+%% Actor x-positions
+\def\xL{0}    % Learner
+\def\xF{2.0}  % Frontend
+\def\xA{4.3}  % /answer route
+\def\xE{6.8}  % IRT + BKT Engine
+\def\xD{9.5}  % Supabase DB
+
+%% Actor headers
+\node[actor] at (\xL, 9.5) {Learner};
+\node[actor] at (\xF, 9.5) {Frontend};
+\node[actor] at (\xA, 9.5) {API Routes};
+\node[actor] at (\xE, 9.5) {IRT + BKT\\Engine};
+\node[actor] at (\xD, 9.5) {Supabase\\PostgreSQL};
+
+%% Lifelines
+\draw[black!18, dashed] (\xL, 9.1) -- (\xL, 0.3);
+\draw[black!18, dashed] (\xF, 9.1) -- (\xF, 0.3);
+\draw[black!18, dashed] (\xA, 9.1) -- (\xA, 0.3);
+\draw[black!18, dashed] (\xE, 9.1) -- (\xE, 0.3);
+\draw[black!18, dashed] (\xD, 9.1) -- (\xD, 0.3);
+
+%% ── POST /answer critical path ─────────────────────────────────
+\node[anchor=west, font=\scriptsize\itshape, text=black!40] at (-0.5, 8.85)
+  {POST /answer};
+
+\draw[msg] (\xL, 8.6) -- (\xF, 8.6)
+  node[lbl, midway, above]{submit response};
+\draw[msg] (\xF, 8.1) -- (\xA, 8.1)
+  node[lbl, midway, above]{POST /answer};
+\draw[msg] (\xA, 7.5) -- (\xD, 7.5)
+  node[lbl, midway, above]{load session state};
+\draw[ret] (\xD, 7.1) -- (\xA, 7.1)
+  node[lbl, midway, above]{theta, kcStates};
+\draw[msg] (\xA, 6.5) -- (\xE, 6.5)
+  node[lbl, midway, above]{eapUpdate() + bktUpdate()};
+\draw[ret] (\xE, 6.1) -- (\xA, 6.1)
+  node[lbl, midway, above]{theta\_new, pLearned\_new};
+\draw[msg] (\xA, 5.5) -- (\xD, 5.5)
+  node[lbl, midway, above]{persist Session + Interaction};
+\draw[ret] (\xD, 5.1) -- (\xA, 5.1)
+  node[lbl, midway, above]{ack};
+\draw[ret] (\xA, 4.5) -- (\xF, 4.5)
+  node[lbl, midway, above]{feedback payload};
+\draw[ret] (\xF, 4.1) -- (\xL, 4.1)
+  node[lbl, midway, above]{render feedback};
+
+%% ── GET /next-question path ────────────────────────────────────
+\draw[black!15] (-0.5, 3.75) -- (10.0, 3.75);
+\node[anchor=west, font=\scriptsize\itshape, text=black!40] at (-0.5, 3.6)
+  {GET /next-question};
+
+\draw[msg] (\xF, 3.4) -- (\xA, 3.4)
+  node[lbl, midway, above]{GET /next-question};
+\draw[msg] (\xA, 2.9) -- (\xD, 2.9)
+  node[lbl, midway, above]{load unseen variants};
+\draw[ret] (\xD, 2.5) -- (\xA, 2.5)
+  node[lbl, midway, above]{eligible pool};
+\draw[msg] (\xA, 2.0) -- (\xE, 2.0)
+  node[lbl, midway, above]{selectByFisher(theta, pool)};
+\draw[ret] (\xE, 1.6) -- (\xA, 1.6)
+  node[lbl, midway, above]{next variant};
+\draw[ret] (\xA, 1.1) -- (\xF, 1.1)
+  node[lbl, midway, above]{question payload};
+\draw[ret] (\xF, 0.6) -- (\xL, 0.6)
+  node[lbl, midway, above]{render question};
+\end{tikzpicture}
+\caption{Sequence diagram of the adaptive question lifecycle across the two
+API routes. The IRT and BKT engine functions are pure computations invoked
+synchronously within the API route handler; all database I/O is mediated
+by the route layer. The total round-trip latency target is $<500$\,ms.}
+\label{fig:sequence_diagram}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Security Implementation}
