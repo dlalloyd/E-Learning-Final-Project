@@ -34,12 +34,15 @@ const prerequisiteEdges = [
   { fromKCId: 'UK_rivers', toKCId: 'north_atlantic_drift', masteryThreshold: 0.8 },
   { fromKCId: 'UK_county_locations', toKCId: 'continental_effect', masteryThreshold: 0.8 },
   
+  // L2 → L2: westerly winds are prerequisite for understanding rain shadow
+  { fromKCId: 'westerly_winds_rainfall', toKCId: 'pennines_rain_shadow', masteryThreshold: 0.8 },
   // Level 3 depends on Level 2
   { fromKCId: 'maritime_continental', toKCId: 'climate_classification', masteryThreshold: 0.8 },
   { fromKCId: 'continental_effect', toKCId: 'climate_classification', masteryThreshold: 0.8 },
   { fromKCId: 'north_atlantic_drift', toKCId: 'climate_change_application', masteryThreshold: 0.8 },
   { fromKCId: 'UK_rivers', toKCId: 'flood_risk_integration', masteryThreshold: 0.8 },
   { fromKCId: 'pennines_rain_shadow', toKCId: 'flood_risk_integration', masteryThreshold: 0.8 },
+  { fromKCId: 'westerly_winds_rainfall', toKCId: 'flood_risk_integration', masteryThreshold: 0.8 },
 ];
 
 async function main() {

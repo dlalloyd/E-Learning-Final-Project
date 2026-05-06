@@ -42,101 +42,152 @@ Chapter~\ref{ch:discussion}.
 \subsection{Knowledge Component Ontology}
 \label{subsec:meth_kc_ontology}
 
-The curriculum is decomposed into 13 Knowledge Components (KCs) aligned with
-the AQA GCSE Geography specification. A KC is defined as a unit of knowledge
-or skill that can be independently assessed and for which mastery can be
-operationally defined \parencite{koedinger2012}. Table~\ref{tab:kc_table}
-lists all 13 KCs with their assigned Bloom cognitive level ceiling and BKT
-prior parameters.
+The curriculum is decomposed into 13 Knowledge Components (KCs) covering UK
+physical geography and climate. A KC is defined as a unit of knowledge or
+skill that can be independently assessed and for which mastery can be
+operationally defined \parencite{koedinger2012}. The domain was scoped to UK
+climate systems after a Sprint~5 risk assessment identified that calibrating
+IRT parameters across the full AQA specification breadth was infeasible
+within the available development timeline; this decision is further justified
+in Section~\ref{sec:meth_evaluation}. Table~\ref{tab:kc_table} lists all
+13 KCs with their Bloom cognitive level ceiling and BKT prior parameters
+as implemented in \texttt{DEFAULT\_BKT\_PARAMS} in \texttt{src/lib/algorithms/bkt.ts}.
 
 \begin{table}[H]
 \centering
-\caption{Knowledge Component ontology: 13 KCs with BKT prior parameters.}
+\caption{Knowledge Component ontology: 13 KCs with BKT prior parameters.
+  $p(S)$ and $p(G)$ are KC-specific; $p(G) = 0.25$ for all KCs (fixed,
+  four-option MCQ). KC identifiers match the live \texttt{DEFAULT\_BKT\_PARAMS}.}
 \label{tab:kc_table}
 \renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{lXccc}
+\begin{tabularx}{\textwidth}{lXcccc}
 \toprule
-\textbf{ID} & \textbf{Knowledge Component} & \textbf{Bloom ceiling} &
-  $p(L_0)$ & $p(T)$ \\
+\textbf{\#} & \textbf{Knowledge Component} & \textbf{Bloom} &
+  $p(L_0)$ & $p(T)$ & $p(S)$ \\
 \midrule
-KC01 & Tectonic Hazards          & L3 & 0.30 & 0.12 \\
-KC02 & Weather Hazards           & L3 & 0.30 & 0.12 \\
-KC03 & Climate Change            & L3 & 0.35 & 0.10 \\
-KC04 & Ecosystems                & L2 & 0.40 & 0.14 \\
-KC05 & Urban Issues              & L3 & 0.25 & 0.10 \\
-KC06 & Changing Economic World   & L3 & 0.25 & 0.10 \\
-KC07 & Resource Management       & L2 & 0.35 & 0.12 \\
-KC08 & Physical Landscapes UK    & L2 & 0.45 & 0.15 \\
-KC09 & Glacial Landscapes        & L2 & 0.35 & 0.12 \\
-KC10 & Fieldwork \& Skills       & L3 & 0.30 & 0.12 \\
-KC11 & Map Skills                & L2 & 0.50 & 0.18 \\
-KC12 & Development \& Globalisation & L3 & 0.20 & 0.08 \\
-KC13 & Geographical Enquiry      & L3 & 0.25 & 0.10 \\
+\multicolumn{6}{l}{\textit{Level 1: Remembering}} \\
+1  & UK Capitals (\texttt{UK\_capitals})                   & L1 & 0.60 & 0.25 & 0.08 \\
+2  & County Locations (\texttt{UK\_county\_locations})     & L1 & 0.45 & 0.20 & 0.12 \\
+3  & UK Rivers (\texttt{UK\_rivers})                       & L1 & 0.55 & 0.22 & 0.10 \\
+4  & UK Mountains (\texttt{UK\_mountains})                 & L1 & 0.50 & 0.18 & 0.10 \\
+5  & National Parks (\texttt{UK\_national\_parks})         & L1 & 0.45 & 0.16 & 0.12 \\
+\multicolumn{6}{l}{\textit{Level 2: Understanding}} \\
+6  & Westerly Winds \& Rainfall (\texttt{westerly\_winds\_rainfall})    & L2 & 0.25 & 0.18 & 0.12 \\
+7  & Maritime vs Continental (\texttt{maritime\_continental})           & L2 & 0.20 & 0.18 & 0.12 \\
+8  & Pennines Rain Shadow (\texttt{pennines\_rain\_shadow})             & L2 & 0.20 & 0.15 & 0.15 \\
+9  & North Atlantic Drift (\texttt{north\_atlantic\_drift})             & L2 & 0.22 & 0.18 & 0.12 \\
+10 & Continental Effect (\texttt{continental\_effect})                  & L2 & 0.18 & 0.15 & 0.15 \\
+\multicolumn{6}{l}{\textit{Level 3: Applying}} \\
+11 & Climate Classification (\texttt{climate\_classification})          & L3 & 0.15 & 0.15 & 0.18 \\
+12 & Climate Change Application (\texttt{climate\_change\_application}) & L3 & 0.12 & 0.15 & 0.18 \\
+13 & Flood Risk Integration (\texttt{flood\_risk\_integration})         & L3 & 0.10 & 0.12 & 0.20 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The slip and guess parameters are fixed at domain-standard values following
-\textcite{pardos2011}: $p(S) = 0.10$ and $p(G) = 0.20$ for all KCs, reflecting
-the structured multiple-choice format and the non-trivial difficulty of
-Geography items even for capable learners.
+Prior probabilities $p(L_0)$ are highest for Level~1 KCs (0.45--0.60),
+reflecting realistic recall knowledge for adult learners, and lowest for
+Level~3 KCs (0.10--0.15), reflecting the synthesis demands of integrative
+items. Within Level~1, UK~Capitals receives the highest $p(L_0) = 0.60$
+(only four facts to recall) while County~Locations and National~Parks receive
+lower priors (0.45), reflecting the larger recall set of 47 counties and
+15 parks respectively. The learning transition $p(T)$ follows the same
+gradient: $p(T) = 0.25$ for UK~Capitals (rapid mastery expected),
+$p(T) = 0.16$ for National~Parks (slow acquisition over a large item set),
+and $p(T) = 0.12$ for Flood~Risk~Integration (synthesis-level knowledge
+acquired incrementally). The slip parameter $p(S)$ scales with Bloom level
+(0.08--0.12 at L1, 0.12--0.15 at L2, 0.18--0.20 at L3), reflecting that
+higher-order items carry greater response uncertainty even for knowledgeable
+learners \parencite{pardos2011}. The guess parameter $p(G) = 0.25$ is fixed
+for all KCs, corresponding to the uniform four-option MCQ format.
 
 \subsection{Prerequisite Graph}
 \label{subsec:meth_prerequisite}
 
 KCs are not independent; mastery of foundational KCs is necessary for
 productive engagement with dependent KCs. The prerequisite graph encodes these
-structural dependencies and governs mastery-gated KC progression. The graph is
-implemented as a directed acyclic graph (DAG) seeded in the database at
-deployment time and queried by the adaptive engine at each question selection
-step.
+structural dependencies and governs mastery-gated KC progression. The graph
+is implemented as a directed acyclic graph (DAG) with 12 edges seeded into
+the \texttt{PrerequisiteEdge} table at deployment time and queried by the
+adaptive engine at each question selection step.
+
+Five Level~1$\to$Level~2 edges gate the climate-process KCs behind the
+spatial KCs that contextualise them (for example, understanding westerly
+winds presupposes knowing where the relevant counties and coastlines are).
+One Level~2$\to$Level~2 edge encodes the causal dependency of the Pennines
+Rain~Shadow on westerly wind patterns: a learner cannot meaningfully reason
+about orographic enhancement without first understanding the prevailing air
+mass trajectory. Five Level~2$\to$Level~3 edges and one direct
+Level~1$\to$Level~3 edge gate the integrative KCs.
+
+All mastery gates use a uniform threshold of $p(\text{Learned}) \geq 0.80$,
+consistent with the BKT mastery convention established by
+\textcite{corbett1995} and used in empirically validated ITS deployments
+\parencite{vanlehn2011}. UK~Capitals and National~Parks have no outgoing
+edges: they are assessed throughout sessions but do not gate any higher-order
+KCs.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  node distance=1.5cm and 2.2cm,
-  kc/.style={rectangle, rounded corners=4pt, draw=black!70, fill=blue!8,
-    text width=3.2cm, align=center, font=\small, minimum height=0.8cm},
-  arr/.style={-{Latex[length=2mm]}, gray!70, thick}
+  kc/.style={rectangle, rounded corners=4pt, draw=black!70,
+    text width=2.5cm, align=center, font=\scriptsize,
+    minimum height=0.9cm, inner sep=3pt},
+  l1/.style={kc, fill=green!7, draw=green!55!black},
+  l2/.style={kc, fill=blue!7, draw=blue!45},
+  l3/.style={kc, fill=orange!8, draw=orange!65!black},
+  arr/.style={-{Latex[length=2mm]}, gray!65, thick}
 ]
-% Row 1: foundational
-\node[kc] (k11) {KC11\\Map Skills};
-\node[kc, right=of k11] (k04) {KC04\\Ecosystems};
-\node[kc, right=of k04] (k08) {KC08\\Physical Landscapes};
 
-% Row 2
-\node[kc, below=of k11] (k01) {KC01\\Tectonic Hazards};
-\node[kc, below=of k04] (k07) {KC07\\Resource Mgmt};
-\node[kc, below=of k08] (k09) {KC09\\Glacial Landscapes};
+%% Level 1: Remembering (y = 4.5) -- five spatial/locational KCs
+\node[l1] (caps)    at ( 0.0, 4.5) {UK\\Capitals};
+\node[l1] (county)  at ( 2.5, 4.5) {County\\Locations};
+\node[l1] (rivers)  at ( 5.0, 4.5) {UK\\Rivers};
+\node[l1] (mnts)    at ( 7.5, 4.5) {UK\\Mountains};
+\node[l1] (parks)   at (10.0, 4.5) {National\\Parks};
 
-% Row 3
-\node[kc, below=of k01] (k02) {KC02\\Weather Hazards};
-\node[kc, below=of k07] (k05) {KC05\\Urban Issues};
-\node[kc, below=of k09] (k06) {KC06\\Economic World};
+%% Level 2: Understanding (y = 2.5) -- five climate-process KCs
+\node[l2] (westerly)    at ( 0.0, 2.5) {Westerly\\Winds};
+\node[l2] (maritime)    at ( 2.5, 2.5) {Maritime vs\\Continental};
+\node[l2] (pennines)    at ( 5.0, 2.5) {Pennines Rain\\Shadow};
+\node[l2] (natldrift)   at ( 7.5, 2.5) {N.\ Atlantic\\Drift};
+\node[l2] (continental) at (10.0, 2.5) {Continental\\Effect};
 
-% Row 4: integrative
-\node[kc, below=1.5cm of k02] (k03) {KC03\\Climate Change};
-\node[kc, right=2.2cm of k03] (k13) {KC13\\Geographical Enquiry};
-\node[kc, right=2.2cm of k13] (k10) {KC10\\Fieldwork \& Skills};
-\node[kc, right=2.2cm of k10] (k12) {KC12\\Development};
+%% Level 3: Applying (y = 0.5) -- three integrative KCs
+\node[l3] (climclass)  at ( 2.5, 0.5) {Climate\\Classification};
+\node[l3] (climchange) at ( 6.5, 0.5) {Climate Change\\Application};
+\node[l3] (flood)      at (10.0, 0.5) {Flood Risk\\Integration};
 
-% Edges
-\draw[arr] (k11) -- (k01);
-\draw[arr] (k11) -- (k09);
-\draw[arr] (k04) -- (k07);
-\draw[arr] (k08) -- (k09);
-\draw[arr] (k01) -- (k02);
-\draw[arr] (k07) -- (k05);
-\draw[arr] (k06) -- (k12);
-\draw[arr] (k02) -- (k03);
-\draw[arr] (k05) -- (k03);
-\draw[arr] (k08) -- (k10);
-\draw[arr] (k11) -- (k13);
-\draw[arr] (k03) -- (k13);
+%% L1 → L2 (five edges)
+\draw[arr] (county) to[out=200,in=80]  (westerly);
+\draw[arr] (county) --                 (maritime);
+\draw[arr] (county) to[out=350,in=90]  (continental);
+\draw[arr] (mnts)   --                 (pennines);
+\draw[arr] (rivers) --                 (natldrift);
+
+%% L2 → L2 (one edge: westerly winds enable rain shadow understanding)
+\draw[arr] (westerly) -- (pennines);
+
+%% L2 → L3 (four edges)
+\draw[arr] (maritime)    -- (climclass);
+\draw[arr] (continental) to[out=215,in=5]   (climclass);
+\draw[arr] (natldrift)   -- (climchange);
+\draw[arr] (pennines)    to[out=310,in=150]  (flood);
+
+%% L1 → L3 (one cross-level edge)
+\draw[arr] (rivers) to[out=265,in=130] (flood);
+
+%% L2 → L3 (westerly winds → flood risk via rainfall loading)
+\draw[arr] (westerly) to[out=320,in=185] (flood);
+
 \end{tikzpicture}
-\caption{KC prerequisite DAG. Arrows indicate structural dependency
-(prerequisite \textrightarrow{} dependent). Mastery gate: $p(\text{Learned}) \geq 0.80$
-on a prerequisite KC before dependent KC items are unlocked.}
+\caption{KC prerequisite DAG: 13 nodes across three Bloom levels
+  (green~=~L1 Remembering, blue~=~L2 Understanding, orange~=~L3 Applying).
+  Arrows indicate structural dependency (prerequisite $\to$ dependent);
+  mastery gate $p(\text{Learned}) \geq 0.80$ on the prerequisite KC before
+  dependent-KC items unlock. KCs without outgoing edges (UK~Capitals,
+  National~Parks) are assessed throughout but do not gate higher-order KCs.
+  12 edges total; 5 L1$\to$L2, 1 L2$\to$L2, 5 L2$\to$L3, 1 L1$\to$L3.}
 \label{fig:kc_dag}
 \end{figure}
 

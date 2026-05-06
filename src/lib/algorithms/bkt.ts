@@ -61,7 +61,7 @@ export const DEFAULT_BKT_PARAMS: Record<string, BKTParams> = {
   // Level 1, Remembering. Priors seeded at or above the 0.5 progression threshold
   // so that prerequisite gating does not cold-lock L2 / L3 at the start of a session.
   UK_national_parks: {
-    pL0: 0.50, pT: 0.20, pS: 0.10, pG: 0.25,
+    pL0: 0.45, pT: 0.16, pS: 0.12, pG: 0.25,
   },
   UK_capitals: {
     pL0: 0.60, pT: 0.25, pS: 0.08, pG: 0.25,
@@ -73,7 +73,7 @@ export const DEFAULT_BKT_PARAMS: Record<string, BKTParams> = {
     pL0: 0.55, pT: 0.22, pS: 0.10, pG: 0.25,
   },
   UK_mountains: {
-    pL0: 0.50, pT: 0.20, pS: 0.10, pG: 0.25,
+    pL0: 0.50, pT: 0.18, pS: 0.10, pG: 0.25,
   },
 
   // Level 2 - Understanding (moderate prior; requires causal reasoning)
