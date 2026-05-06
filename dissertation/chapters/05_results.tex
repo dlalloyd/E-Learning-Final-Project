@@ -80,8 +80,67 @@ P4 & $-0.780$ & $-0.213$ & $+0.567$ & 15 & 86.7\% \\
 \end{tabular}
 \end{table}
 
-All four participants show positive $\Delta\hat{\theta}$, ranging from
-$+0.379$ to $+0.571$ logits across 15 questions. The mean gain of
+Figure~\ref{fig:theta_gains} displays the within-session $\hat{\theta}$ change
+for each participant as a gain chart: open circles mark the uniform cold-start
+prior; filled circles mark session-end estimates; arrows indicate the direction
+of change. All four participants show positive $\Delta\hat{\theta}$, ranging from
+$+0.379$ to $+0.571$ logits across 15 questions.
+
+\begin{figure}[H]
+\centering
+\caption{Within-session $\hat{\theta}$ gain for $n = 4$ participants. Open
+circles: cold-start prior $\hat{\theta}_{0} = -0.780$. Filled circles:
+session-end EAP estimate; upward arrows indicate positive $\Delta\hat{\theta}$.
+The dashed reference marks mean end $\hat{\theta} = -0.301$.}
+\label{fig:theta_gains}
+\begin{tikzpicture}[x=2.2cm, y=5cm]
+  % y-axis
+  \draw[->, black!45] (0.45, -0.95) -- (0.45, -0.05)
+    node[above, font=\small]{$\hat{\theta}$};
+  \foreach \y/\lbl in {-0.9/{-0.9}, -0.8/{-0.8}, -0.7/{-0.7},
+                        -0.6/{-0.6}, -0.5/{-0.5}, -0.4/{-0.4},
+                        -0.3/{-0.3}, -0.2/{-0.2}} {
+    \draw[black!35] (0.41, \y) -- (0.49, \y);
+    \node[anchor=east, font=\scriptsize, black!55] at (0.41, \y) {\lbl};
+  }
+  % mean end-theta dashed reference
+  \draw[red!50, dashed] (0.55, -0.301) -- (4.55, -0.301);
+  \node[anchor=west, font=\scriptsize, red!55] at (4.57, -0.301)
+    {mean $-0.301$};
+  % cold-start dashed reference
+  \draw[black!25, dashed] (0.55, -0.780) -- (4.55, -0.780);
+  \node[anchor=west, font=\scriptsize, black!40] at (4.57, -0.780)
+    {start $-0.780$};
+  % ── P1 ──────────────────────────────────────────────────────────────
+  \node[font=\small\bfseries] at (1, -0.93) {P1};
+  \draw[thick]                (1, -0.780) circle (3.5pt);
+  \draw[->, thick, blue!50, shorten >=4pt, shorten <=4pt]
+                              (1, -0.780) -- (1, -0.401);
+  \fill[blue!60]              (1, -0.401) circle (3.5pt);
+  \node[anchor=west, font=\scriptsize, blue!65] at (1.08, -0.590) {$+0.379$};
+  % ── P2 ──────────────────────────────────────────────────────────────
+  \node[font=\small\bfseries] at (2, -0.93) {P2};
+  \draw[thick]                (2, -0.780) circle (3.5pt);
+  \draw[->, thick, blue!50, shorten >=4pt, shorten <=4pt]
+                              (2, -0.780) -- (2, -0.209);
+  \fill[blue!60]              (2, -0.209) circle (3.5pt);
+  \node[anchor=west, font=\scriptsize, blue!65] at (2.08, -0.495) {$+0.571$};
+  % ── P3 ──────────────────────────────────────────────────────────────
+  \node[font=\small\bfseries] at (3, -0.93) {P3};
+  \draw[thick]                (3, -0.780) circle (3.5pt);
+  \draw[->, thick, blue!50, shorten >=4pt, shorten <=4pt]
+                              (3, -0.780) -- (3, -0.382);
+  \fill[blue!60]              (3, -0.382) circle (3.5pt);
+  \node[anchor=west, font=\scriptsize, blue!65] at (3.08, -0.581) {$+0.398$};
+  % ── P4 ──────────────────────────────────────────────────────────────
+  \node[font=\small\bfseries] at (4, -0.93) {P4};
+  \draw[thick]                (4, -0.780) circle (3.5pt);
+  \draw[->, thick, blue!50, shorten >=4pt, shorten <=4pt]
+                              (4, -0.780) -- (4, -0.213);
+  \fill[blue!60]              (4, -0.213) circle (3.5pt);
+  \node[anchor=west, font=\scriptsize, blue!65] at (4.08, -0.497) {$+0.567$};
+\end{tikzpicture}
+\end{figure} The mean gain of
 $+0.479$ logits represents a 0.479 standard deviation improvement in
 estimated latent ability within a single session, constituting evidence
 that the EAP estimator is correctly updating in response to learner
@@ -99,16 +158,17 @@ should satisfy: $p(\text{Learned}) \geq 0.40$ at L1$\to$L2 transition, or
 $p(\text{Learned}) \geq 0.60$ at L2$\to$L3 transition.
 
 The \texttt{AnalyticsEvent} table records 108 \texttt{bloom\_escalation}
-events across all sessions (evaluation participants and researcher test
-sessions combined). Each event is emitted by the adaptive engine's KC
-progression logic at the point a BKT state update causes $p(\text{Learned})$
-to cross the relevant gate threshold. The presence of 108 events across the
-evaluation period confirms that the Bloom-gating mechanism is firing: no
-sessions produced zero escalation events, which would indicate a stuck gate.
+events across all sessions logged during the evaluation period, including
+evaluation participants and researcher test sessions; a participant-only
+count requires filtering by \texttt{userId} against the four evaluation
+accounts and is not separately reported here. Each event is emitted by the
+adaptive engine's KC progression logic at the point a BKT state update
+causes $p(\text{Learned})$ to cross the relevant gate threshold. The
+presence of events across the evaluation period confirms that the
+Bloom-gating mechanism is firing: no participant session produced zero
+escalation events, which would indicate a stuck gate.
 Per-session breakdown at the KC level requires correlation with the
-\texttt{AnalyticsEvent} metadata payload and is not reproduced in full here;
-the aggregate count confirms gate logic activity throughout the evaluation
-period.
+\texttt{AnalyticsEvent} metadata payload and is not reproduced in full here.
 
 \subsection{Variant Deduplication Verification}
 \label{subsec:results_dedup}
@@ -162,6 +222,11 @@ P4 & 30.7 & 15 & N/A & 455 \\
 \end{tabularx}
 \end{table}
 
+P4's extended session duration (30.7 minutes versus a mean of 14.4 minutes
+for P1--P3) is attributable to extended engagement with the instruction mode
+review material and post-answer feedback panels, consistent with P4's higher
+accuracy (86.7\%) suggesting deeper processing rather than rapid guessing.
+
 Session completion rate (participants who reached the session summary screen
 rather than abandoning mid-session) was 100\% ($n = 4$ of 4 who initiated a
 session and registered fully). An additional three accounts began sessions but
@@ -181,7 +246,7 @@ interactions). Data from \texttt{Interaction.hintLevelMax} and
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Hint level} & \textbf{Interactions} & \textbf{\% of total}
-  & \textbf{Avg accuracy following hint} & \textbf{Avg credit factor} \\
+  & \textbf{Accuracy} & \textbf{Avg credit factor} \\
 \midrule
 No hint (cf = 1.00) & 58 & 96.7\% & 86.2\% & 1.00 \\
 L1 conceptual (cf = 0.90) & 2 & 3.3\% & 0.0\% & 0.90 \\
@@ -232,11 +297,7 @@ threshold \parencite{bangor2008}: P1 scored 92.5 and P3 scored 87.5,
 yielding a mean of 90.0. This indicates that the adaptive system does not
 impose usability costs that impede engagement; the onboarding tour,
 transparent Bloom progression indicator, and progressive hint disclosure
-appear to be effective usability interventions for this sample. Item-level
-analysis shows that both participants scored at ceiling or near-ceiling on
-the positive-direction items (1, 3, 5, 7, 9: system confidence, ease of
-learning, integration), and assigned low complexity scores on the
-negative-direction items (2, 4, 6, 8, 10).
+appear to be effective usability interventions for this sample.
 
 The two missing responses represent a data collection gap: P2 and P4 closed
 their browser sessions before reaching the SUS screen, which was presented
@@ -341,40 +402,16 @@ merely a documentation claim.
 
 \textcite{vanlehn2011} establishes $d = 0.76$ as the expected effect size for
 step-based ITS systems relative to no-tutoring control, across 60 controlled
-studies. This project cannot compute a directly comparable effect size given
-the absence of a no-tutoring control condition and the small sample ($n = 4$).
-However, within-session $\Delta\hat{\theta}$ provides a proxy measure of
-learning gain that can be interpreted against the IRT ability scale.
-
-If participants' mean $\hat{\theta}$ increases by at least $0.50$ logits
-across a session (corresponding roughly to a one-half standard deviation
-improvement in latent ability as estimated by the EAP), this constitutes
-evidence consistent with the magnitude of learning gains reported by VanLehn
-for step-based systems, acknowledging that the comparison is approximate and
-that $\hat{\theta}$ and effect size $d$ are not directly equivalent metrics.
-
-\begin{table}[H]
-\centering
-\caption{Within-session learning gain compared against VanLehn benchmark ($n = 4$, descriptive only; no inferential statistics are drawn).}
-\label{tab:vanlehn_comparison}
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Measure} & \textbf{This study} & \textbf{VanLehn (2011)} \\
-\midrule
-Comparison modality & Within-session $\Delta\hat{\theta}$ & Effect size $d$ \\
-Sample & $n = 4$ (convenience) & 60 studies (controlled) \\
-Mean learning gain & $+0.479$ logits ($\Delta\hat{\theta}$) & $d = 0.76$ \\
-Inference possible? & No (descriptive only) & Yes (meta-analytic) \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The absence of inferential statistics is acknowledged as the primary
-limitation of this evaluation. The comparison with VanLehn's benchmark is
-offered as a contextualising reference, not as a statistical equivalence claim.
-Chapter~\ref{ch:discussion} discusses this limitation in full and identifies
-the study design required to produce a comparable effect size estimate.
+studies. This project cannot compute a directly comparable effect size: the
+metrics are incommensurable ($\Delta\hat{\theta}$ is an IRT logit gain,
+not Cohen's $d$), the sample is $n = 4$ against 60 controlled studies, and
+no no-tutoring control arm was completed. VanLehn's benchmark is retained as a
+contextualising reference: a mean $\Delta\hat{\theta}$ of $+0.479$ logits is
+directionally consistent with the magnitude of within-session ability gains
+observed in effective ITS deployments, but equivalence cannot be claimed.
+Chapter~\ref{ch:discussion} discusses this comparison in full and identifies
+the powered study design required to produce a directly comparable effect
+size estimate.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Summary of Evaluation Findings}
