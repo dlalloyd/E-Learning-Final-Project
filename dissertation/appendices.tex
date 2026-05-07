@@ -1,0 +1,34 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\linespread{1.05}
+
+\usepackage[a4paper, margin=2.5cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{amsmath}
+
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+  pdftitle={GeoMentor: Appendices},
+  pdfauthor={Dylan Bengi}
+]{hyperref}
+
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+\begin{document}
+
+\appendix
+\input{chapters/appendix_ai_declaration}
+
+\end{document}

@@ -285,7 +285,7 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── Session ─────────────────────────────────────────────────────────
-\node[hdr] (sH) at (4, 8)      {Session};
+\node[hdr] (sH) at (5, 8)      {Session};
 \node[ent, anchor=north] (s) at (sH.south) {
   \texttt{id} (PK)\\
   \texttt{userId} (FK)\\
@@ -295,7 +295,7 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── Interaction ──────────────────────────────────────────────────────
-\node[hdr] (iH) at (8, 8)      {Interaction};
+\node[hdr] (iH) at (10, 8)     {Interaction};
 \node[ent, anchor=north] (i) at (iH.south) {
   \texttt{id} (PK)\\
   \texttt{sessionId} (FK)\\
@@ -305,7 +305,7 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── QuestionTemplate ─────────────────────────────────────────────────
-\node[hdr] (tH) at (4, 3.5)    {QuestionTemplate};
+\node[hdr] (tH) at (5, 3.5)    {QuestionTemplate};
 \node[ent, anchor=north] (t) at (tH.south) {
   \texttt{id} (PK)\\
   \texttt{kcId}\\
@@ -314,7 +314,7 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── QuestionVariant ──────────────────────────────────────────────────
-\node[hdr] (vH) at (8, 3.5)    {QuestionVariant};
+\node[hdr] (vH) at (10, 3.5)   {QuestionVariant};
 \node[ent, anchor=north] (v) at (vH.south) {
   \texttt{id} (PK)\\
   \texttt{templateId} (FK)\\
@@ -322,7 +322,7 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── UserVariantSeen ──────────────────────────────────────────────────
-\node[hdr] (uvH) at (4, 0)     {UserVariantSeen};
+\node[hdr] (uvH) at (5, 0)     {UserVariantSeen};
 \node[ent, anchor=north] (uv) at (uvH.south) {
   \texttt{userId} (FK, unique)\\
   \texttt{variantId} (FK, unique)
@@ -337,38 +337,34 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
 };
 
 %% ── Relationships ───────────────────────────────────────────────────
-%% User 1..N Session
-\draw[arr] (uH.east) -- node[lbl, above]{1} (sH.west)
-  node[lbl, near start, above]{};
-\node[lbl] at (0.8, 8.2)  {1};
-\node[lbl] at (3.1, 8.2)  {N};
+%% User 1..N Session  (gap: x 1.4 to 3.6)
+\draw[arr] (uH.east) -- node[lbl, near start, above]{1}
+                         node[lbl, near end,   above]{N} (sH.west);
 
-%% Session 1..N Interaction
-\draw[arr] (sH.east) -- node[lbl]{} (iH.west);
-\node[lbl] at (4.8, 8.2)  {1};
-\node[lbl] at (7.1, 8.2)  {N};
+%% Session 1..N Interaction  (gap: x 6.4 to 8.6)
+\draw[arr] (sH.east) -- node[lbl, near start, above]{1}
+                         node[lbl, near end,   above]{N} (iH.west);
 
-%% QuestionTemplate 1..N QuestionVariant
-\draw[arr] (tH.east) -- node[lbl]{} (vH.west);
-\node[lbl] at (4.8, 3.7)  {1};
-\node[lbl] at (7.1, 3.7)  {N};
+%% QuestionTemplate 1..N QuestionVariant  (gap: x 6.4 to 8.6)
+\draw[arr] (tH.east) -- node[lbl, near start, above]{1}
+                         node[lbl, near end,   above]{N} (vH.west);
 
-%% QuestionVariant 1..N Interaction
-\draw[arr] (vH.north) -- node[lbl, right]{N} (iH.south)
-  node[lbl, near end, right]{1};
+%% QuestionVariant 1..N Interaction  (vertical)
+\draw[arr] (vH.north) -- node[lbl, near start, right]{N}
+                          node[lbl, near end,   right]{1} (iH.south);
 
-%% User 1..N UserVariantSeen
+%% User 1..N UserVariantSeen  (routed path)
 \draw[arr] (u.south) -- ++(0,-0.5) -| (uv.north west)
   node[lbl, near start, right]{1};
-\node[lbl] at (3.3, 0.3) {N};
+\node[lbl] at (3.4, 0.3) {N};
 
-%% QuestionVariant 1..N UserVariantSeen
-\draw[arr] (v.south) -- node[lbl, right]{1} (uv.north east)
-  node[lbl, near end, right]{N};
+%% QuestionVariant 1..N UserVariantSeen  (diagonal)
+\draw[arr] (v.south) -- node[lbl, near start, right]{1}
+                         node[lbl, near end,   right]{N} (uv.north east);
 
-%% Session 0..1 SUSResponse
-\draw[arr] (sH.west) -- node[lbl, above]{1} (susH.east)
-  node[lbl, near end, above]{0..1};
+%% Session 0..1 SUSResponse  (diagonal)
+\draw[arr] (sH.west) -- node[lbl, near start, above]{1}
+                         node[lbl, near end,   above]{0..1} (susH.east);
 \end{tikzpicture}
 \caption{Entity-relationship diagram for the six core Prisma schema models.
 \texttt{UserVariantSeen} enforces a unique (userId, variantId) constraint, preventing
@@ -542,10 +538,10 @@ lifecycle across both routes.
 ]
 %% Actor x-positions
 \def\xL{0}    % Learner
-\def\xF{2.0}  % Frontend
-\def\xA{4.3}  % /answer route
-\def\xE{6.8}  % IRT + BKT Engine
-\def\xD{9.5}  % Supabase DB
+\def\xF{2.2}  % Frontend
+\def\xA{4.8}  % /answer route
+\def\xE{7.6}  % IRT + BKT Engine
+\def\xD{10.8} % Supabase DB
 
 %% Actor headers
 \node[actor] at (\xL, 9.5) {Learner};
@@ -570,15 +566,15 @@ lifecycle across both routes.
 \draw[msg] (\xF, 8.1) -- (\xA, 8.1)
   node[lbl, midway, above]{POST /answer};
 \draw[msg] (\xA, 7.5) -- (\xD, 7.5)
-  node[lbl, midway, above]{load session state};
+  node[lbl, midway, above]{load state};
 \draw[ret] (\xD, 7.1) -- (\xA, 7.1)
   node[lbl, midway, above]{theta, kcStates};
 \draw[msg] (\xA, 6.5) -- (\xE, 6.5)
-  node[lbl, midway, above]{eapUpdate() + bktUpdate()};
+  node[lbl, midway, above]{EAP + BKT update};
 \draw[ret] (\xE, 6.1) -- (\xA, 6.1)
   node[lbl, midway, above]{theta\_new, pLearned\_new};
 \draw[msg] (\xA, 5.5) -- (\xD, 5.5)
-  node[lbl, midway, above]{persist Session + Interaction};
+  node[lbl, midway, above]{persist state};
 \draw[ret] (\xD, 5.1) -- (\xA, 5.1)
   node[lbl, midway, above]{ack};
 \draw[ret] (\xA, 4.5) -- (\xF, 4.5)
@@ -587,7 +583,7 @@ lifecycle across both routes.
   node[lbl, midway, above]{render feedback};
 
 %% ── GET /next-question path ────────────────────────────────────
-\draw[black!15] (-0.5, 3.75) -- (10.0, 3.75);
+\draw[black!15] (-0.5, 3.75) -- (11.5, 3.75);
 \node[anchor=west, font=\scriptsize\itshape, text=black!40] at (-0.5, 3.6)
   {GET /next-question};
 
@@ -598,7 +594,7 @@ lifecycle across both routes.
 \draw[ret] (\xD, 2.5) -- (\xA, 2.5)
   node[lbl, midway, above]{eligible pool};
 \draw[msg] (\xA, 2.0) -- (\xE, 2.0)
-  node[lbl, midway, above]{selectByFisher(theta, pool)};
+  node[lbl, midway, above]{Fisher select};
 \draw[ret] (\xE, 1.6) -- (\xA, 1.6)
   node[lbl, midway, above]{next variant};
 \draw[ret] (\xA, 1.1) -- (\xF, 1.1)

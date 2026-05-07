@@ -31,6 +31,11 @@
 \usepackage{float}
 \usepackage[labelfont=bf]{caption}
 
+% ── Float spacing ─────────────────────────────────────────────────────────────
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{14pt plus 2pt minus 4pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+
 % ── Code listings ─────────────────────────────────────────────────────────────
 \usepackage{listings}
 \usepackage{xcolor}
@@ -213,9 +218,5 @@ conducted.
 
 % ── Bibliography ──────────────────────────────────────────────────────────────
 \printbibliography[heading=bibintoc, title={References}]
-
-% ── Appendices ────────────────────────────────────────────────────────────────
-\appendix
-\input{chapters/appendix_ai_declaration}
 
 \end{document}
