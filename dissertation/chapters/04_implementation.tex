@@ -6,31 +6,22 @@
 \label{sec:impl_architecture}
 % ─────────────────────────────────────────────────────────────────────────────
 
-GeoMentor is implemented as a monolithic Next.js 14 application using the App
-Router paradigm, deployed to Vercel's edge network with a Supabase PostgreSQL
-database hosted in the Frankfurt (eu-central-1) region. This architectural
-choice departs from a microservices pattern: the adaptive engine, API routes,
-and frontend components all reside in a single codebase. This was a deliberate
-CSSE decision: the system's research contribution lies in the adaptive
-algorithm, not in distributed systems complexity, and a monolith reduced
-operational overhead and eliminated the inter-service latency that would
-have degraded the interactive learning experience.
+GeoMentor is implemented as a monolithic Next.js~14 application deployed to
+Vercel's edge network, with Supabase PostgreSQL hosted in the Frankfurt
+(eu-central-1) region. The monolithic architecture was a deliberate decision:
+the research contribution lies in the adaptive algorithm, not distributed
+systems complexity, and a monolith reduces operational overhead and eliminates
+inter-service latency. The key architectural constraint is the \textbf{isolation
+of the adaptive engine}: the algorithm modules (\texttt{irt.ts} and
+\texttt{bkt.ts}) are implemented as pure functions with no direct database
+access. All database I/O passes through Next.js API route handlers, which
+orchestrate the learner state lifecycle: loading state, invoking engine
+functions, persisting updated state, and returning the question. This isolation
+makes the engine independently testable and domain-agnostic.
 
-The key architectural constraint is the \textbf{isolation of the adaptive
-engine}: the algorithm modules (\texttt{src/lib/algorithms/irt.ts} and
-\texttt{src/lib/algorithms/bkt.ts}) are implemented as pure functions with no
-direct database access. All database I/O passes through Next.js API route
-handlers, which orchestrate the learner state lifecycle: loading state,
-invoking engine functions, persisting updated state, and returning the
-question to the client. This isolation makes the engine independently testable
-and domain-agnostic: replacing the Geography question bank with any other KC
-graph requires no changes to the algorithm modules.
-Figure~\ref{fig:component_diagram} shows the four-layer architecture;
-Figure~\ref{fig:sequence_diagram} shows the question lifecycle across
-both routes; Figure~\ref{fig:er_diagram} shows the core database schema.
-
-\subsection{Technology Stack}
-\label{subsec:impl_stack}
+Figure~\ref{fig:component_diagram} shows the four-layer component architecture;
+Figure~\ref{fig:sequence_diagram} shows the question lifecycle across both
+routes; Figure~\ref{fig:er_diagram} shows the core database schema.
 
 \begin{table}[H]
 \centering
@@ -43,64 +34,31 @@ both routes; Figure~\ref{fig:er_diagram} shows the core database schema.
 \midrule
 Frontend & Next.js 14 (App Router) &
   React Server Components reduce client bundle size; streaming enables
-  progressive loading of session summary data without a full re-render \\
+  progressive session summary loading \\
 Styling & Tailwind CSS &
-  Utility-first CSS eliminates style-sheet maintenance overhead;
-  consistent design tokens across all components \\
+  Utility-first CSS; consistent design tokens across all components \\
 ORM & Prisma 5 &
-  Type-safe database access; migration history provides schema audit trail
-  (CSSE quality assurance requirement) \\
+  Type-safe database access; migration history provides schema audit trail \\
 Database & Supabase PostgreSQL &
-  Row-Level Security (RLS) enforces data isolation at the database layer,
-  not the application layer; reduces risk of privilege escalation bugs \\
+  Row-Level Security enforces data isolation at the database layer \\
 Auth & Supabase Auth + JWT &
   PKCE flow; bcrypt password hashing; NIST SP 800-63B compliant \\
 Deployment & Vercel &
   Preview deployments per branch; automatic HTTPS; edge caching \\
 IRT calibration & R + \texttt{mirt} &
-  Industry-standard psychometric tooling; calibration is offline and
-  audit-logged in the repository \\
+  Industry-standard psychometric tooling; offline and audit-logged \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-% ─────────────────────────────────────────────────────────────────────────────
-\subsection{Non-Functional Properties}
-\label{subsec:impl_nfr}
-
-The architecture was designed against the following non-functional targets,
-relevant to the CP6 CSSE competency requirement:
-
-\begin{description}
-  \item[Scalability.] The monolithic Next.js deployment scales horizontally
-    via Vercel's serverless function infrastructure: each API route invocation
-    is an independent function execution, and Vercel automatically provisions
-    additional instances under load. The primary scalability constraint is
-    the PostgreSQL connection pool; Supabase's PgBouncer connection pooler
-    mitigates this for the expected evaluation-scale traffic. For a deployment
-    beyond a few hundred concurrent learners, connection pooling configuration
-    and read-replica routing would be required.
-
-  \item[Reliability.] The system targets \textgreater\,99\% uptime via
-    Vercel's edge network SLA. Supabase Frankfurt operates on a managed
-    PostgreSQL cluster with daily automated backups and point-in-time recovery.
-    Error boundaries (\texttt{error.tsx} boundary components) prevent
-    component-level failures from crashing the full session.
-
-  \item[Efficiency.] The adaptive engine executes the EAP grid integration
-    and BKT update in-process within the API route, targeting an end-to-end
-    question selection latency of under 500\,ms (measured from request receipt
-    to response delivery). The JSON-serialised \texttt{kcStates} field on the
-    \texttt{Session} model was chosen to eliminate join overhead on the
-    hot path.
-
-  \item[Maintainability.] TypeScript strict mode enforces type safety at
-    every layer; Prisma migration files provide a versioned, auditable schema
-    history; and Git atomic commits with descriptive messages enable precise
-    reconstruction of the development timeline. The adaptive engine's
-    pure-function architecture means algorithm changes can be made without
-    touching the database or API layers.
-\end{description}
+The system targets the following non-functional properties: \textbf{scalability}
+via Vercel's serverless function infrastructure (each API route invocation is
+an independent function execution); \textbf{reliability} via Supabase Frankfurt's
+managed PostgreSQL cluster with daily automated backups; \textbf{efficiency}
+with EAP grid integration and BKT update executing in-process within the API
+route, targeting end-to-end question selection latency under 500\,ms; and
+\textbf{maintainability} via TypeScript strict mode, Prisma migration files,
+and the adaptive engine's pure-function architecture.
 
 \begin{figure}[H]
 \centering
@@ -111,58 +69,43 @@ relevant to the CP6 CSSE competency requirement:
   arr/.style={-{Latex[length=2mm]}, thick, black!45, shorten >=2pt, shorten <=2pt},
   lbl/.style={font=\scriptsize, black!55, fill=white, inner sep=1pt}
 ]
-%% Layer dividers
 \draw[black!14, dashed] (-5.4, 5.0) -- (5.4, 5.0);
 \draw[black!14, dashed] (-5.4, 3.0) -- (5.4, 3.0);
 \draw[black!14, dashed] (-5.4, 1.0) -- (5.4, 1.0);
 
-%% Layer labels
 \node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 6.0) {Presentation};
 \node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 4.0) {Application};
 \node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 2.0) {Adaptive Engine};
 \node[anchor=east, font=\footnotesize\itshape, text=black!40] at (-5.2, 0.0) {Persistence};
 
-%% Components
 \node[box] (fe) at (0, 6.0)
   {\textbf{React Frontend}\\{\scriptsize SessionPage $\cdot$ QuestionCard}};
-
 \node[box] (nq) at (-2.8, 4.0)
   {\textbf{GET /next-question}\\{\scriptsize item selection}};
 \node[box] (an) at (2.8, 4.0)
   {\textbf{POST /answer}\\{\scriptsize state update}};
-
 \node[engine] (irt) at (-2.8, 2.0)
   {\textbf{IRT Module}\\{\scriptsize \texttt{irt.ts} $\cdot$ pure function}};
 \node[engine] (bkt) at (2.8, 2.0)
   {\textbf{BKT Module}\\{\scriptsize \texttt{bkt.ts} $\cdot$ pure function}};
-
 \node[box] (db) at (0, 0.0)
   {\textbf{Supabase PostgreSQL}\\{\scriptsize Prisma ORM $\cdot$ eu-central-1}};
 
-%% Presentation to Application
 \draw[arr] (fe.south west) -- node[lbl, left]{HTTP GET} (nq.north);
 \draw[arr] (fe.south east) -- node[lbl, right]{HTTP POST} (an.north);
-
-%% Application to Engine
 \draw[arr] (nq) -- node[lbl, left=2pt]{Fisher info} (irt);
 \draw[arr] (an.south west) -- node[lbl, above, sloped]{EAP update} (irt.north east);
 \draw[arr] (an) -- node[lbl, right=2pt]{BKT update} (bkt);
-
-%% Application to Persistence (IRT/BKT have no DB arrows)
 \draw[arr] (nq.south east) -- node[lbl, above, sloped]{load variants} (db.north west);
 \draw[arr] (an.south west) -- node[lbl, above, sloped]{persist state} (db.north east);
-
-%% Engine decoupling box
 \draw[blue!25, thick, dashed, rounded corners=5pt]
   (-4.5, 1.05) rectangle (4.5, 2.95);
 \node[font=\scriptsize\itshape, text=blue!50, anchor=south east] at (4.4, 1.1)
   {zero UI/DB dependencies};
 \end{tikzpicture}
-\caption{UML 2.5 component diagram of the GeoMentor system. The Adaptive Engine
-subsystem (IRT and BKT modules) is implemented as pure functions with no direct
-UI or database dependencies. All state I/O passes through the Next.js API route
-handlers, which load learner state from Supabase and persist updated state after
-each response.}
+\caption{UML 2.5 component diagram. The Adaptive Engine subsystem (IRT and BKT
+modules) is implemented as pure functions with no direct UI or database
+dependencies.}
 \label{fig:component_diagram}
 \end{figure}
 
@@ -171,111 +114,38 @@ each response.}
 \label{sec:impl_schema}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The Prisma schema defines 20 models. The six models central to the adaptive
-engine are described here; the full schema is available in the repository
+The Prisma schema defines 20 models. The six central to the adaptive engine
+are described here; the full schema is in the repository
 (\texttt{prisma/schema.prisma}).
 
-\subsection{Session Model}
-\label{subsec:impl_session}
-
-The \texttt{Session} model is the principal state carrier for the adaptive
-engine. Key fields:
-
-\begin{itemize}[leftmargin=2em]
-  \item \texttt{theta~Float}: current EAP ability estimate, initialised at
-        $-0.780$ (the 20th percentile derived from the self-pilot calibration,
-        2026-02-26).
-  \item \texttt{thetaSd~Float}: posterior standard deviation, initialised at
-        $0.543$, used to widen or tighten the EAP prior.
-  \item \texttt{kcStates~String}: JSON-serialised
-        \texttt{Record\textless{}kcId, KCState\textgreater{}}, carrying the
-        full BKT state for all 13 Knowledge Components between requests.
-        JSON serialisation was chosen over a normalised \texttt{KCState} table
-        to reduce read latency: a single \texttt{Session.findUnique} call
-        returns all per-KC state without joins.
-  \item \texttt{condition~String}: \texttt{"adaptive"} or \texttt{"static"},
-        assigned at signup via the \texttt{studyCondition} field on the
-        \texttt{User} model, preventing self-selection bias in the
-        within-subjects evaluation design.
-  \item \texttt{startedFromAssessmentId~String?}: links to the pre-test
-        \texttt{Assessment} record that seeded the session's initial
-        $\hat{\theta}$, providing a verifiable audit trail of cold-start
-        seeding decisions.
-\end{itemize}
-
-\subsection{Interaction Model}
-\label{subsec:impl_interaction}
-
-The \texttt{Interaction} model records every question--answer event at full
-psychometric resolution:
-
-\begin{itemize}[leftmargin=2em]
-  \item \texttt{theta\_before}, \texttt{theta\_after}: EAP estimates
-        immediately before and after the response, enabling per-item
-        $\Delta\theta$ analysis.
-  \item \texttt{pLearned\_before}, \texttt{pLearned\_after}: BKT posteriors
-        for the question's KC, enabling per-response knowledge state analysis.
-  \item \texttt{hintsUsed~Int}, \texttt{hintLevelMax~Int}: total hints
-        accessed and the maximum hint level revealed, used by the credit
-        factor computation in the BKT update.
-  \item \texttt{cognitiveLoad~Int?}: optional NASA-TLX style self-report
-        (1=Very Easy, 5=Very Difficult) collected after each question,
-        enabling cognitive load analysis across Bloom levels.
-  \item \texttt{responseTimeMs~Int}: response latency in milliseconds,
-        providing a behavioural correlate of item difficulty.
-\end{itemize}
-
-\subsection{Question Bank Models}
-\label{subsec:impl_question_bank}
-
-The question bank is organised as a two-layer hierarchy:
-
-\begin{description}
-  \item[\texttt{QuestionTemplate}] defines the KC, Bloom level, IRT
-    parameters ($a$, $b$, $c$), and a stem template containing
-    \texttt{\{variable\}} placeholders.
-  \item[\texttt{QuestionVariant}] substitutes specific values for each
-    placeholder, producing a surface-different isomorphic item. Multiple
-    variants per template prevent item overexposure across sessions.
-  \item[\texttt{UserVariantSeen}] records every (user, variant) pair that
-    has been presented, enforced as a unique constraint. At question
-    selection, the eligible pool excludes any variant present in this table
-    for the requesting user.
-  \item[\texttt{VariantPresentation}] logs each presentation event with
-    timestamp and session context, supporting post-hoc analysis of
-    item exposure patterns.
-\end{description}
-
-\subsection{Analytics Model}
-\label{subsec:impl_analytics}
-
-The \texttt{AnalyticsEvent} model provides a structured event log for the
-five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
-
-\begin{itemize}[leftmargin=2em]
-  \item \texttt{bloom\_escalation}: emitted when a learner's Bloom gate
-        advances, with payload recording the KC, new Bloom level, and
-        triggering $p(\text{Learned})$ value.
-  \item \texttt{variant\_pool\_exhausted}: emitted when no unseen variants
-        remain for a KC-Bloom combination, triggering the fallback selection
-        logic.
-  \item \texttt{kc\_mastered}: emitted when $p(\text{Learned}) \geq 0.95$
-        for a KC, with payload recording the number of questions required.
-  \item \texttt{decay\_detected}: emitted at session start when a KC's
-        cross-session $p(\text{Learned})$ decline exceeds the decay threshold.
-\end{itemize}
+The \textbf{Session} model carries the principal adaptive state: \texttt{theta}
+(current EAP estimate, initialised at $-0.780$), \texttt{thetaSd} (posterior
+SD, initialised at $0.543$), and \texttt{kcStates} (JSON-serialised
+\texttt{Record<kcId, KCState>} carrying BKT state for all 13 KCs). JSON
+serialisation eliminates join overhead on the hot adaptive selection path.
+The \textbf{Interaction} model records every question--answer event with full
+psychometric resolution: \texttt{theta\_before}/\texttt{theta\_after},
+\texttt{pLearned\_before}/\texttt{pLearned\_after}, \texttt{hintLevelMax}
+(used by the credit factor computation), and \texttt{responseTimeMs}.
+The question bank is a two-layer hierarchy: \texttt{QuestionTemplate}
+(defines KC, Bloom level, IRT parameters $a$, $b$, $c$, and a stem with
+\texttt{\{variable\}} placeholders) and \texttt{QuestionVariant} (surface-specific
+substitutions). \texttt{UserVariantSeen} records every (user, variant) pair
+presented, enforced as a unique constraint to prevent re-exposure. The
+\texttt{AnalyticsEvent} model provides a structured event log including
+\texttt{bloom\_escalation}, \texttt{variant\_pool\_exhausted},
+\texttt{kc\_mastered}, and \texttt{decay\_detected} events.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
   ent/.style={rectangle, draw=black!60, fill=white, rounded corners=2pt,
-              text width=2.8cm, align=center, font=\small, inner sep=4pt},
+              text width=3.2cm, align=center, font=\small, inner sep=4pt},
   hdr/.style={ent, fill=gray!12, font=\small\bfseries, minimum height=0.65cm},
   arr/.style={-{Latex[length=2mm]}, thick, black!50, shorten >=2pt, shorten <=2pt},
   lbl/.style={font=\scriptsize, black!55, fill=white, inner sep=1pt}
 ]
 
-%% ── User ───────────────────────────────────────────────────────────
 \node[hdr] (uH) at (0, 8)      {User};
 \node[ent, anchor=north] (u) at (uH.south) {
   \texttt{id} (PK)\\
@@ -284,7 +154,6 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \texttt{kcsMastered}
 };
 
-%% ── Session ─────────────────────────────────────────────────────────
 \node[hdr] (sH) at (5, 8)      {Session};
 \node[ent, anchor=north] (s) at (sH.south) {
   \texttt{id} (PK)\\
@@ -294,17 +163,15 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \texttt{condition}
 };
 
-%% ── Interaction ──────────────────────────────────────────────────────
 \node[hdr] (iH) at (10, 8)     {Interaction};
 \node[ent, anchor=north] (i) at (iH.south) {
   \texttt{id} (PK)\\
   \texttt{sessionId} (FK)\\
   \texttt{isCorrect}\\
-  \texttt{theta\_before/after}\\
-  \texttt{pLearned\_before/after}
+  \texttt{theta\_pre/post}\\
+  \texttt{pLearned\_pre/post}
 };
 
-%% ── QuestionTemplate ─────────────────────────────────────────────────
 \node[hdr] (tH) at (5, 3.5)    {QuestionTemplate};
 \node[ent, anchor=north] (t) at (tH.south) {
   \texttt{id} (PK)\\
@@ -313,7 +180,6 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \texttt{a}, \texttt{b}, \texttt{c}
 };
 
-%% ── QuestionVariant ──────────────────────────────────────────────────
 \node[hdr] (vH) at (10, 3.5)   {QuestionVariant};
 \node[ent, anchor=north] (v) at (vH.south) {
   \texttt{id} (PK)\\
@@ -321,14 +187,12 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \texttt{content}
 };
 
-%% ── UserVariantSeen ──────────────────────────────────────────────────
 \node[hdr] (uvH) at (5, 0)     {UserVariantSeen};
 \node[ent, anchor=north] (uv) at (uvH.south) {
   \texttt{userId} (FK, unique)\\
   \texttt{variantId} (FK, unique)
 };
 
-%% ── SUSResponse ──────────────────────────────────────────────────────
 \node[hdr] (susH) at (0, 3.5)  {SUSResponse};
 \node[ent, anchor=north] (sus) at (susH.south) {
   \texttt{id} (PK)\\
@@ -336,40 +200,25 @@ five-track evaluation (Chapter~\ref{ch:results}). Events of interest include:
   \texttt{score}
 };
 
-%% ── Relationships ───────────────────────────────────────────────────
-%% User 1..N Session  (gap: x 1.4 to 3.6)
 \draw[arr] (uH.east) -- node[lbl, near start, above]{1}
                          node[lbl, near end,   above]{N} (sH.west);
-
-%% Session 1..N Interaction  (gap: x 6.4 to 8.6)
 \draw[arr] (sH.east) -- node[lbl, near start, above]{1}
                          node[lbl, near end,   above]{N} (iH.west);
-
-%% QuestionTemplate 1..N QuestionVariant  (gap: x 6.4 to 8.6)
 \draw[arr] (tH.east) -- node[lbl, near start, above]{1}
                          node[lbl, near end,   above]{N} (vH.west);
-
-%% QuestionVariant 1..N Interaction  (vertical)
 \draw[arr] (vH.north) -- node[lbl, near start, right]{N}
                           node[lbl, near end,   right]{1} (iH.south);
-
-%% User 1..N UserVariantSeen  (routed path)
 \draw[arr] (u.south) -- ++(0,-0.5) -| (uv.north west)
   node[lbl, near start, right]{1};
 \node[lbl] at (3.4, 0.3) {N};
-
-%% QuestionVariant 1..N UserVariantSeen  (diagonal)
 \draw[arr] (v.south) -- node[lbl, near start, right]{1}
                          node[lbl, near end,   right]{N} (uv.north east);
-
-%% Session 0..1 SUSResponse  (diagonal)
 \draw[arr] (sH.west) -- node[lbl, near start, above]{1}
                          node[lbl, near end,   above]{0..1} (susH.east);
 \end{tikzpicture}
-\caption{Entity-relationship diagram for the six core Prisma schema models.
-\texttt{UserVariantSeen} enforces a unique (userId, variantId) constraint, preventing
-variant re-exposure across sessions. \texttt{kcStates} is stored as a JSON string on
-\texttt{Session} to eliminate join overhead on the hot adaptive selection path.}
+\caption[ER diagram: six core Prisma schema models.]{Entity-relationship diagram for the six core Prisma schema models.
+\texttt{UserVariantSeen} enforces a unique (userId, variantId) constraint,
+preventing variant re-exposure across sessions.}
 \label{fig:er_diagram}
 \end{figure}
 
@@ -378,153 +227,52 @@ variant re-exposure across sessions. \texttt{kcStates} is stored as a JSON strin
 \label{sec:impl_engine}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection{IRT Module (\texttt{src/lib/algorithms/irt.ts})}
-\label{subsec:impl_irt}
+The IRT module (\texttt{src/lib/algorithms/irt.ts}) implements the 3PL model
+with the $D = 1.7$ logistic approximation \parencite{lord1980}. The EAP
+estimator integrates over a grid of $K = 161$ points spanning $\theta \in
+[-4, 4]$ with step $0.05$. The finer grid (compared to the $0.1$-step grid
+specified at design time) was adopted after self-pilot testing revealed that
+coarser grids produced visible staircase artefacts in the $\hat{\theta}$
+trajectory for high-ability learners.
 
-The IRT module implements the 3PL model with the $D = 1.7$ logistic
-approximation \parencite{lord1980}. The core probability function is:
+The BKT module (\texttt{src/lib/algorithms/bkt.ts}) implements the standard
+Corbett--Anderson update plus the credit factor modification. The implementation
+adopts a \textit{soft observation} interpolation: for credit-weighted correct
+responses, the posterior is interpolated between the full Bayesian update and
+the prior in proportion to $\text{cf}$, which is mathematically equivalent to
+a Bayesian update with a degraded likelihood but numerically more stable.
+Incorrect responses following hint access receive full-weight Bayesian updates:
+providing a hint does not make an incorrect response less informative about
+knowledge state.
 
-\begin{lstlisting}[language=JavaScript, caption={3PL probability function
-(\texttt{irt.ts:91--94}).}, label=lst:p3pl]
-export function p3PL(theta: number, params: IRTParams): number {
-  const { a, b, c } = params;
-  return c + (1 - c) / (1 + Math.exp(-D * a * (theta - b)));
-}
-\end{lstlisting}
-
-The Fisher information function implements Lord's (1980) Eq.~6.19 for the
-3PL model:
-
-\begin{lstlisting}[language=JavaScript, caption={Fisher information function
-(\texttt{irt.ts:100--105}).}, label=lst:fisher]
-export function itemInformation(theta: number, params: IRTParams): number {
-  const { a, c } = params;
-  const p = p3PL(theta, params);
-  return (D ** 2 * a ** 2 * ((p - c) ** 2)) / ((1 - c) ** 2 * p * (1 - p));
-}
-\end{lstlisting}
-
-The EAP estimator integrates over a grid of $K = 161$ points spanning
-$\theta \in [-4, 4]$ with step $0.05$. The finer grid (compared to the
-$0.1$-step grid proposed in the design phase) was adopted after self-pilot
-testing revealed that coarser grids produced visible ``staircase'' artefacts
-in the $\hat{\theta}$ trajectory for high-ability learners. The prior is a
-normal distribution centred at $\mu_0 = -0.780$ with $\sigma_0 = 0.543$,
-derived from the developer's own self-pilot session on 2026-02-26, which
-provided empirical grounding for the novice prior rather than an arbitrary
-assumed value.
-
-\subsection{BKT Module (\texttt{src/lib/algorithms/bkt.ts})}
-\label{subsec:impl_bkt}
-
-The BKT module implements the standard Corbett--Anderson update plus the
-credit factor modification. The implementation adopts a \textit{soft
-observation} interpolation for credit-weighted correct responses, mixing the
-Bayesian posterior for a full correct answer with the prior in proportion to
-the credit factor:
-
-\begin{lstlisting}[language=JavaScript, caption={Credit factor implementation
-in \texttt{updateBKT()} (\texttt{bkt.ts:159--165}).}, label=lst:credit]
-if (isCorrect) {
-  pLearnedGivenResponse =
-    factor * posteriorIfCorrect + (1 - factor) * pLearned_before;
-} else {
-  pLearnedGivenResponse = posteriorIfIncorrect;
-}
-\end{lstlisting}
-
-This soft-observation approach is mathematically equivalent to a Bayesian
-update with a degraded likelihood, but is numerically more stable than
-computing a partial likelihood directly. Incorrect responses following hint
-access receive full-weight Bayesian updates (no credit factor applied):
-providing a hint does not make an incorrect response less informative about the
-learner's knowledge state.
-
-\textbf{Mastery threshold.} The BKT mastery threshold is implemented at
-$p(\text{Learned}) \geq 0.95$, higher than the $0.80$ threshold cited in the
-literature review. This decision reflects the binary nature of the BKT latent
-state: because BKT models a hard ``knows / does not know'' distinction, a
-higher threshold provides a stronger guarantee that the posterior is not merely
-elevated by a lucky guess run. The $0.80$ threshold applies to the IRT-based
-mastery check (\texttt{checkMastery()} in \texttt{irt.ts}), which averages
-$P(\text{correct})$ across all KC items at the current $\hat{\theta}$ and uses
-the continuous IRT scale rather than a binary state estimate. The two thresholds
-address different aspects of mastery: BKT monitors \textit{knowledge state
-transitions}; IRT monitors \textit{average response probability}.
-
-The KC parameter set for the deployed system reflects the Geography KC
-structure described in Table~\ref{tab:kc_table}, with parameters seeded from
-curriculum difficulty estimates and the DfE Geography specification
-\parencite{dfe2013}.
+The BKT mastery threshold is implemented at $p(\text{Learned}) \geq 0.95$,
+higher than the $0.80$ threshold cited in the literature review. The binary
+nature of BKT's latent state demands a stronger guarantee that the posterior
+is not merely elevated by a lucky guess run. The $0.80$ threshold applies
+separately to the IRT-based mastery check (\texttt{checkMastery()} in
+\texttt{irt.ts}), which averages $P(\text{correct})$ across all KC items at
+the current $\hat{\theta}$ using the continuous IRT scale.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{API Route Design}
 \label{sec:impl_api}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The adaptive session lifecycle is managed by four API routes:
-
-\begin{description}
-  \item[\texttt{GET /api/sessions/[id]/next-question}]
-    The core adaptive selection route. Execution sequence:
-    \begin{enumerate}[leftmargin=2em, nosep]
-      \item Load session (theta, thetaSd, kcStates, condition).
-      \item Load unseen variant pool: join \texttt{QuestionTemplate}
-            $\times$ \texttt{QuestionVariant} minus
-            \texttt{UserVariantSeen} for this user.
-      \item Apply mastery gate (exclude templates whose KC has unmastered
-            prerequisites in the prerequisite DAG).
-      \item Apply Bloom gate (exclude templates whose Bloom level exceeds
-            the learner's current escalation threshold for that KC).
-      \item Apply decay boost ($1.5\times$ information multiplier) for KCs
-            flagged with cross-session $p(\text{Learned})$ decline.
-      \item Select $i^* = \arg\max_i I_i(\hat{\theta})$ from eligible pool.
-      \item Render variant: interpolate \texttt{\{variable\}} placeholders
-            with variant-specific values; shuffle answer options using
-            Fisher-Yates to prevent position bias.
-      \item Emit \texttt{variant\_pool\_exhausted} if eligible pool was
-            empty (fallback to unrestricted selection).
-      \item Return serialised question object.
-    \end{enumerate}
-
-  \item[\texttt{POST /api/sessions/[id]/answer}]
-    Processes a learner response and updates the learner state:
-    \begin{enumerate}[leftmargin=2em, nosep]
-      \item Validate the submitted answer label against the stored correct
-            label for the presented variant.
-      \item Compute credit factor from \texttt{hintLevelMax}.
-      \item Run EAP update over the full response history to produce new
-            $\hat{\theta}$ and $\sigma_\theta$.
-      \item Run BKT update for the question's KC with the credit factor.
-      \item Persist updated session state (theta, thetaSd, kcStates).
-      \item Write \texttt{Interaction} record with full psychometric payload.
-      \item Check mastery: if BKT posterior $\geq 0.95$ and not previously
-            mastered, emit \texttt{kc\_mastered} event, increment
-            \texttt{User.kcsMastered}, award XP.
-      \item Check Bloom escalation: if $p(\text{Learned})$ has crossed an
-            escalation threshold, emit \texttt{bloom\_escalation} event.
-    \end{enumerate}
-
-  \item[\texttt{GET /api/sessions/[id]/summary}]
-    Generates the session summary payload for the five-tab dashboard.
-    Aggregates: per-KC BKT trajectory, overall $\hat{\theta}$ delta,
-    distractor frequency table, XP earned, and a natural-language narrative
-    summarising session performance.
-
-  \item[\texttt{GET /api/sessions/[id]/trajectory}]
-    Returns the longitudinal $\hat{\theta}$ sequence across all interactions
-    in the session, used by the Trajectory tab of the session summary
-    dashboard to render the ability progression chart.
-\end{description}
-
-An additional route, \texttt{GET /api/analytics/error-patterns}, aggregates
-distractor selection frequencies across all interactions for a given KC,
-returning the most common incorrect attractors. This route powers the
-Misconceptions tab and constitutes Track 4 of the multi-method evaluation
-(Section~\ref{sec:results_misconceptions}).
-
-Figure~\ref{fig:sequence_diagram} illustrates the complete adaptive question
-lifecycle across both routes.
+The adaptive session is managed by four API routes. \textbf{GET
+/api/sessions/[id]/next-question}: loads session state; builds the eligible
+variant pool (joining \texttt{QuestionTemplate} and \texttt{QuestionVariant}
+minus \texttt{UserVariantSeen}); applies mastery gate, Bloom gate, deduplication,
+and decay boost; selects $i^* = \arg\max I_i(\hat{\theta})$; renders variant
+by interpolating placeholders and shuffling answer options (Fisher-Yates);
+returns serialised question object. \textbf{POST /api/sessions/[id]/answer}:
+validates the submitted answer; computes credit factor from \texttt{hintLevelMax};
+runs EAP update and BKT update; persists updated session state atomically;
+writes \texttt{Interaction} record; checks mastery and Bloom escalation
+thresholds; emits analytics events as appropriate.
+\textbf{GET /api/sessions/[id]/summary}: generates the five-tab dashboard payload.
+\textbf{GET /api/sessions/[id]/trajectory}: returns the longitudinal
+$\hat{\theta}$ sequence for the ability progression chart. Figure~\ref{fig:sequence_diagram}
+illustrates the complete question lifecycle.
 
 \begin{figure}[H]
 \centering
@@ -536,28 +284,24 @@ lifecycle across both routes.
   ret/.style={-{Latex[length=2mm]}, thick, black!35, dashed, shorten >=2pt},
   lbl/.style={font=\scriptsize, black!60, fill=white, inner sep=1pt}
 ]
-%% Actor x-positions
-\def\xL{0}    % Learner
-\def\xF{2.2}  % Frontend
-\def\xA{4.8}  % /answer route
-\def\xE{7.6}  % IRT + BKT Engine
-\def\xD{10.8} % Supabase DB
+\def\xL{0}
+\def\xF{2.2}
+\def\xA{4.8}
+\def\xE{7.6}
+\def\xD{10.8}
 
-%% Actor headers
 \node[actor] at (\xL, 9.5) {Learner};
 \node[actor] at (\xF, 9.5) {Frontend};
 \node[actor] at (\xA, 9.5) {API Routes};
 \node[actor] at (\xE, 9.5) {IRT + BKT\\Engine};
 \node[actor] at (\xD, 9.5) {Supabase\\PostgreSQL};
 
-%% Lifelines
 \draw[black!18, dashed] (\xL, 9.1) -- (\xL, 0.3);
 \draw[black!18, dashed] (\xF, 9.1) -- (\xF, 0.3);
 \draw[black!18, dashed] (\xA, 9.1) -- (\xA, 0.3);
 \draw[black!18, dashed] (\xE, 9.1) -- (\xE, 0.3);
 \draw[black!18, dashed] (\xD, 9.1) -- (\xD, 0.3);
 
-%% ── POST /answer critical path ─────────────────────────────────
 \node[anchor=west, font=\scriptsize\itshape, text=black!40] at (-0.5, 8.85)
   {POST /answer};
 
@@ -582,7 +326,6 @@ lifecycle across both routes.
 \draw[ret] (\xF, 4.1) -- (\xL, 4.1)
   node[lbl, midway, above]{render feedback};
 
-%% ── GET /next-question path ────────────────────────────────────
 \draw[black!15] (-0.5, 3.75) -- (11.5, 3.75);
 \node[anchor=west, font=\scriptsize\itshape, text=black!40] at (-0.5, 3.6)
   {GET /next-question};
@@ -602,10 +345,10 @@ lifecycle across both routes.
 \draw[ret] (\xF, 0.6) -- (\xL, 0.6)
   node[lbl, midway, above]{render question};
 \end{tikzpicture}
-\caption{Sequence diagram of the adaptive question lifecycle across the two
-API routes. The IRT and BKT engine functions are pure computations invoked
-synchronously within the API route handler; all database I/O is mediated
-by the route layer. The total round-trip latency target is $<500$\,ms.}
+\caption{Sequence diagram of the adaptive question lifecycle across both API
+routes. The IRT and BKT engine functions are pure computations invoked
+synchronously; all database I/O is mediated by the route layer. Target
+round-trip latency: $<500$\,ms.}
 \label{fig:sequence_diagram}
 \end{figure}
 
@@ -614,31 +357,15 @@ by the route layer. The total round-trip latency target is $<500$\,ms.}
 \label{sec:impl_security}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Security requirements were specified against NIST Special Publication 800-63B
-\parencite{nist2017}. The following controls were implemented:
+Security requirements were specified against NIST SP 800-63B \parencite{nist2017}:
 
 \begin{description}
-  \item[Password storage.] Passwords are hashed with bcrypt at cost factor 12
-    before storage. Plaintext passwords are never persisted or logged.
-  \item[Authentication.] JWT-based session tokens with Supabase Auth PKCE
-    flow. Tokens are short-lived (1 hour) with automatic refresh. Token
-    payloads contain only the user ID and role; no personal data is encoded
-    in the token.
-  \item[Rate limiting.] Authentication endpoints (login, registration,
-    password reset) are rate-limited to 10 requests per minute per IP address,
-    mitigating credential stuffing and brute-force attacks.
-  \item[Row-Level Security.] Supabase RLS policies enforce that learners can
-    only read and write their own \texttt{Session}, \texttt{Interaction}, and
-    \texttt{Assessment} records. Policies were verified by cross-user access
-    testing from a separate test account.
-  \item[Email blocklist.] Disposable email domain registration is blocked at
-    signup via a maintained blocklist, reducing research data pollution from
-    low-effort registrations.
-  \item[Input validation.] All API route inputs are validated server-side
-    against typed schemas before processing. Client-side validation is
-    supplementary only.
-  \item[HTTPS.] All traffic is served over HTTPS via Vercel's edge
-    certificates. HTTP requests are redirected at the CDN layer.
+  \item[Password storage.] bcrypt at cost factor 12; plaintext never persisted.
+  \item[Authentication.] JWT with Supabase Auth PKCE flow; tokens short-lived (1 hour); payloads contain user ID and role only.
+  \item[Rate limiting.] Auth endpoints rate-limited to 10 requests/minute/IP, mitigating credential stuffing.
+  \item[Row-Level Security.] Supabase RLS enforces per-user data isolation on all 33 tables; verified by cross-user access testing.
+  \item[Input validation.] All API route inputs validated server-side against typed schemas; client-side validation supplementary.
+  \item[HTTPS.] All traffic served over HTTPS via Vercel edge certificates; HTTP redirected at CDN layer.
 \end{description}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -646,131 +373,73 @@ Security requirements were specified against NIST Special Publication 800-63B
 \label{sec:impl_frontend}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection{Session Flow and Question Interface}
-\label{subsec:impl_session_flow}
+The learner session follows a linear state machine: \texttt{pre-test}
+$\to$ \texttt{instruction} $\to$ \texttt{question} $\to$ \texttt{feedback}
+$\to$ \texttt{summary}. The question interface renders the stem and four
+shuffled answer options (Fisher-Yates to prevent position bias), a progress
+bar for session and KC mastery, a three-level hint panel with progressive
+disclosure, a confidence slider, and a pause button that persists session
+state to the database for future resumption.
 
-The learner session follows a linear state machine managed by the top-level
-session page component. States are: \texttt{pre-test} $\to$
-\texttt{instruction} $\to$ \texttt{question} $\to$ \texttt{feedback} $\to$
-\texttt{summary}. The question interface renders:
+\texttt{FirstVisitTour.tsx} implements a five-step onboarding overlay explaining
+the adaptive engine, the BKT mastery bar, the hint system, the XP level
+system, and the session summary. Tour completion is persisted to
+\texttt{localStorage}. This implements Mayer's (2009) signalling principle:
+the adaptive system's reasoning is made legible before the learner encounters
+the first question.
 
-\begin{itemize}[leftmargin=2em]
-  \item The question stem and four labelled answer options (A--D), shuffled
-        per-presentation to prevent position-bias memorisation.
-  \item A progress bar showing overall session completion and the current KC's
-        BKT progress toward mastery.
-  \item A three-level hint panel (\texttt{HintPanel.tsx}), accessible on
-        demand. Each hint level is revealed progressively; previously revealed
-        levels remain visible. The panel records the maximum hint level
-        accessed before the learner submits their answer.
-  \item A confidence slider (1--5) presented before answer submission,
-        enabling the confidence calibration analysis reported in
-        Track 4 of the evaluation.
-  \item A pause button that persists the current session state to the database
-        and allows the learner to resume from the exact same question in a
-        future visit.
-\end{itemize}
+\texttt{SessionSummaryDashboard.tsx} presents a five-tab post-session analysis
+interface: Overview (statistics and performance narrative), Trajectory
+($\hat{\theta}$ chart with hover tooltips), Skills (per-KC mastery bar chart),
+Misconceptions (distractor frequency table), and Share (PNG performance card
+export). The leaderboard ranks opt-in learners by total XP; consent is
+double-checked server-side on every read.
 
-\subsection{First-Visit Onboarding Tour}
-\label{subsec:impl_tour}
+Figure~\ref{fig:ss_dashboard} and Figure~\ref{fig:ss_hint} show the live
+production interface for two key interaction states.
 
-\texttt{FirstVisitTour.tsx} implements a five-step onboarding overlay
-displayed to new users on their first session. Steps explain: (1) the
-adaptive engine's purpose, (2) the BKT mastery bar and what it means,
-(3) how the hint system works and its effect on mastery estimates, (4) the
-XP and level system, and (5) the session summary dashboard. Tour completion
-is persisted to \texttt{localStorage} to prevent repetition. This implements
-the signalling principle from Mayer's (2009) cognitive theory of multimedia
-learning: the adaptive system's reasoning is made legible before the learner
-encounters the first question.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{ss_dashboard}
+\caption{GeoMentor dashboard (hi-fi screenshot): adaptive badge, XP display,
+KC mastery bar, and session entry point. The ``Adaptive'' badge communicates
+the personalisation mode to the learner.}
+\label{fig:ss_dashboard}
+\end{figure}
 
-\subsection{Session Summary Dashboard}
-\label{subsec:impl_summary}
-
-\texttt{SessionSummaryDashboard.tsx} presents a five-tab post-session
-analysis interface:
-
-\begin{description}
-  \item[Overview.] Overall session statistics: total questions, accuracy,
-    XP earned, level achieved, and a natural-language performance narrative
-    generated by the summary API route.
-  \item[Trajectory.] Line chart of $\hat{\theta}$ across the session,
-    with hover tooltips showing the question ID and KC at each data point.
-    The chart makes the adaptive engine's continuous ability estimation
-    visible to the learner.
-  \item[Skills.] Per-KC mastery bar chart showing $p(\text{Learned})$ for
-    all 13 KCs, colour-coded by mastery status (mastered / in progress /
-    not started).
-  \item[Misconceptions.] Distractor frequency table showing the most common
-    wrong-answer attractors per KC, enabling learners to identify specific
-    knowledge gaps for targeted revision.
-  \item[Share.] A shareable performance card (PNG export) for the leaderboard
-    opt-in flow.
-\end{description}
-
-\subsection{Leaderboard}
-\label{subsec:impl_leaderboard}
-
-The leaderboard ranks learners by total XP, filtered to users who have
-explicitly opted in via the \texttt{User.leaderboardOptIn} consent flag.
-Consent is confirmed via a server-side double-check on every leaderboard
-read: learners who withdraw consent are immediately removed from the ranked
-display. Rank changes between sessions are animated using CSS transition
-classes, providing visual feedback on relative performance improvement.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{ss_hint}
+\caption{Three-level hint panel (hi-fi screenshot): conceptual hint displayed
+at Level~1, with progressive disclosure controls for Level~2 (procedural
+strategy) and Level~3 (worked example). The BKT credit factor is reduced for
+any correct answer following hint access.}
+\label{fig:ss_hint}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Challenges Encountered and Deviations from Plan}
+\section{Challenges Encountered}
 \label{sec:impl_challenges}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection{EAP Grid Resolution}
-\label{subsec:impl_eap_resolution}
+\textbf{EAP grid resolution.} The specified 81-point grid produced visible
+staircase discontinuities in $\hat{\theta}$ trajectories for high-ability
+learners. The grid was refined to 161 points (step $0.05$), resolving the
+artefact at acceptable computational cost.
 
-The methodology chapter (Section~\ref{subsec:meth_eap}) specified an EAP
-grid of 81 points with step $0.1$. Self-pilot testing revealed that this
-resolution produced visible ``staircase'' discontinuities in the
-$\hat{\theta}$ trajectory for high-ability learners, where the posterior
-peak jumped between adjacent grid points rather than tracking smoothly. The
-grid was refined to 161 points with step $0.05$, which resolved the artefact.
-The computational cost increase (approximately $2\times$) was acceptable
-given that EAP runs on the server per-question and not in the browser.
+\textbf{Review Material bug.} The instruction mode interstitial triggers
+an unintended \texttt{setAppState('start')} call in certain render paths,
+resetting the session to the start screen. This affects only the post-mastery
+instructional interstitial, not the adaptive engine's core question selection
+or BKT update logic. The bug is disclosed here in full; a fix was deprioritised
+in Sprint~9 in favour of evaluation data collection.
 
-\subsection{Review Material Bug}
-\label{subsec:impl_review_bug}
-
-The ``Review Material'' feature (instruction mode between KC mastery and the
-next KC introduction) triggers an unintended \texttt{setAppState('start')}
-call in certain render paths within \texttt{InstructionMode.tsx}, causing
-the session to reset to the start screen. This bug was identified during
-usability testing and is documented as a known issue. It does not affect the
-adaptive engine's core question selection or BKT update logic; it is confined
-to the post-mastery instructional interstitial. A fix was scoped for Sprint 9
-but deprioritised in favour of evaluation data collection. The bug is
-disclosed here as an honest account of delivered system quality.
-
-\subsection{K-Means Cold-Start: Evaluated and Superseded}
-\label{subsec:impl_kmeans}
-
-The interim report described a K-means clustering approach to cold-start
-initialisation, in which new learners would be assigned to a cluster based
-on demographic features and initialised with the cluster's median $\hat{\theta}$.
-Following implementation of the pre-test seeding mechanism
-(Section~\ref{sec:meth_pretest}), K-means was evaluated and superseded.
-Pre-test seeding provides direct per-KC ability evidence rather than a
-demographic proxy, is more interpretable, and avoids the ethical concern of
-conditioning initial learning experience on demographic cluster assignment.
-The K-means approach is therefore absent from the final implementation;
-this section documents the deviation explicitly.
-
-\subsection{Prisma React 18 Strict Mode Double-Invocation}
-\label{subsec:impl_strict_mode}
-
-React 18 Strict Mode double-invokes component render functions and
-\texttt{useEffect} hooks in the development environment to surface
-side-effect bugs. This caused apparent duplicate API calls in development
-logs, which were initially misdiagnosed as a session state bug. Confirmed
-to be a development-only behaviour with no impact on production sessions;
-documented here to prevent re-investigation.
+\textbf{K-means cold-start: evaluated and superseded.} The interim report
+described K-means clustering for cold-start initialisation. Following
+implementation of pre-test seeding, K-means was evaluated and superseded:
+pre-test seeding provides direct per-KC ability evidence rather than a
+demographic proxy, is more interpretable, and avoids conditioning initial
+learning experience on cluster assignment.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Requirements Traceability}
@@ -794,7 +463,7 @@ FR02 & Per-KC knowledge state tracking (BKT) & Done &
 FR03 & Bloom-gated question escalation & Done &
   \texttt{next-question/route.ts} \\
 FR04 & Pre-test ability seeding & Done &
-  \texttt{irt.ts:estimateThetaFromAssessment} \\
+  \texttt{irt.ts:estimateTheta} \\
 FR05 & Cross-session variant deduplication & Done &
   \texttt{UserVariantSeen} model \\
 FR06 & Graduated hint system with credit penalty & Done &
@@ -812,8 +481,7 @@ FR11 & NIST 800-63B compliant authentication & Done &
 FR12 & Analytics event log & Done &
   \texttt{AnalyticsEvent} model \\
 FR13 & 7-day retention assessment & Partial &
-  \texttt{Assessment.type = 'delayed\_post\_test'} (infrastructure
-  implemented; data collection limited by evaluation timeline) \\
+  Infrastructure implemented; data collection limited by timeline \\
 FR14 & Multi-domain KC support & Deferred &
   Architecture supports; content not authored \\
 \bottomrule
@@ -821,122 +489,25 @@ FR14 & Multi-domain KC support & Deferred &
 \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Deployment and Continuous Integration}
+\section{Deployment, Testing, and Quality}
 \label{sec:impl_ci}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The build pipeline executes the following steps on every push to the main
-branch:
+The build pipeline executes on every push to main: \texttt{prisma generate}
+(type safety); \texttt{tsc --noEmit} (TypeScript strict-mode check, fails
+on any type error); \texttt{next build} (production build); and Vercel
+deployment to preview or production URL.
 
-\begin{enumerate}[leftmargin=2em]
-  \item \texttt{prisma generate}: regenerates the Prisma client from the
-        current schema, ensuring type safety is up to date.
-  \item \texttt{tsc --noEmit}: TypeScript strict-mode type check. Build
-        fails on any type error.
-  \item \texttt{next build}: Next.js production build. Fails on any build
-        error or unresolved import.
-  \item Vercel deployment: if all previous steps pass, Vercel deploys the
-        new build to the preview URL (for feature branches) or the production
-        URL (for merges to main).
-\end{enumerate}
-
-Schema migrations are applied manually using \texttt{prisma db push} (for
-rapid iteration on the development database) or \texttt{prisma migrate deploy}
-(for production-safe migration with full rollback support). This two-track
-migration strategy was an intentional trade-off: the development speed of
-\texttt{db push} was prioritised during early sprints, with the switch to
-formal migration files coinciding with the Sprint 7 security hardening phase.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Testing Strategy}
-\label{sec:impl_testing}
-% ─────────────────────────────────────────────────────────────────────────────
-
-Three layers of testing were implemented to validate system correctness across
-algorithmic, integration, and regression dimensions.
-
-\begin{description}
-  \item[Unit tests.] The IRT and BKT algorithm modules (\texttt{irt.ts},
-    \texttt{bkt.ts}) are covered by 79 unit tests, validating: the 3PL
-    probability function at boundary $\hat{\theta}$ values; EAP convergence
-    on synthetic correct/incorrect response sequences; BKT posterior
-    monotonicity under correct and incorrect response streams; credit-factor
-    interpolation at all three hint levels ($cf \in \{1.0, 0.85, 0.65\}$);
-    and Bloom gate threshold enforcement. Tests are authored in Jest and
-    execute as part of the local development workflow. The algorithm modules'
-    pure-function architecture (no database calls, deterministic given the
-    same inputs) makes them directly amenable to unit testing without mocking.
-
-  \item[Integration testing.] The end-to-end session flow was validated
-    through a structured developer self-pilot on 2026-02-26: a 13-question
-    pre-test followed by a full adaptive session, verifying that the EAP
-    estimator, BKT update pipeline, item selector, and session state
-    persistence all behaved correctly under realistic response patterns.
-    This session also provided the empirical prior parameters
-    ($\hat{\theta}_0 = -0.780$, $\sigma_0 = 0.543$) used by the live system.
-
-  \item[Regression testing via CI.] TypeScript strict-mode type checking
-    (\texttt{tsc --noEmit}) and the Next.js production build execute
-    automatically on every push to \texttt{main}. The build fails on any
-    type error or unresolved import, providing automated regression detection
-    across all API routes and components. Feature branches are deployed to
-    isolated Vercel preview URLs before merge, enabling manual integration
-    testing without affecting the production environment.
-\end{description}
-
-The primary quality assurance gap is the absence of automated end-to-end
-browser tests (Playwright or Cypress). UI regression testing relied on
-manual verification against Vercel preview deployments. This limitation is
-disclosed per the CSSE quality assurance principle: honest reporting of
-defects and gaps, not a claim of defect-free delivery.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Accessibility Implementation}
-\label{sec:impl_accessibility}
-% ─────────────────────────────────────────────────────────────────────────────
-
-The interface was developed to meet WCAG 2.1 Level AA accessibility guidelines
-\parencite{w3c2018}. The following controls were implemented:
-
-\begin{description}
-  \item[ARIA labels.] All icon-only interactive elements (the hint panel
-    toggle, pause button, tab navigation icons, and progress indicators)
-    carry \texttt{aria-label} attributes describing their function, ensuring
-    screen reader compatibility for learners using assistive technology.
-  \item[Colour contrast.] Foreground text on authentication forms and answer
-    option buttons was reviewed to meet the WCAG 4.5:1 minimum contrast ratio
-    for normal text. Answer chips use a dark background with high-contrast
-    light text, maintaining legibility under the system's dark theme across
-    all feedback states (neutral, correct, incorrect).
-  \item[Keyboard navigation.] Answer options, hint panels, and navigation
-    controls are rendered as native \texttt{<button>} elements, accessible
-    via Tab and activated via Enter or Space, preserving browser-native
-    keyboard interaction without custom keyboard event handlers.
-  \item[Reduced motion.] Framer Motion animation components (rank-change
-    animation on the leaderboard) respect the operating system's
-    \texttt{prefers-reduced-motion} media query; transitions are suppressed
-    when the user has enabled the reduce-motion accessibility preference.
-\end{description}
-
-A full automated WCAG 2.1 AA audit (e.g., via axe-core or Lighthouse
-accessibility scoring) was not conducted within the project timeline;
-accessibility improvements were applied through manual review and iterative
-correction. A comprehensive audit is identified as a prerequisite for any
-production deployment targeting secondary school learners, where the public
-sector bodies accessibility regulations may apply.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Self-Pilot Calibration}
-\label{sec:impl_selfpilot}
-% ─────────────────────────────────────────────────────────────────────────────
-
-Before external participant recruitment, the developer conducted a full
-self-pilot session on 2026-02-26. This served two purposes: (a) functional
-verification of the end-to-end session flow under realistic conditions, and
-(b) empirical derivation of the novice prior parameters
-($\hat{\theta}_0 = -0.780$, $\sigma_0 = 0.543$). The resulting EAP estimate
-after a 13-question pre-test was adopted as the system's default prior,
-replacing the arbitrary $\mathcal{N}(0, 1)$ prior used during development.
-This approach follows the recommendation of \textcite{baker2004} that EAP
-priors should be empirically grounded where possible, even from small pilots,
-rather than assigned on theoretical grounds alone.
+Three testing layers were implemented. \textbf{Unit tests}: 79 Jest tests
+cover the IRT and BKT algorithm modules, validating the 3PL probability
+function at boundary values, EAP convergence on synthetic sequences, BKT
+posterior monotonicity, credit-factor interpolation, and Bloom gate enforcement.
+The pure-function architecture makes these directly testable without mocking.
+\textbf{Integration testing}: a structured developer self-pilot on 2026-02-26
+verified the end-to-end session flow and provided the empirical prior parameters
+($\hat{\theta}_0 = -0.780$, $\sigma_0 = 0.543$). \textbf{Regression testing}:
+TypeScript strict mode and Next.js production build execute automatically on
+every push; feature branches are deployed to isolated Vercel preview URLs
+before merge. The primary quality gap is the absence of automated end-to-end
+browser tests; UI regression relied on manual verification against preview
+deployments, disclosed per the CSSE quality assurance principle.

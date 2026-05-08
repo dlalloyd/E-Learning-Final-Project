@@ -6,33 +6,27 @@
 \label{sec:intro_background}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The educational technology sector has undergone significant expansion over the
-past decade, yet the dominant paradigm in digital learning platforms remains
-one-size-fits-all content delivery. A learner who already understands tectonic
-plate mechanics receives the same sequence of questions as one who has never
-encountered the concept; a learner who has mastered map reading is presented
-with the same map skills introduction as a complete novice. This homogeneity
-is not a technical constraint but a design choice, and one that the
-empirical literature consistently identifies as suboptimal.
+The dominant paradigm in digital learning platforms remains one-size-fits-all
+content delivery. A learner who already understands tectonic plate mechanics
+receives the same sequence of questions as one encountering the concept for the
+first time. This homogeneity is not a technical constraint but a design choice
+that the empirical literature consistently identifies as suboptimal.
 
-\textcite{bloom1984} demonstrated that one-to-one human tutoring, which
-adapts to the learner's current ability in real time, produces learning
-outcomes approximately two standard deviations above conventional classroom
-instruction. \textcite{vanlehn2011} subsequently showed that step-based
-Intelligent Tutoring Systems (ITS) can approach this performance at scale,
-achieving effect sizes statistically indistinguishable from human tutoring.
-The implication is clear: the adaptive feedback loop is the critical variable,
-not the delivery medium or the domain.
+\textcite{bloom1984} demonstrated that one-to-one human tutoring, which adapts
+to the learner's current ability in real time, produces learning outcomes
+approximately two standard deviations above conventional classroom instruction.
+\textcite{vanlehn2011} subsequently showed that step-based Intelligent Tutoring
+Systems (ITS) can approach this performance at scale, achieving effect sizes
+statistically indistinguishable from human tutoring. The adaptive feedback loop
+is the critical variable, not the delivery medium.
 
 Despite this evidence, adaptive ITS remain largely confined to mathematics and
 programming domains, where knowledge structures are well-defined and assessment
-is unambiguous. Geography, a subject that integrates declarative factual
-knowledge, procedural reasoning, and conceptual understanding, has received
-almost no attention in the adaptive learning literature \parencite{bednarz2013}.
-The UK KS3/GCSE Geography curriculum, with its distinctive structure spanning
-physical geography, human geography, and geographical skills, represents both
-an underserved educational context and a meaningful test case for ITS methods
-applied to non-STEM knowledge domains.
+is unambiguous. Geography, integrating declarative factual knowledge, procedural
+reasoning, and conceptual understanding, has received almost no attention in the
+adaptive learning literature \parencite{bednarz2013}. The UK KS3/GCSE Geography
+curriculum represents both an underserved educational context and a meaningful
+test case for ITS methods applied to non-STEM knowledge domains.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Research Question}
@@ -50,11 +44,11 @@ UK KS3/GCSE Geography content?}
 
 The question has three components: an \textit{algorithmic claim} (the hybrid
 IRT+BKT engine can perform valid adaptive selection), a \textit{technical
-claim} (this can be implemented in a production-deployed web application), and
-an \textit{empirical claim} (the system produces measurable learning gains).
-The evaluation strategy in Chapter~\ref{ch:results} addresses all three,
-with the acknowledgement that the empirical claim is evaluated at
-proof-of-concept scale rather than at statistical significance.
+claim} (implementable in a production-deployed web application), and an
+\textit{empirical claim} (the system produces measurable learning gains).
+The evaluation in Chapter~\ref{ch:results} addresses all three, with the
+acknowledgement that the empirical claim is evaluated at proof-of-concept
+scale rather than at statistical significance.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Project Overview}
@@ -68,17 +62,10 @@ estimates learner ability and Knowledge Component mastery, selects questions
 targeting the learner's Zone of Proximal Development, and enforces Bloom's
 taxonomy cognitive prerequisites across a 13-KC curriculum graph.
 
-The system was developed as the artefact for this Honours Stage Project over
-ten two-week sprints from October 2025 to May 2026, following a Design Science
-Research methodology \parencite{hevner2004}. It is production-deployed,
-publicly accessible, and open-source, providing a proof-of-concept
-implementation that can be independently verified, reproduced, and extended.
-
-The scope was deliberately concentrated on a single domain following a Sprint 5
-risk assessment that identified multi-domain calibration as infeasible within
-the available timeline. The system's architecture is domain-agnostic, and
-Cross-Domain Knowledge Transfer is identified as the primary architectural
-stretch goal for future development (Section~\ref{sec:lr_future}).
+The system was developed over ten two-week sprints from October 2025 to
+May 2026, following a Design Science Research methodology \parencite{hevner2004}.
+It is production-deployed, publicly accessible, and open-source, providing a
+proof-of-concept implementation that can be independently verified and extended.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Contributions}
@@ -103,8 +90,7 @@ This project makes the following contributions:
   \item \textbf{Bloom-gated adaptive progression.} An implementation of
   Bloom's taxonomy as a computational selection constraint, enforcing that
   learners consolidate recall-level knowledge before encountering
-  application-level items, a feature absent from standard IRT-only CAT
-  implementations.
+  application-level items.
 
   \item \textbf{A five-track multi-method evaluation framework for small-sample
   ITS validation.} A structured evaluation approach combining algorithmic
@@ -114,9 +100,7 @@ This project makes the following contributions:
 
   \item \textbf{An open-source domain-agnostic ITS architecture.} The codebase
   provides a reusable template for researchers and developers building adaptive
-  systems for non-STEM declarative-knowledge domains, with the KC graph,
-  question bank, and IRT parameter store fully parameterised and independent
-  of Geography-specific logic.
+  systems for non-STEM declarative-knowledge domains.
 
 \end{enumerate}
 
@@ -125,24 +109,16 @@ This project makes the following contributions:
 \label{sec:intro_scope}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The following boundaries apply to this project:
-
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Domain.} UK KS3/GCSE Geography only (AQA specification). No
-    other subject domain is supported in the current release, though the
-    architecture is designed for extension.
+  \item \textbf{Domain.} UK KS3/GCSE Geography only (AQA specification).
   \item \textbf{Assessment type.} Multiple-choice questions with four options.
-    Extended writing, diagram annotation, and data interpretation items are
-    outside scope.
   \item \textbf{Participant population.} University of Hull students
-    (convenience sample). The system targets KS3/GCSE students but was
-    evaluated with adults due to ethical and logistical constraints on
-    secondary school access.
-  \item \textbf{Algorithm.} IRT 3PL + BKT hybrid. Deep Knowledge Tracing,
-    Elo, and 2PL models were evaluated and rejected
-    (Section~\ref{sec:lr_algorithms}).
-  \item \textbf{Evaluation scale.} Proof-of-concept validation at $n = 4$.
-    Inferential statistical claims are not made.
+    (convenience sample); the system targets KS3/GCSE students but was
+    evaluated with adults due to ethical and logistical constraints.
+  \item \textbf{Algorithm.} IRT 3PL + BKT hybrid. DKT, Elo, and 2PL were
+    evaluated and rejected (Section~\ref{sec:lr_algorithms}).
+  \item \textbf{Evaluation scale.} Proof-of-concept at $n = 4$. No
+    inferential statistical claims are made.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -153,72 +129,52 @@ The following boundaries apply to this project:
 All participant data was collected under informed written consent. No
 personally identifiable data beyond email address and name (required for
 authentication) was collected; session performance data is stored under
-a pseudonymous user ID and is accessible only to the authenticated user and
+a pseudonymous user ID, accessible only to the authenticated user and
 to the researcher under the study protocol.
 
-Artificial intelligence tools were used in the development and writing of this
-project. Specifically: authentication boilerplate, UI scaffolding, and Vercel
-deployment configuration received AI assistance. The research design, KC
-ontology, IRT calibration strategy, BKT credit-factor modification, and the
-adaptive engine's core algorithm were designed and implemented by the author.
-Full details of AI usage are provided in Appendix~\ref{app:ai_declaration},
-in compliance with the University of Hull's Academic Integrity Policy.
+\textbf{AI use declaration.} This project was developed with AI assistance
+(Claude, Anthropic), consistent with the University of Hull's Student AI Use
+Policy (2025). AI assistance was employed for infrastructure scaffolding
+(Supabase RLS boilerplate, Resend email integration, bcrypt helpers), frontend
+component implementation from candidate-authored specifications, Mapbox
+integration, Vercel deployment configuration, and Prisma schema iteration.
+The following constitute the candidate's independent intellectual work and
+were not produced by AI tools: the hybrid IRT 3PL + BKT algorithm architecture;
+the credit-factor BKT modification and its full mathematical derivation; the
+Bloom escalation gating design and its implementation as a computational
+constraint; the 13-KC curriculum ontology and prerequisite DAG; the research
+design including the within-subjects quasi-experimental structure, VanLehn
+benchmark selection, and Sprint~5 scope reduction justification; the five-track
+multi-method evaluation framework; all Architecture Decision Records; and the
+IRT calibration strategy. AI assistance was employed exclusively as an
+implementation accelerator for repetitive or infrastructural tasks; all design
+decisions and algorithmic contributions are the candidate's own work and are
+grounded in the peer-reviewed literature cited throughout this report.
 
-Data collection complied with the UK General Data Protection Regulation
-(UK GDPR) and the Data Protection Act 2018. The lawful basis for processing
-participant data is \textit{consent}: participants provided explicit, informed,
-written consent prior to any data collection and were informed of their
-unconditional right to withdraw their data at any point without consequence
-to their participation. The consent instrument recorded each participant's age
-range, prior Geography knowledge, and agreement to data storage under the
-researcher's pseudonymisation protocol; no special category data (as defined
-by UK GDPR Article 9) were collected. All data are stored on EU-resident
-servers (Supabase, Frankfurt region) and access is restricted to the researcher
-and project supervisor.
-
-This project was conducted in accordance with the British Computer Society
-Code of Conduct's four obligations: public interest (no harm to participants
-or third parties); professional competence (all techniques are grounded in
-peer-reviewed literature); integrity (findings and limitations are reported
-honestly, including the n\,=\,4 sample size); and duty to relevant authority
-(supervisor approval was obtained for the Sprint~5 scope reduction and
-evaluation protocol). Ethical considerations were assessed under the University
-of Hull Research Ethics Policy prior to participant recruitment.
+Data collection complied with UK GDPR and the Data Protection Act 2018.
+The lawful basis for processing is \textit{consent}: participants provided
+explicit informed written consent prior to any data collection and were
+informed of their unconditional right to withdraw without consequence.
+No special category data were collected; all data are stored on EU-resident
+servers (Supabase, Frankfurt region). This project was conducted in accordance
+with the British Computer Society Code of Conduct's four obligations (public
+interest, professional competence, integrity, and duty to relevant authority);
+ethical considerations were assessed under the University of Hull Research
+Ethics Policy prior to participant recruitment.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Report Structure}
 \label{sec:intro_structure}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The remainder of this report is organised as follows.
-
-Chapter~\ref{ch:literature_review} presents a critical review of the
-theoretical and empirical foundations of adaptive intelligent tutoring systems,
-covering pedagogical theory, adaptive algorithms, Computerised Adaptive Testing
-principles, empirical effectiveness evidence, implementation challenges, and
-ethical considerations. Forty-five sources are reviewed and five research gaps
-are identified.
-
-Chapter~\ref{ch:methodology} describes the research design, KC ontology,
-adaptive algorithm design with full mathematical derivation, IRT calibration
-pipeline, pre-test seeding, scaffolding design, evaluation protocol, agile
-development methodology, project Gantt chart, risk register, and an honest
-account of what was and was not delivered.
-
-Chapter~\ref{ch:implementation} describes the technical implementation: the
-database schema, adaptive engine code, API route design, security
-implementation, frontend components, and challenges encountered. Deviations
-from the methodology specification are documented with justifications.
-
-Chapter~\ref{ch:results} presents the five-track multi-method evaluation:
-algorithm validation, engagement data, SUS usability scores, misconception
-analysis, and system robustness metrics.
-
-Chapter~\ref{ch:discussion} interprets the results, compares the system with
-related work, defends the scope reduction as a research strength, analyses
-limitations and threats to validity, documents what could not be delivered,
-identifies future work, and reflects on CSSE competency demonstration.
-
-Chapter~\ref{ch:conclusion} summarises contributions, revisits the research
-question, situates the project's broader significance, and offers a final
-statement.
+Chapter~\ref{ch:literature_review} critically reviews adaptive ITS theory,
+algorithms, CAT principles, empirical effectiveness, and ethical dimensions,
+identifying five research gaps. Chapter~\ref{ch:methodology} details the
+KC ontology, adaptive algorithm design with full mathematical derivation,
+evaluation protocol, and agile development methodology.
+Chapter~\ref{ch:implementation} describes the technical implementation
+including database schema, adaptive engine, API routes, and security.
+Chapter~\ref{ch:results} presents the five-track multi-method evaluation.
+Chapter~\ref{ch:discussion} interprets results, examines limitations, and
+identifies future work. Chapter~\ref{ch:conclusion} summarises contributions
+and offers a final statement.

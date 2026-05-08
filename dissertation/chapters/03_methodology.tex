@@ -6,34 +6,18 @@
 \label{sec:meth_design}
 % ─────────────────────────────────────────────────────────────────────────────
 
-This project adopts a \textit{Design Science Research} (DSR) methodology
-\parencite{hevner2004}, which prescribes the iterative construction and
-evaluation of an artefact intended to solve a practical problem. DSR is
-appropriate when the research goal is not merely to observe an existing
-phenomenon but to engineer a system that demonstrably improves upon the
-current state of practice. The artefact produced is GeoMentor: a
-production-deployed adaptive intelligent tutoring system for UK KS3/GCSE
-Geography implementing a hybrid IRT 3PL + BKT algorithm.
-
-The evaluation component follows a \textbf{within-subjects quasi-experimental
-design}. Each participant experiences both a baseline linear condition and the
-adaptive condition within a single extended session, eliminating individual
-ability as a confound. The absence of randomised assignment to groups (due to
-the convenience sample and within-subjects structure) classifies the design as
-quasi-experimental rather than a true randomised controlled trial. This is a
-documented limitation acknowledged in Section~\ref{sec:meth_evaluation}.
-
-The scope was deliberately concentrated on a single Knowledge Component domain
-(UK physical geography and climate, 13 KCs covering spatial recall, climate
-processes, and integrative application within the KS3/GCSE Geography
-specification) rather than the multi-domain ambition of the initial proposal. This decision, taken following technical risk assessment in
-the second project sprint (February 2026), strengthens rather than weakens the
-evaluation claims: validation depth within a single well-specified domain
-produces more defensible psychometric evidence than shallow validation across
-multiple domains. Cross-Domain Knowledge Transfer remains the primary
-architectural stretch goal and is addressed in the system's domain-agnostic
-design (Section~\ref{sec:meth_kc}) and discussed as future work in
-Chapter~\ref{ch:discussion}.
+This project adopts \textit{Design Science Research} (DSR) \parencite{hevner2004},
+which prescribes iterative construction and evaluation of an artefact intended
+to solve a practical problem. The artefact is GeoMentor: a production-deployed
+adaptive ITS for UK KS3/GCSE Geography implementing a hybrid IRT 3PL + BKT
+algorithm. The evaluation employs a within-subjects quasi-experimental design;
+the absence of randomised group assignment (due to the convenience sample)
+classifies the design as quasi-experimental rather than a true RCT.
+The scope was concentrated on a single KC domain (UK physical geography and
+climate, 13 KCs) following a Sprint~5 technical risk assessment, a decision
+that strengthens rather than weakens evaluation claims: single-domain
+validation depth produces more defensible psychometric evidence than shallow
+multi-domain coverage.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Knowledge Representation}
@@ -43,22 +27,16 @@ Chapter~\ref{ch:discussion}.
 \subsection{Knowledge Component Ontology}
 \label{subsec:meth_kc_ontology}
 
-The curriculum is decomposed into 13 Knowledge Components (KCs) covering UK
-physical geography and climate. A KC is defined as a unit of knowledge or
-skill that can be independently assessed and for which mastery can be
-operationally defined \parencite{koedinger2012}. The domain was scoped to UK
-climate systems after a Sprint~5 risk assessment identified that calibrating
-IRT parameters across the full AQA specification breadth was infeasible
-within the available development timeline; this decision is further justified
-in Section~\ref{sec:meth_evaluation}. Table~\ref{tab:kc_table} lists all
-13 KCs with their Bloom cognitive level ceiling and BKT prior parameters
-as implemented in \texttt{DEFAULT\_BKT\_PARAMS} in \texttt{src/lib/algorithms/bkt.ts}.
+The curriculum is decomposed into 13 Knowledge Components (KCs). A KC is a
+unit of knowledge for which mastery can be operationally defined
+\parencite{koedinger2012}. Table~\ref{tab:kc_table} lists all 13 KCs with
+their Bloom ceiling and BKT prior parameters as implemented in
+\texttt{DEFAULT\_BKT\_PARAMS}.
 
 \begin{table}[H]
 \centering
 \caption{Knowledge Component ontology: 13 KCs with BKT prior parameters.
-  $p(S)$ and $p(G)$ are KC-specific; $p(G) = 0.25$ for all KCs (fixed,
-  four-option MCQ). KC identifiers match the live \texttt{DEFAULT\_BKT\_PARAMS}.}
+  $p(G) = 0.25$ for all KCs (fixed, four-option MCQ).}
 \label{tab:kc_table}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\textwidth}{lXcccc}
@@ -88,45 +66,20 @@ as implemented in \texttt{DEFAULT\_BKT\_PARAMS} in \texttt{src/lib/algorithms/bk
 
 Prior probabilities $p(L_0)$ are highest for Level~1 KCs (0.45--0.60),
 reflecting realistic recall knowledge for adult learners, and lowest for
-Level~3 KCs (0.10--0.15), reflecting the synthesis demands of integrative
-items. Within Level~1, UK~Capitals receives the highest $p(L_0) = 0.60$
-(only four facts to recall) while County~Locations and National~Parks receive
-lower priors (0.45), reflecting the larger recall set of 47 counties and
-15 parks respectively. The learning transition $p(T)$ follows the same
-gradient: $p(T) = 0.25$ for UK~Capitals (rapid mastery expected),
-$p(T) = 0.16$ for National~Parks (slow acquisition over a large item set),
-and $p(T) = 0.12$ for Flood~Risk~Integration (synthesis-level knowledge
-acquired incrementally). The slip parameter $p(S)$ scales with Bloom level
-(0.08--0.12 at L1, 0.12--0.15 at L2, 0.18--0.20 at L3), reflecting that
-higher-order items carry greater response uncertainty even for knowledgeable
-learners \parencite{pardos2011}. The guess parameter $p(G) = 0.25$ is fixed
-for all KCs, corresponding to the uniform four-option MCQ format.
+Level~3 KCs (0.10--0.15), reflecting synthesis demands. The slip parameter
+$p(S)$ scales with Bloom level (0.08--0.12 at L1, 0.12--0.15 at L2,
+0.18--0.20 at L3), reflecting that higher-order items carry greater response
+uncertainty even for knowledgeable learners \parencite{pardos2011}.
 
 \subsection{Prerequisite Graph}
 \label{subsec:meth_prerequisite}
 
-KCs are not independent; mastery of foundational KCs is necessary for
-productive engagement with dependent KCs. The prerequisite graph encodes these
-structural dependencies and governs mastery-gated KC progression. The graph
-is implemented as a directed acyclic graph (DAG) with 12 edges seeded into
-the \texttt{PrerequisiteEdge} table at deployment time and queried by the
-adaptive engine at each question selection step.
-
-Five Level~1$\to$Level~2 edges gate the climate-process KCs behind the
-spatial KCs that contextualise them (for example, understanding westerly
-winds presupposes knowing where the relevant counties and coastlines are).
-One Level~2$\to$Level~2 edge encodes the causal dependency of the Pennines
-Rain~Shadow on westerly wind patterns: a learner cannot meaningfully reason
-about orographic enhancement without first understanding the prevailing air
-mass trajectory. Five Level~2$\to$Level~3 edges and one direct
-Level~1$\to$Level~3 edge gate the integrative KCs.
-
-All mastery gates use a uniform threshold of $p(\text{Learned}) \geq 0.80$,
-consistent with the BKT mastery convention established by
-\textcite{corbett1995} and used in empirically validated ITS deployments
-\parencite{vanlehn2011}. UK~Capitals and National~Parks have no outgoing
-edges: they are assessed throughout sessions but do not gate any higher-order
-KCs.
+KCs encode structural dependencies in a directed acyclic graph (DAG) with
+12 edges, queried by the adaptive engine at each selection step. Five
+Level~1$\to$Level~2 edges gate climate-process KCs behind spatial KCs; one
+Level~2$\to$Level~2 edge encodes the Pennines Rain Shadow's dependency on
+westerly wind patterns; five Level~2$\to$Level~3 and one Level~1$\to$Level~3
+edge gate the integrative KCs. All mastery gates use $p(\text{Learned}) \geq 0.80$.
 
 \begin{figure}[H]
 \centering
@@ -140,55 +93,53 @@ KCs.
   arr/.style={-{Latex[length=2mm]}, gray!65, thick}
 ]
 
-%% Level 1: Remembering (y = 4.5) -- five spatial/locational KCs
+%% Level 1: Remembering (y = 4.5)
 \node[l1] (caps)    at ( 0.0, 4.5) {UK\\Capitals};
 \node[l1] (county)  at ( 2.5, 4.5) {County\\Locations};
 \node[l1] (rivers)  at ( 5.0, 4.5) {UK\\Rivers};
 \node[l1] (mnts)    at ( 7.5, 4.5) {UK\\Mountains};
 \node[l1] (parks)   at (10.0, 4.5) {National\\Parks};
 
-%% Level 2: Understanding (y = 2.5) -- five climate-process KCs
+%% Level 2: Understanding (y = 2.5)
 \node[l2] (westerly)    at ( 0.0, 2.5) {Westerly\\Winds};
 \node[l2] (maritime)    at ( 2.5, 2.5) {Maritime vs\\Continental};
 \node[l2] (pennines)    at ( 5.0, 2.5) {Pennines Rain\\Shadow};
 \node[l2] (natldrift)   at ( 7.5, 2.5) {N.\ Atlantic\\Drift};
 \node[l2] (continental) at (10.0, 2.5) {Continental\\Effect};
 
-%% Level 3: Applying (y = 0.5) -- three integrative KCs
+%% Level 3: Applying (y = 0.5)
 \node[l3] (climclass)  at ( 2.5, 0.5) {Climate\\Classification};
 \node[l3] (climchange) at ( 6.5, 0.5) {Climate Change\\Application};
 \node[l3] (flood)      at (10.0, 0.5) {Flood Risk\\Integration};
 
-%% L1 → L2 (five edges)
+%% L1 → L2
 \draw[arr] (county) to[out=200,in=80]  (westerly);
 \draw[arr] (county) --                 (maritime);
 \draw[arr] (county) to[out=350,in=90]  (continental);
 \draw[arr] (mnts)   --                 (pennines);
 \draw[arr] (rivers) --                 (natldrift);
 
-%% L2 → L2 (one edge: westerly winds enable rain shadow understanding)
+%% L2 → L2
 \draw[arr] (westerly) -- (pennines);
 
-%% L2 → L3 (four edges)
+%% L2 → L3
 \draw[arr] (maritime)    -- (climclass);
 \draw[arr] (continental) to[out=215,in=5]   (climclass);
 \draw[arr] (natldrift)   -- (climchange);
 \draw[arr] (pennines)    to[out=310,in=150]  (flood);
 
-%% L1 → L3 (one cross-level edge)
+%% L1 → L3
 \draw[arr] (rivers) to[out=265,in=130] (flood);
 
-%% L2 → L3 (westerly winds → flood risk via rainfall loading)
+%% L2 → L3 (westerly winds → flood risk)
 \draw[arr] (westerly) to[out=320,in=185] (flood);
 
 \end{tikzpicture}
 \caption{KC prerequisite DAG: 13 nodes across three Bloom levels
   (green~=~L1 Remembering, blue~=~L2 Understanding, orange~=~L3 Applying).
-  Arrows indicate structural dependency (prerequisite $\to$ dependent);
-  mastery gate $p(\text{Learned}) \geq 0.80$ on the prerequisite KC before
-  dependent-KC items unlock. KCs without outgoing edges (UK~Capitals,
-  National~Parks) are assessed throughout but do not gate higher-order KCs.
-  12 edges total; 5 L1$\to$L2, 1 L2$\to$L2, 5 L2$\to$L3, 1 L1$\to$L3.}
+  Arrows indicate structural dependency; mastery gate
+  $p(\text{Learned}) \geq 0.80$ on the prerequisite KC before
+  dependent-KC items unlock. 12 edges total.}
 \label{fig:kc_dag}
 \end{figure}
 
@@ -201,29 +152,23 @@ KCs.
 \label{subsec:meth_irt}
 
 The probability of a correct response from a learner with latent ability
-$\theta$ on item $i$ is modelled by the three-parameter logistic (3PL)
-function \parencite{birnbaum1968}:
+$\theta$ on item $i$ is modelled by the 3PL function \parencite{birnbaum1968}:
 
 \begin{equation}
   P(X=1 \mid \theta) = c_i + \frac{1-c_i}{1 + e^{-a_i(\theta - b_i)}}
   \label{eq:irt_3pl_meth}
 \end{equation}
 
-where $a_i \in [0.5, 3.0]$ is the discrimination parameter (steepness of the
-Item Characteristic Curve), $b_i \in [-3, 3]$ is the difficulty parameter
-(logit scale), and $c_i$ is the pseudo-guessing lower asymptote (fixed at
-$0.25$ for all four-option MCQs). The 3PL model is calibrated offline using
-the \texttt{mirt} package in R \parencite{chalmers2012} and the resulting
-parameter estimates are serialised to a JSON configuration file consumed by
-the Node.js runtime (see Section~\ref{subsec:meth_calibration}).
+where $a_i \in [0.5, 3.0]$ is discrimination, $b_i \in [-3, 3]$ is difficulty,
+and $c_i = 0.25$ is the pseudo-guessing parameter (fixed for four-option MCQs).
+Parameters are calibrated offline using the \texttt{mirt} package in R
+\parencite{chalmers2012} and serialised to JSON for Node.js consumption.
 
 \subsection{EAP Ability Estimation}
 \label{subsec:meth_eap}
 
-Learner ability $\theta$ is updated after each response using Expected A
-Posteriori (EAP) estimation, preferred over MLE for short sessions due to
-its stability when response patterns are monotone (see
-Section~\ref{subsec:lr_eap}). EAP integrates over a discrete grid:
+Learner ability is updated after each response via Expected A Posteriori (EAP)
+estimation \parencite{bock1982}:
 
 \begin{equation}
   \hat{\theta}_{\text{EAP}} = \frac{\displaystyle\sum_{k=1}^{K}
@@ -234,16 +179,14 @@ Section~\ref{subsec:lr_eap}). EAP integrates over a discrete grid:
 
 where $K = 81$ grid points span $[-4, 4]$ with step $0.1$. The prior
 $\pi(\theta_k) = \mathcal{N}(\mu_0, \sigma_0)$ is initialised at
-$\mu_0 = -0.780$ (20th percentile, reflecting conservative prior for a new
-learner) and $\sigma_0 = 0.543$. Following pre-test seeding
-(Section~\ref{sec:meth_pretest}), the prior is updated to incorporate the
-pre-test evidence with a tightened standard deviation of $0.35$.
+$\mu_0 = -0.780$ (20th percentile) and $\sigma_0 = 0.543$. Following
+pre-test seeding, the prior is tightened to $\sigma_0 = 0.35$.
 
 \subsection{Bayesian Knowledge Tracing}
 \label{subsec:meth_bkt}
 
-Per-KC knowledge state is maintained as a BKT posterior \parencite{corbett1995}.
-After each observed response, the posterior is updated via Bayes' theorem:
+Per-KC knowledge state is maintained as a BKT posterior \parencite{corbett1995},
+updated after each response:
 
 \begin{equation}
   p(L_n \mid \text{obs}_n) = \frac{P(\text{obs}_n \mid L_n) \cdot p(L_n)}
@@ -252,20 +195,12 @@ After each observed response, the posterior is updated via Bayes' theorem:
   \label{eq:bkt_update_meth}
 \end{equation}
 
-where $P(\text{correct} \mid L_n) = 1 - p(S)$ and
-$P(\text{correct} \mid \neg L_n) = p(G)$. The learning transition then
-produces the updated prior for the next observation:
-
-\begin{equation}
-  p(L_{n+1}) = p(L_n \mid \text{obs}_n) + \bigl(1 - p(L_n \mid \text{obs}_n)\bigr)
-    \cdot p(T)
-  \label{eq:bkt_transition_meth}
-\end{equation}
+with learning transition $p(L_{n+1}) = p(L_n \mid \text{obs}_n) +
+(1 - p(L_n \mid \text{obs}_n)) \cdot p(T)$.
 
 \subsubsection*{Credit Factor Modification}
 
-Standard BKT treats all correct responses as equally informative. This
-project modifies the learning transition by a credit factor $\text{cf}$
+This project modifies the learning transition by a credit factor $\text{cf}$
 reflecting the scaffolding level at which the correct response was obtained:
 
 \begin{equation}
@@ -294,38 +229,25 @@ reflecting the scaffolding level at which the correct response was obtained:
 \subsection{Question Selection Algorithm}
 \label{subsec:meth_selection}
 
-At each step the adaptive engine selects the next question from the eligible
-item pool via the following procedure (Figure~\ref{fig:selection_flowchart}):
+At each step the adaptive engine selects from the eligible pool via a
+multi-gate pipeline (Figure~\ref{fig:selection_flowchart}):
+(1)~mastery gate: exclude KCs with unmastered prerequisites;
+(2)~Bloom gate: exclude items above the learner's escalation threshold
+(L2 unlocks at $p(\text{Learned}) \geq 0.40$ or prerequisite KC $\geq 0.50$;
+L3 at $\geq 0.60$);
+(3)~deduplication: exclude variants seen by this learner in any prior session;
+(4)~decay boost: multiply Fisher information by $1.5$ for decayed KCs;
+(5)~ZPD targeting: select $i^* = \arg\max_{i \in \mathcal{E}} I_i(\hat{\theta})$:
 
-\begin{enumerate}[leftmargin=2em]
-  \item \textbf{Mastery gate}: exclude all items whose KC has not yet been
-        unlocked (i.e., a prerequisite KC has $p(\text{Learned}) < 0.80$).
-  \item \textbf{Bloom gate}: exclude items whose Bloom level exceeds the
-        learner's current escalation threshold for that KC:
-        \begin{itemize}
-          \item L2 unlocks when $p(\text{Learned}) \geq 0.40$ \textit{or} a
-                direct prerequisite KC exceeds $0.50$
-          \item L3 unlocks when $p(\text{Learned}) \geq 0.60$
-        \end{itemize}
-  \item \textbf{Deduplication}: exclude items whose variant has been seen by
-        this learner in any prior session (\texttt{UserVariantSeen} table).
-  \item \textbf{Decay boost}: for KCs flagged as decayed (cross-session
-        $p(\text{Learned})$ decline), multiply the Fisher information by $1.5$.
-  \item \textbf{ZPD targeting}: from the remaining eligible pool, select the
-        item maximising Fisher information at the current $\hat{\theta}$:
-        \begin{equation}
-          i^* = \arg\max_{i \in \mathcal{E}} I_i(\hat{\theta}) =
-            \arg\max_{i \in \mathcal{E}}
-            \frac{a_i^2 \cdot P_i(\hat{\theta})(1 - P_i(\hat{\theta}))}
-            {\left(\dfrac{P_i(\hat{\theta}) - c_i}{1 - c_i}\right)^2}
-          \label{eq:selection}
-        \end{equation}
-        where $\mathcal{E}$ is the eligible item pool after steps 1--4.
-  \item \textbf{Fallback}: if the eligible pool is exhausted
-        (\texttt{variant\_pool\_exhausted} event emitted), the engine falls
-        back to selecting the highest-information item from the full
-        unrestricted pool for that KC.
-\end{enumerate}
+\begin{equation}
+  i^* = \arg\max_{i \in \mathcal{E}}
+    \frac{a_i^2 \cdot P_i(\hat{\theta})(1 - P_i(\hat{\theta}))}
+    {\left(\dfrac{P_i(\hat{\theta}) - c_i}{1 - c_i}\right)^2}
+  \label{eq:selection}
+\end{equation}
+
+If the eligible pool is exhausted, the engine falls back to the full
+unrestricted pool and emits a \texttt{variant\_pool\_exhausted} event.
 
 \begin{figure}[H]
 \centering
@@ -361,8 +283,7 @@ item pool via the following procedure (Figure~\ref{fig:selection_flowchart}):
 \draw[arr] (fisher) -- (serve);
 \end{tikzpicture}
 \caption{Adaptive question selection flowchart. Steps execute in sequence per
-question request; ``Yes'' labels indicate the branch taken when the condition
-is satisfied.}
+question request.}
 \label{fig:selection_flowchart}
 \end{figure}
 
@@ -371,44 +292,25 @@ is satisfied.}
 \label{subsec:meth_calibration}
 % ─────────────────────────────────────────────────────────────────────────────
 
-IRT item parameters cannot be estimated from live session data without
-sufficient observations (minimum 200 responses per item for stable 3PL
-recovery \parencite{lord1980}). This project implements a two-stage offline
-calibration pipeline:
-
-\begin{enumerate}[leftmargin=2em]
-  \item \textbf{Pilot data collection.} A pilot study provides initial
-        response data. The response matrix (participants $\times$ items) is
-        exported from Supabase to a CSV file.
-  \item \textbf{R calibration.} The \texttt{mirt} package
-        \parencite{chalmers2012} fits the 3PL model with $c_i$ constrained
-        to $0.25$ via an equality constraint vector. Convergence is assessed
-        using RMSEA (acceptable: $< 0.08$) and the M2 statistic. If 3PL
-        estimation is unstable (non-convergence after 500 EM cycles, or
-        RMSEA $> 0.10$), the model falls back to Rasch (1PL). This decision
-        is pre-specified as a risk mitigation and documented in the risk
-        register (Table~\ref{tab:risk_register}).
-  \item \textbf{JSON serialisation.} Estimated $a_i$ and $b_i$ parameters are
-        exported to \texttt{question\_bank.json} and committed to the
-        repository. The Node.js runtime loads this file at application startup;
-        no database query is required per session.
-  \item \textbf{Recalibration trigger.} If the cumulative response count for
-        any item exceeds 200, a recalibration is scheduled for the next
-        deployment cycle. This is tracked via a Supabase monitoring query
-        against the \texttt{AnalyticsEvent} table.
-\end{enumerate}
+IRT item parameters are estimated via a two-stage offline pipeline.
+(1)~The response matrix from a pilot study is exported from Supabase to CSV.
+(2)~The \texttt{mirt} package \parencite{chalmers2012} fits the 3PL model
+with $c_i$ constrained to $0.25$; convergence is verified using RMSEA
+(acceptable: $< 0.08$). If 3PL estimation is unstable (RMSEA $> 0.10$ or
+non-convergence within 500 EM cycles), the model falls back to Rasch (1PL).
+(3)~Estimated $a_i$ and $b_i$ parameters are serialised to
+\texttt{question\_bank.json} and committed to the repository for Node.js
+runtime consumption.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Pre-Test Seeding}
 \label{sec:meth_pretest}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Before the adaptive session begins, a 13-item diagnostic pre-test spanning all
-KCs at Bloom Level 1 provides initial ability evidence, addressing the
-cold-start problem \parencite{matos2025}. Items are selected at Level 1 to
-minimise frustration and to ensure the pre-test is informative across the full
-ability range. The raw pre-test score is converted to a Laplace-smoothed
-logit seed estimate:
+Before the adaptive session, a 13-item diagnostic pre-test (one item per KC
+at Bloom Level~1) provides initial ability evidence, addressing the cold-start
+problem \parencite{matos2025}. The raw score is converted to a Laplace-smoothed
+logit seed:
 
 \begin{equation}
   \theta_{\text{seed}} = \frac{\ln\!\left(\dfrac{n_{\text{correct}} + 0.5}
@@ -416,136 +318,58 @@ logit seed estimate:
   \label{eq:theta_seed_meth}
 \end{equation}
 
-where the $1.7$ denominator is the standard IRT logistic approximation scaling
-log-odds to the normal-ogive $D$ parameter \parencite{lord1980}. Laplace
-smoothing (adding $0.5$ to numerator and denominator) prevents boundary
-estimates at perfect or zero pre-test scores. The seed is bounded to
-$\theta_{\text{seed}} \in [-2.5, 2.5]$ and used as the initial $\hat{\theta}$
-for EAP estimation in the adaptive session, with the prior standard deviation
-reduced to $0.35$ to reflect the additional information.
+bounded to $[-2.5, 2.5]$, with the EAP prior standard deviation reduced to
+$0.35$ to reflect additional information.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Scaffolding Design}
+\section{Scaffolding and Variant Design}
 \label{sec:meth_scaffolding}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Each question item provides three levels of graduated scaffolding, accessible
-on demand by the learner without interrupting the session flow. The hint
-architecture follows the three-level model of \textcite{koedinger2007}:
+Each question provides three graduated hint levels following
+\textcite{koedinger2007}: Level~1 (conceptual reframe, no solution disclosure);
+Level~2 (procedural strategy, method without answer); Level~3 (worked analogy,
+cognitive pathway explicit). Each access reduces the credit factor applied to
+a subsequent correct response (Table~\ref{tab:credit_factors}).
 
-\begin{description}
-  \item[Level 1: Conceptual reframe.] Restates the question in simpler
-    terms, clarifies terminology, or draws attention to relevant factual
-    knowledge. Does not disclose the solution pathway.
-  \item[Level 2: Procedural strategy.] Provides the method or framework
-    for approaching the question. Identifies which geographic concept is
-    tested without specifying the answer.
-  \item[Level 3: Worked example.] Provides a fully worked analogy question
-    with an explained solution. The learner's own question remains unsolved,
-    but the cognitive pathway to the answer is made explicit.
-\end{description}
-
-Each hint access reduces the credit factor applied to a subsequent correct
-answer (Table~\ref{tab:credit_factors}), implementing the principle that
-hint-assisted correctness is less evidentially informative about latent
-knowledge than unaided correctness \parencite{koedinger2007}. Incorrect
-responses following any hint level are treated as full-weight incorrect
-responses in the BKT update.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Isomorphic Variation and Cross-Session Deduplication}
-\label{sec:meth_variants}
-% ─────────────────────────────────────────────────────────────────────────────
-
-A persistent methodological challenge in adaptive assessment is item
-overexposure: learners who return for multiple sessions may receive previously
-seen questions, inflating mastery estimates. This project addresses the
-problem through a two-layer variant system.
-
-\textbf{Isomorphic variants.} Each KC-Bloom-level combination is authored as a
-\texttt{QuestionTemplate} with a stem and a set of correct/distractor answer
-keys. Multiple \texttt{QuestionVariant} records are derived from each template
-by substituting surface-level details (specific country names, values,
-locations) while preserving the underlying cognitive demand. Isomorphic
-variants test the same KC-Bloom construct as their parent template but differ
-in surface form, rendering rote memorisation of prior answers non-transferable.
-
-\textbf{Cross-session deduplication.} Every variant served is recorded in the
-\texttt{UserVariantSeen} join table, keyed to the user and variant IDs. At
-question selection, the eligible pool excludes any variant present in this
-table for the requesting user. If all variants of a template have been
-exhausted, the \texttt{variant\_pool\_exhausted} analytics event is emitted
-and the engine falls back to the template-level item pool.
+Each KC-Bloom combination is authored as a \texttt{Question\-Template} with
+multiple \texttt{Question\-Variant} records substituting surface-level details
+while preserving the underlying cognitive demand. Every variant served is
+recorded in \texttt{User\-Variant\-Seen}, preventing re-exposure across sessions.
+If all variants of a template are exhausted, the engine falls back to the
+full template-level pool.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Evaluation Protocol}
 \label{sec:meth_evaluation}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection{Study Design}
+\subsection{Study Design and Instruments}
 \label{subsec:meth_study}
 
-The evaluation employs a within-subjects quasi-experimental design with the
-following conditions:
-
-\begin{description}
-  \item[Adaptive condition.] Full adaptive session using the IRT+BKT engine
-    with Bloom-gated selection, pre-test seeding, and graduated scaffolding.
-  \item[Baseline reference.] VanLehn's (2011) meta-analytic benchmark of
-    $d = 0.76$ for step-based ITS systems is used as the primary comparison
-    standard, as a direct no-adaptation control arm could not be implemented
-    within the single-session constraint.
-\end{description}
-
-\subsection{Participants}
-\label{subsec:meth_participants}
-
-Participants are recruited from University of Hull undergraduate and
-postgraduate students via the university's participant pool and departmental
-email lists. Inclusion criteria: (a) English-language fluency; (b) no
-prior formal study of UK KS3/GCSE Geography at GCSE level or above (to avoid
-ceiling effects); (c) informed written consent. Target sample size is $n \geq
-15$ for the primary session, with a retention follow-up targeting $n \geq 10$
-after anticipated attrition.
-
-\subsection{Instruments}
-\label{subsec:meth_instruments}
-
-\begin{description}
-  \item[System Usability Scale (SUS).] The 10-item SUS questionnaire
-    \parencite{brooke1996} is administered at session end. The benchmark for
-    above-average usability is $\geq 68$ \parencite{bangor2008}.
-  \item[Misconception analysis.] Post-session distractor frequency tables
-    identify the most common incorrect attractors per KC, enabling qualitative
-    analysis of systematic knowledge gaps.
-  \item[Theta trajectory.] Session-level $\hat{\theta}$ sequences are stored
-    for longitudinal analysis of within-session learning gains.
-  \item[7-day retention test.] A subset of isomorphic items (not previously
-    seen) is administered via the same platform seven days post-session to
-    assess delayed retention of mastered KCs.
-\end{description}
+The evaluation uses a within-subjects quasi-experimental design. VanLehn's
+(2011) meta-analytic benchmark of $d = 0.76$ serves as the primary comparison
+standard; a direct no-adaptation control arm could not be completed within the
+single-session constraint. Instruments administered include: the System Usability
+Scale (SUS; 10-item Likert, scored 0--100, benchmark $\geq 68$
+\parencite{bangor2008}); session-level $\hat{\theta}$ sequences for within-session
+learning gain analysis; post-session distractor frequency tables for misconception
+analysis; and a 7-day isomorphic retention assessment.
 
 \subsection{Limitations of the Evaluation}
 \label{subsec:meth_limitations}
 
-The evaluation design carries several acknowledged limitations:
-
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Sample size.} $n = 4$ external participants were available for
-        the primary evaluation phase, substantially below the target of $n = 15$.
-        This precludes inferential statistical testing (paired $t$-test requires
-        approximately $n = 13$ for 80\% power at $d = 0.76$, $\alpha = 0.05$).
-        Results are reported descriptively as proof-of-concept evidence only.
-  \item \textbf{No control condition completed.} The within-subjects control arm
-        was not implemented due to time constraints; VanLehn's benchmark serves
-        as the comparative reference.
+  \item \textbf{Sample size.} $n = 4$ external participants, substantially below
+        the target of $n = 15$. Results are descriptive and proof-of-concept only;
+        inferential statistics require approximately $n = 13$ for 80\% power at
+        $d = 0.76$, $\alpha = 0.05$.
+  \item \textbf{No control condition completed.} VanLehn's benchmark serves as
+        the comparative reference.
   \item \textbf{Convenience sample.} University students are not representative
-        of the KS3/GCSE student population the system targets. Findings cannot
-        be generalised to secondary school learners without further validation.
-  \item \textbf{IRT parameters from pilot.} Item parameters are estimated from
-        pilot data with a small calibration sample. Parameter instability is
-        a known risk and is mitigated through the constrained calibration
-        strategy described in Section~\ref{subsec:meth_calibration}.
+        of the KS3/GCSE student population.
+  \item \textbf{IRT parameters from pilot.} Parameter instability is mitigated
+        by the constrained calibration strategy.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -568,19 +392,16 @@ The evaluation design carries several acknowledged limitations:
     font=\footnotesize, minimum height=1.0cm, aspect=0.25},
   arr/.style={-{Latex[length=2mm]}, thick, gray!70}
 ]
-% Layers
 \node[layer] (client) {Browser\\Client};
 \node[layer, below=of client] (nextjs) {Next.js\\App Router};
 \node[layer, below=of nextjs] (api) {API Routes\\(Edge Functions)};
 \node[layer, below=of api] (engine) {Adaptive Engine};
 \node[db, below=of engine] (db) {Supabase\\PostgreSQL};
 
-% Engine sub-modules
 \node[mod, right=2.0cm of engine] (irt) {IRT 3PL\\$\hat{\theta}$ EAP};
 \node[mod, above=0.5cm of irt] (bkt) {BKT\\per-KC state};
 \node[mod, below=0.5cm of irt] (sel) {Item\\Selector};
 
-% Arrows
 \draw[arr] (client) -- node[right, font=\footnotesize]{HTTPS} (nextjs);
 \draw[arr] (nextjs) -- (api);
 \draw[arr] (api) -- (engine);
@@ -591,37 +412,25 @@ The evaluation design carries several acknowledged limitations:
 \draw[arr, dashed] (db) to[bend right=30] node[left, font=\footnotesize]{Prisma ORM} (api);
 \end{tikzpicture}
 \caption{High-level system architecture. The adaptive engine is isolated as a
-pure-function module (\texttt{src/lib/algorithms/}) with no direct database
-access; all I/O passes through the API route layer.}
+pure-function module with no direct database access; all I/O passes through
+the API route layer.}
 \label{fig:architecture}
 \end{figure}
 
-The system is deployed as a Next.js 14 (App Router) application on Vercel,
-with Supabase (Frankfurt region) providing the PostgreSQL database, Row-Level
-Security policies, and authentication services. Prisma ORM manages schema
-migrations and type-safe database access. The adaptive engine module
-(\texttt{src/lib/algorithms/}) is intentionally isolated from the database
-layer: it receives serialised learner state as input and returns a question
-selection decision as output, making it independently testable and
-domain-agnostic.
+GeoMentor is deployed as a Next.js~14 (App Router) application on Vercel,
+with Supabase (Frankfurt) providing PostgreSQL, Row-Level Security, and
+authentication. Prisma ORM manages schema migrations and type-safe access.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Agile Development Methodology}
 \label{sec:meth_agile}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Development followed a two-week sprint cycle adapted from Scrum, managed
-through a Notion project tracker. The sprint structure was chosen over a
-waterfall approach because the adaptive algorithm design required iterative
-empirical validation: initial IRT parameter estimates are hypotheses, not
-specifications, and the system design required multiple calibration cycles to
-stabilise. This decision aligns with the CSSE competency requirement to
-``use established software development methodologies to discover authentic
-requirements, respond to change, ensure quality and deliver value to users
-and stakeholders'' \parencite{hull2024}.
-
-\subsection{Sprint Structure}
-\label{subsec:meth_sprints}
+Development followed two-week sprints adapted from Scrum, managed through a
+Notion project tracker. The iterative cycle was chosen because adaptive
+algorithm design requires empirical validation: initial IRT parameter estimates
+are hypotheses, not specifications, and multiple calibration cycles are needed
+to stabilise. Table~\ref{tab:sprints} summarises the sprint history.
 
 \begin{table}[H]
 \centering
@@ -656,95 +465,49 @@ and stakeholders'' \parencite{hull2024}.
 \end{tabularx}
 \end{table}
 
-\subsection{Responding to Change: The Scope Reduction Decision}
-\label{subsec:meth_scope_reduction}
-
-The initial project proposal described a multi-domain adaptive system covering
-STEM and Humanities subjects. By Sprint 5 (February 2026), technical risk
-assessment revealed that multi-domain calibration would require separate IRT
-parameter estimates for each domain, each demanding a minimum of 200 responses
-per item, infeasible within the available study timeline. Furthermore,
-deploying a validation study across multiple domains would have diluted the
-evaluation's statistical power across subgroups too small for meaningful
-analysis.
-
-The decision to scope down to a single domain (UK Geography) and
-subsequently to validate a single core KC workflow was taken in consultation
-with the project supervisor and is documented in the project's Scope Lock
-Document. This decision is an instance of the CSSE competency ``respond to
-change'': it represents an evidence-based pivot from an overscoped requirement
-to a tractable research claim, not a retreat from ambition. The system's
-domain-agnostic architecture (the adaptive engine operates on any KC graph,
-regardless of subject domain) preserves the multi-domain vision as a credible
-future direction.
-
-\subsection{Version Control and Audit Trail}
-\label{subsec:meth_git}
-
-All development activity is version-controlled in a public GitHub repository
-(\url{https://github.com/dlalloyd/E-Learning-Final-Project}). The repository
-provides a verifiable audit trail of development progress: each feature is
-committed atomically with a descriptive commit message, enabling reconstruction
-of the development timeline by examining the Git log. Key architectural
-milestones are tagged in the repository to facilitate evaluation.
-
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Project Timeline}
 \label{sec:meth_gantt}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Figure~\ref{fig:gantt} presents the planned and actual project timeline,
-reconstructed from the Git commit history. The Sprint~5 scope reduction
-(red dashed line) and the resulting re-planning are clearly visible.
+Figure~\ref{fig:gantt} presents the planned and actual project timeline
+reconstructed from the Git commit history.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[x=0.92cm, y=0.72cm]
-  % ── Vertical grid
   \foreach \x in {0,...,10} {
     \draw[gray!22, thin] (\x, 0.65) -- (\x, -4.60);
   }
-  % ── Sprint header
   \foreach \i in {1,...,10} {
     \pgfmathsetmacro\xc{\i - 0.5}
     \node[font=\footnotesize\bfseries] at (\xc, 0.45) {S\i};
   }
-  % ── Month sub-row
   \foreach \xc/\mo in
       {0.5/Oct, 1.5/Nov, 2.5/Dec, 3.5/Jan, 4.5/Feb,
        5.5/Mar, 6.5/Mar, 7.5/Apr, 8.5/Apr, 9.5/May} {
     \node[font=\tiny, gray!60] at (\xc, 0.10) {\mo};
   }
-  % ── Phase bars
-  % Initiation & Design  S1–S4
   \fill[blue!28, rounded corners=2pt] (0,-0.30) rectangle (4,-0.80);
   \node[anchor=east, font=\small] at (-0.22,-0.55) {Initiation \& Design};
-  % Core Development  S2–S5
   \fill[blue!48, rounded corners=2pt] (1,-1.00) rectangle (5,-1.50);
   \node[anchor=east, font=\small] at (-0.22,-1.25) {Core Development};
-  % Integration & Hardening  S6–S8
   \fill[blue!68, rounded corners=2pt] (5,-1.70) rectangle (8,-2.20);
   \node[anchor=east, font=\small] at (-0.22,-1.95) {Integration \& Hardening};
-  % Evaluation  S9
   \fill[orange!55, rounded corners=2pt] (8,-2.40) rectangle (9,-2.90);
   \node[anchor=east, font=\small] at (-0.22,-2.65) {Evaluation ($n=4$)};
-  % Dissertation  S9–S10
   \fill[green!35!black!55, rounded corners=2pt] (8,-3.10) rectangle (10,-3.60);
   \node[anchor=east, font=\small] at (-0.22,-3.35) {Dissertation};
-  % ── Scope reduction marker  x = 4
   \draw[red!65, thick, dashed] (4, 0.65) -- (4,-4.10);
   \node[red!65, font=\tiny, align=center, above] at (4, 0.65)
       {\textbf{Scope}\\reduction};
-  % ── Submission diamond  x = 10
   \fill[red!60]
       (10.00,-3.35) -- (10.22,-3.15) -- (10.44,-3.35) -- (10.22,-3.55) -- cycle;
   \node[anchor=west, font=\tiny, red!70] at (10.50,-3.35) {06~May};
-  % ── Border
   \draw[black!25] (0, 0.65) rectangle (10,-4.10);
 \end{tikzpicture}
-\caption{Project Gantt chart. Each column = one fortnightly sprint (Oct~2025–May~2026).
-Bar shading indicates development phase; the red dashed line marks the Sprint~5
-scope reduction from multi-domain to single-domain Geography KC validation.}
+\caption{Project Gantt chart. Each column = one fortnightly sprint (Oct~2025--May~2026).
+The red dashed line marks the Sprint~5 scope reduction.}
 \label{fig:gantt}
 \end{figure}
 
@@ -755,112 +518,251 @@ scope reduction from multi-domain to single-domain Geography KC validation.}
 
 \begin{table}[H]
 \centering
-\caption{Project risk register. Likelihood: H = High, M = Medium, L = Low.
-Impact: H = High, M = Medium, L = Low.}
+\caption{Project risk register. L = Likelihood; I = Impact (H/M/L).}
 \label{tab:risk_register}
 \renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{cp{4.5cm}ccp{2cm}X}
+\begin{tabularx}{\textwidth}{cp{4.0cm}ccp{2.0cm}X}
 \toprule
 \textbf{ID} & \textbf{Risk} & \textbf{L} & \textbf{I} & \textbf{Status} & \textbf{Mitigation} \\
 \midrule
-R1 & IRT 3PL fails to converge (small pilot sample) &
+R1 & IRT 3PL fails to converge &
   H & M & Mitigated &
-  Pre-specify Rasch (1PL) fallback; fix $c=0.25$ as equality constraint \\
-R2 & Participant attrition at 7-day follow-up &
+  Pre-specify Rasch fallback; fix $c=0.25$ \\
+R2 & Participant attrition at follow-up &
   H & M & Accepted &
-  Target $n=18$ recruitment; acknowledge in evaluation limitations \\
-R3 & variant\_pool\_exhausted before session end &
+  Target $n=18$ recruitment; acknowledged in limitations \\
+R3 & \texttt{variant\_pool\_\allowbreak exhausted} &
   M & L & Mitigated &
-  Fallback to unrestricted pool; \texttt{variant\_pool\_exhausted} event emitted \\
-R4 & Supabase RLS misconfiguration exposing user data &
+  Fallback to unrestricted pool; event emitted \\
+R4 & Supabase RLS misconfiguration &
   L & H & Mitigated &
-  RLS policies peer-reviewed; rate limiting on auth endpoints \\
-R5 & Cross-session BKT state corruption (concurrent sessions) &
+  RLS policies peer-reviewed; rate limiting on auth \\
+R5 & BKT state corruption (concurrent sessions) &
   L & H & Mitigated &
-  Postgres row-level locking; session state written atomically \\
-R6 & Scope overrun (multi-domain ambition) &
+  Postgres row-level locking; atomic session writes \\
+R6 & Scope overrun (multi-domain) &
   H & H & Resolved &
-  Sprint 5 scope reduction to single-domain Geography KC validation \\
-R7 & Gantt chart absent from interim report &
-  H & M & Resolved &
-  Gantt included in this final report (Figure~\ref{fig:gantt}) \\
+  Sprint~5 scope reduction to single-domain Geography \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{What Could and Could Not Be Delivered}
+\section{What Was and Was Not Delivered}
 \label{sec:meth_delivery}
 % ─────────────────────────────────────────────────────────────────────────────
 
 \subsection{Delivered}
-\label{subsec:meth_delivered}
-
-The following components were fully implemented and are verifiable in the
-production deployment and Git history:
 
 \begin{itemize}[leftmargin=2em]
   \item Hybrid IRT 3PL + BKT adaptive engine with EAP estimation,
         Bloom-gated selection, and credit-factor BKT modification
-  \item 13-KC question bank with isomorphic variants and cross-session
-        deduplication (\texttt{UserVariantSeen} table)
+  \item 13-KC question bank with isomorphic variants and cross-session deduplication
   \item Three-level graduated hint system with evidential credit weighting
   \item Pre-test seeding with Laplace-smoothed logit initialisation
   \item BKT decay detection and successive relearning boost ($1.5\times$)
-  \item Five-tab session summary dashboard (Trajectory, Skills, Misconceptions,
-        Achievements, Share)
+  \item Five-tab session summary dashboard (Trajectory, Skills, Misconceptions, Achievements, Share)
   \item Leaderboard with XP ranking, consent opt-in, and rank-change animation
-  \item First-visit onboarding tour (\texttt{FirstVisitTour.tsx})
-  \item Security implementation: bcrypt, JWT, rate limiting, Supabase RLS,
-        NIST SP 800-63B compliance
+  \item First-visit onboarding tour
+  \item Security implementation: bcrypt, JWT, rate limiting, Supabase RLS, NIST SP 800-63B compliance
   \item Production deployment on Vercel with Supabase Frankfurt backend
 \end{itemize}
 
 \subsection{Not Delivered}
-\label{subsec:meth_not_delivered}
-
-The following items from the original proposal were not delivered, with
-justifications:
 
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Multi-domain support.} Evaluated and superseded by the scope
-        reduction decision (Section~\ref{subsec:meth_scope_reduction}). The
-        architecture supports multi-domain extension without algorithmic change.
-  \item \textbf{K-means cold-start clustering.} Originally proposed as an
-        alternative cold-start mechanism. Evaluated and superseded by the
-        pre-test seeding approach, which provides per-KC ability evidence
-        rather than a demographic cluster assignment. Pre-test seeding is
-        both more principled and more interpretable.
-  \item \textbf{Full A/B randomised control trial.} A direct no-adaptation
-        control arm was not implemented within the single-session study
-        design; VanLehn's meta-analytic benchmark is used as the comparator.
-  \item \textbf{7-day retention data at scale.} Follow-up data collection
-        could not be completed within the project timeline; retention
-        assessment was conducted for the available $n=4$ sample only.
+  \item \textbf{Multi-domain support.} Superseded by the Sprint~5 scope
+        reduction; the architecture supports extension without algorithmic change.
+  \item \textbf{K-means cold-start clustering.} Evaluated and superseded by
+        pre-test seeding, which provides per-KC ability evidence rather than
+        a demographic cluster assignment.
+  \item \textbf{Full A/B randomised controlled trial.} VanLehn's meta-analytic
+        benchmark used as comparator; static arm implemented but not wired.
+  \item \textbf{7-day retention data at scale.} Follow-up data collection could
+        not be completed within the project timeline.
 \end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Interface Design: Lo-fi Prototypes}
+\label{sec:meth_lofi}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Interface design preceded implementation in each sprint cycle.
+Figure~\ref{fig:lofi_question} shows the lo-fi wireframe for the adaptive
+question screen, and Figure~\ref{fig:lofi_summary} shows the session summary
+dashboard layout. Both informed the production React component specifications
+authored by the candidate.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.80cm, y=0.72cm]
+  % Outer browser chrome
+  \draw[black!35, rounded corners=3pt] (0,0) rectangle (13,-11);
+
+  % Top navigation bar
+  \fill[blue!12] (0,0) rectangle (13,-1.0);
+  \node[anchor=west, font=\small\bfseries] at (0.3,-0.50) {GeoMentor};
+  \node[font=\footnotesize, black!60] at (6.5,-0.50) {Session: Q7 / 15};
+  \draw[black!40, rounded corners=2pt, fill=white] (11.0,-0.75) rectangle (12.7,-0.25);
+  \node[font=\tiny] at (11.85,-0.50) {Pause};
+
+  % Progress bar strip
+  \fill[blue!30] (0,-1.0) rectangle (6.0,-1.25);
+  \fill[gray!20] (6.0,-1.0) rectangle (13,-1.25);
+
+  % KC badge + Bloom level
+  \draw[blue!55, rounded corners=2pt, fill=blue!8]
+    (0.4,-1.55) rectangle (4.6,-2.05);
+  \node[font=\scriptsize] at (2.5,-1.80) {KC: Westerly Winds (L2)};
+
+  % Mastery bar label
+  \node[font=\tiny, black!50, anchor=west] at (0.4,-2.20)
+    {KC mastery: {\color{blue!60}62\%}};
+  \draw[gray!30, rounded corners=1pt] (0.4,-2.40) rectangle (12.6,-2.65);
+  \fill[blue!45, rounded corners=1pt] (0.4,-2.40) rectangle (8.26,-2.65);
+
+  % Question text box
+  \draw[black!25, rounded corners=3pt, fill=gray!4]
+    (0.4,-2.85) rectangle (12.6,-5.10);
+  \node[font=\small, align=center, text width=11cm] at (6.5,-3.97)
+    {Why does western Britain receive significantly more rainfall\\
+     than eastern Britain? [Select one answer]};
+
+  % Answer options
+  \foreach \i/\lbl/\txt in {
+    0/A/Air masses from the Atlantic carry less moisture,
+    1/B/Prevailing westerlies deposit orographic rainfall on uplands,
+    2/C/The North Atlantic Drift reduces evaporation rates,
+    3/D/Eastern regions have fewer mountain ranges overall
+  }{
+    \pgfmathsetmacro\yy{-5.40 - \i*1.15}
+    \draw[black!30, rounded corners=2pt, fill=white]
+      (0.4,\yy) rectangle (12.6,\yy-0.90);
+    \node[font=\scriptsize\bfseries, black!60] at (1.1,\yy-0.45) {\lbl};
+    \node[font=\scriptsize, anchor=west, text width=10cm] at (1.5,\yy-0.45) {\txt};
+  }
+
+  % Bottom bar: Hint | Confidence | Submit
+  \fill[gray!10] (0,-9.95) rectangle (13,-11);
+  \draw[orange!60, rounded corners=2pt, fill=orange!10]
+    (0.4,-10.45) rectangle (2.8,-10.75);
+  \node[font=\tiny] at (1.6,-10.60) {Hint (Level 1)};
+  \node[font=\tiny, black!55] at (6.5,-10.60)
+    {Confidence: \underline{~~~Medium~~~}};
+  \draw[blue!60, rounded corners=2pt, fill=blue!55]
+    (10.2,-10.45) rectangle (12.6,-10.75);
+  \node[font=\tiny, white] at (11.4,-10.60) {Submit Answer};
+\end{tikzpicture}
+\caption{Lo-fi wireframe: adaptive question screen. Key elements are the KC
+  badge (identifies active Knowledge Component and Bloom level), the BKT
+  mastery bar (reflects live $p(\text{Learned})$), four MCQ options, the
+  graduated hint trigger (orange), confidence rating, and submit button.
+  This wireframe preceded the Sprint~4 React implementation.}
+\label{fig:lofi_question}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.80cm, y=0.72cm]
+  % Outer browser chrome
+  \draw[black!35, rounded corners=3pt] (0,0) rectangle (13,-10);
+
+  % Header bar
+  \fill[blue!12] (0,0) rectangle (13,-1.0);
+  \node[anchor=west, font=\small\bfseries] at (0.3,-0.50) {GeoMentor};
+  \node[font=\small] at (6.5,-0.50) {Session Summary};
+
+  % Stats strip: three stat boxes
+  \fill[gray!8] (0,-1.0) rectangle (13,-2.6);
+  \foreach \i/\statval/\statlbl in {
+    0/{$\hat{\theta}$: $-0.78 \to +0.21$}/Ability gain,
+    1/{87\% accuracy}/Response rate,
+    2/{18 min}/Session time
+  }{
+    \pgfmathsetmacro\xleft{0.4 + \i*4.2}
+    \pgfmathsetmacro\xright{\xleft + 3.9}
+    \draw[black!20, rounded corners=2pt, fill=white]
+      (\xleft,-1.15) rectangle (\xright,-2.45);
+    \node[font=\footnotesize\bfseries] at (\xleft+1.95,-1.65) {\statval};
+    \node[font=\tiny, black!55] at (\xleft+1.95,-2.15) {\statlbl};
+  }
+
+  % Tab bar
+  \fill[gray!14] (0,-2.6) rectangle (13,-3.2);
+  \foreach \i/\tabnm in {
+    0/Overview, 1/Trajectory, 2/Skills, 3/Misconceptions, 4/Share
+  }{
+    \pgfmathsetmacro\tcx{1.2 + \i*2.4}
+    \ifnum\i=0
+      \fill[white] (\tcx-1.1,-2.6) rectangle (\tcx+1.1,-3.2);
+      \node[font=\tiny\bfseries, blue!65] at (\tcx,-2.90) {\tabnm};
+    \else
+      \node[font=\tiny, black!50] at (\tcx,-2.90) {\tabnm};
+    \fi
+  }
+
+  % Main content pane (Overview tab active)
+  \draw[black!18, fill=gray!3] (0,-3.2) rectangle (13,-8.2);
+
+  % Left: $\hat\theta$ trajectory chart placeholder
+  \draw[black!25, fill=white, rounded corners=2pt]
+    (0.4,-3.5) rectangle (7.8,-8.0);
+  \node[font=\tiny, black!40] at (4.1,-5.75)
+    {$\hat{\theta}$ trajectory chart (15 questions)};
+  % Simulated line
+  \draw[blue!50, thick]
+    (0.8,-7.5) -- (1.5,-7.2) -- (2.2,-6.9) -- (3.0,-6.5)
+    -- (3.8,-6.1) -- (4.6,-5.8) -- (5.4,-5.4) -- (6.2,-5.1)
+    -- (6.9,-4.7) -- (7.6,-4.4);
+
+  % Right: per-KC mastery bars
+  \draw[black!25, fill=white, rounded corners=2pt]
+    (8.0,-3.5) rectangle (12.6,-8.0);
+  \node[font=\tiny, black!40, align=center] at (10.3,-3.70)
+    {KC mastery};
+  \foreach \j/\kcshort/\pct in {
+    0/Capitals/0.92,
+    1/County/0.78,
+    2/Rivers/0.81,
+    3/W-Winds/0.62,
+    4/Maritime/0.48,
+    5/Pennines/0.33
+  }{
+    \pgfmathsetmacro\ybase{-4.00 - \j*0.60}
+    \node[anchor=east, font=\tiny, black!60] at (8.8,\ybase-0.15) {\kcshort};
+    \draw[gray!25] (8.9,\ybase-0.05) rectangle (12.4,\ybase-0.35);
+    \pgfmathsetmacro\barend{8.9 + \pct*3.5}
+    \fill[blue!50] (8.9,\ybase-0.05) rectangle (\barend,\ybase-0.35);
+  }
+
+  % Bottom action bar
+  \fill[gray!10] (0,-8.2) rectangle (13,-10);
+  \draw[blue!50, rounded corners=2pt, fill=blue!10]
+    (0.4,-9.0) rectangle (4.0,-9.55);
+  \node[font=\small] at (2.2,-9.275) {Return to dashboard};
+  \draw[green!50!black, rounded corners=2pt, fill=green!8]
+    (4.4,-9.0) rectangle (8.2,-9.55);
+  \node[font=\small] at (6.3,-9.275) {Export PNG card};
+  \draw[gray!50, rounded corners=2pt, fill=gray!8]
+    (8.6,-9.0) rectangle (12.6,-9.55);
+  \node[font=\small] at (10.6,-9.275) {Start new session};
+\end{tikzpicture}
+\caption{Lo-fi wireframe: session summary dashboard (Overview tab active).
+  The three-stat strip reports the within-session $\Delta\hat{\theta}$,
+  overall accuracy, and session duration. Left pane: $\hat{\theta}$ trajectory
+  chart across 15 questions. Right pane: per-KC BKT mastery bars.
+  Tab navigation exposes Trajectory (interactive chart), Skills (KC breakdown),
+  Misconceptions (distractor analysis), and Share (PNG card export).}
+\label{fig:lofi_summary}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Quality Assurance}
 \label{sec:meth_qa}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Quality assurance mechanisms employed across the project lifecycle include:
-
-\begin{itemize}[leftmargin=2em]
-  \item \textbf{TypeScript strict mode.} The entire codebase compiles under
-        TypeScript strict mode, eliminating a class of runtime errors at
-        the type-checking stage.
-  \item \textbf{Prisma schema validation.} Database schema changes are
-        managed exclusively through Prisma migration files, providing a
-        versioned, auditable schema history.
-  \item \textbf{Vercel preview deployments.} Each feature branch receives an
-        isolated preview deployment, enabling integration testing before
-        merge to main.
-  \item \textbf{Supabase RLS verification.} Row-Level Security policies were
-        verified by attempting cross-user data access from a test account,
-        confirming that users cannot read each other's session data.
-  \item \textbf{Manual SUS administration.} SUS instrument was administered
-        by the researcher, with participants reading and signing a
-        participant information sheet confirming informed consent before
-        beginning any session.
-\end{itemize}
+Quality assurance mechanisms employed include: TypeScript strict mode
+eliminating runtime errors at the type-checking stage; Prisma migration files
+providing a versioned schema audit trail; Vercel preview deployments enabling
+integration testing per feature branch before merge; and Supabase RLS
+verification by cross-user access testing from a test account.
