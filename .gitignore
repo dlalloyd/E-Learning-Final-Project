@@ -43,13 +43,15 @@ yarn-error.log*
 .vercel
 
 .env*.local
-.claude/
 
-# Claude Code internals — local tooling, not project code
+# Claude Code internals — never commit
+.claude/
+CLAUDE.md
 .agents/
 skills-lock.json
 
-# Submission artefacts
+# Submission artefacts / internal working docs
 dissertation.zip
 instruction-mode.zip
 tsconfig.tsbuildinfo
+dissertation/implementation-challenges-log.md
